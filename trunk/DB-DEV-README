@@ -1,0 +1,24 @@
+This file explains the connection details to the embedded derby db
+
+connection properties:
+
+driver = "org.apache.derby.jdbc.EmbeddedDriver"
+protocol = "jdbc:derby:"
+dbName = "db"
+
+procedure:
+
+1. start Derby DB's interactive SQL scripting tool - ij
+	java -cp .:./lib/derby.jar:./lib/derbytools.jar org.apache.derby.tools.ij
+
+2. At the prompt, type in:
+	connect 'jdbc:derby:db';
+
+3. exit; to disconnect
+
+4. show tables; to show all tables in the database
+   The tables of interest to us are index and defaultselection
+
+
+See http://db.apache.org/derby/papers/DerbyTut/ij_intro.html for more details.
+

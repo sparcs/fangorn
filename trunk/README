@@ -1,0 +1,136 @@
+**********************************
+Overview
+**********************************
+
+Fangorn runs within a Jetty webserver present in the "server" directory. The 
+"index" directory contains the search indexes and "db" contains an apache derby 
+embedded database. The database is only used to manage corpora state. We use 
+the term application synonymously with the server, because starting the server 
+starts the application.
+
+
+**********************************
+Installation instructions
+**********************************
+
+Read INSTALL file in the root directory.
+All commands listed below are to be executed from the install directory and 
+not from the root directory which contains this file.
+
+
+**********************************
+Data
+**********************************
+
+The data should be present in the Penn Treebank bracketed style. An example 
+annotation looks like this:
+
+((S(NP-SBJ(EX There))(VP(VBZ is)(NP-PRD(DT no)(NN asbestos))(PP-LOC(IN in)(NP(PR
+P$ our)(NNS products)))(ADVP-TMP(RB now)))(. .)('' '')))
+
+A file can contain one or more sentences, and could be present in any directory
+hierarchy under a main corpus directory. A corpus file is identified by its 
+extension .mrg, or .gz if gzipped.
+
+A line starting with a '*' is treated as a comment and is ignored.
+
+The application is distributed with sample data from the Penn Treebank Corpus
+available in NLTK's data distribution.
+
+
+**********************************
+Running the application
+**********************************
+
+Run the script start-app.sh
+
+NOTE: 
+A. Software requirements: Java 5 SE JRE (runtime env) or JDK (dev kit) or 
+above. Please note that this distribution has been compiled without
+optimization in order to make it run on several distributions of Java. For
+faster querying you could send an email to: sghodke@csse.unimelb.edu.au 
+asking for the Java 5/6/7 optimised version.
+B. The application is distributed with an example set of 343 sentences from 
+The Penn Treebank corpus.
+
+
+**********************************
+Stopping the application
+**********************************
+
+Press Ctrl + c in the terminal where the application is running.
+
+
+**********************************
+Accessing the application
+**********************************
+
+* If accessing the application on the same machine as the server: Start Mozilla 
+Firefox browser and type in http://localhost:9090 or http://localhost:9090/index
+in the address bar.
+
+* The application could be accessed on a network using 
+http://<machine-name>:9090 or http://<machine-name>:9090/index
+
+
+**********************************
+Adding a Corpus to Fangorn
+**********************************
+
+1. Run the script create-index-GZ.sh or create-index-MRG.sh based on whether the
+corpus files are gizpped and have the extension .gz or if they are plain text 
+files with the extension .mrg
+Both scripts require 3 compulsory parameters and 1 optional parameter that 
+should be specified in the order mentioned below:
+	(1) The complete path to the corpus directory.
+	(2) The directory where the index is stored (should be different from the 
+	    ones already present).
+	(3) The name of the corpus as should be displayed in the UI.
+	(4) [Optional] Total number of sentences to be indexed from the corpus. All 
+	    sentences in the directory are indexed if this parameter is not 
+	    specified.  
+	
+2. Example usages:
+
+sh create-index-MRG.sh /home/test/Corpora/Penn/WSJ pwsj Penn_Treebank_WSJ
+
+Indexes all sentences in the directory /home/test/Corpora/Penn/WSJ and displays 
+the corpus as "Penn Treebank WSJ" in the user interface.
+
+sh create-index-MRG.sh /home/test/Corpora/Penn/Br pbrn PT_Brown_100 100
+
+Indexes first 100 sentences in the directory /home/test/Corpora/Penn/Br and 
+displays it as "PT Brown 100" in the user interface.
+
+NOTE:
+A. The create-index-GZ.sh file expects each corpus file to be gzip compressed 
+and available with an extension .gz.
+B. If a corpus is added while the application is running it will only be visible
+after re-starting the application.
+C. If the index directory supplied is not unique the script will report it and 
+terminate. Previous data will not be overwritten. You could avoid this by 
+viewing a current listing of all corpora (See Listing all Corpora section below).
+
+
+**********************************
+Deleting a Corpus from Fangorn
+**********************************
+
+1. This should be performed when the application is not running.
+
+2. Run the script delete-index.sh with the name of the directory where the index
+is stored. The term should be the same as that mentioned in Step 2. (2) in the 
+Add a Corpus instructions.
+
+NOTE:
+A. If unsure about the dir name, check a listing of all corpora (See Listing all
+ Corpora section below).
+
+
+**********************************
+Listing all Corpora
+**********************************
+
+1. Run the script list-db.sh.
+
+NOTE: This only lists the contents of the database.

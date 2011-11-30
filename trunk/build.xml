@@ -1,0 +1,67 @@
+<project name="main" default="compile">
+	<property name="src.dir" location="src/java"/>
+	<property name="build.dir" location="build" />
+	<property name="lib.dir" location="lib" />
+	<property name="test.dir" location="test" />
+	<property name="dist.dir" location="dist"/>
+	<property name="dist-project.dir" location="${dist.dir}/fangorn"/>
+	<property name="javac.deprecation" value="off"/>
+	<property name="javac.debug" value="off"/>
+	<property name="javac.source" value="1.6"/>
+	<property name="javac.target" value="1.6"/>
+
+	<target name="clean">
+		<delete includeemptydirs="true">
+			<fileset dir="${build.dir}" includes="**/*"/>
+			<fileset dir="${dist.dir}" includes="**/*"/>
+		</delete>
+	</target>
+
+	<path id="compile.class.path">
+		<filelist>
+			<file name="./server/WEB-INF/lib/lucene-core-2.4.jar"/>
+		</filelist>
+		<fileset dir="${lib.dir}">
+			<include name="**/*.jar" />
+		</fileset>
+	</path>
+
+	<target name="compile">
+		<javac srcdir="${src.dir}" 
+			destdir="${build.dir}" 
+			debug="${javac.debug}"
+		       source="${javac.source}"
+		        target="${javac.target}">
+			<classpath refid="compile.class.path" />
+		</javac>
+	</target>
+	
+	<target name="jar" depends="compile">
+		<jar destfile="fangorn.jar" basedir="${build.dir}"/> 
+	</target>
+	
+	<target name="dist" depends="jar">
+		<mkdir dir="${dist-project.dir}"/>
+		<mkdir dir="${dist-project.dir}/index"/>
+		<copy todir="${dist-project.dir}">
+			<fileset dir=".">
+				<include name="server/**/*"/>
+				<include name="lib/**/*"/>
+				<include name="db/**/*"/>
+			</fileset>
+		</copy>		
+		<copy todir="${dist-project.dir}/index">
+			<fileset dir="index">
+				<include name="penneg/**/*"/>
+			</fileset>
+		</copy>
+		<copy todir="${dist-project.dir}">
+			<fileset dir="scripts">
+				<include name="*"/>
+			</fileset>
+		</copy>		
+		<copy file="fangorn.jar" todir="${dist-project.dir}/server/WEB-INF/lib"/>
+		<copy file="README" todir="${dist-project.dir}"/>
+	</target>
+
+</project>
