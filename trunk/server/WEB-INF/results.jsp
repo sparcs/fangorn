@@ -1,3 +1,4 @@
+<!--
 #-------------------------------------------------------------------------------
 # Copyright 2011 The fangorn project
 # 
@@ -20,6 +21,7 @@
 #        specific language governing permissions and limitations
 #        under the License.
 #-------------------------------------------------------------------------------
+-->
 <?xml version="1.0" encoding="UTF-8"?>
 <%
 	response.setContentType("application/xhtml+xml");
@@ -201,8 +203,7 @@ be displayed using Javascript.</noscript>
 </head>
 <body onload="render();">
 <div id="top">
-<h3 id="pagetitle"><a href="index" title="Click to reach Home page">Treebank
-Search</a></h3>
+<h3 id="pagetitle"><a href="index" title="Click to reach Home page">Fangorn</a></h3>
 </div>
 <a name="top"></a>
 <hr />
