@@ -1,3 +1,4 @@
+/**
 #-------------------------------------------------------------------------------
 # Copyright 2011 The fangorn project
 # 
@@ -20,6 +21,7 @@
 #        specific language governing permissions and limitations
 #        under the License.
 #-------------------------------------------------------------------------------
+*/
 var sent;
 var position;
 
