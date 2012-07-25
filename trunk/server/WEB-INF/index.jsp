@@ -26,11 +26,18 @@
 <link rel="shortcut icon" href="favicon.ico" type="image/x-icon" />
 <link rel="stylesheet" href="style.css" type="text/css" />
 <title>Search</title>
-<noscript>It seems like you either have an early version
-browser or have Javascript disabled. We regret that the results can only
-be displayed using Javascript.</noscript>
+<noscript>
+<div class="error">
+Your browser either doesn't support Javascript or you have
+turned it off. This page requires Javascript to display results.
+</div>
+</noscript>
 </head>
 <body>
+<script type="text/javascript">
+if (navigator.userAgent.indexOf("Firefox") == -1)
+	alert("To see this page as it is meant to appear please use a Mozilla Firefox browser.");
+</script>
 <div id="top">
 <h3 id="pagetitle"><a href="index"
 	title="Click to reach Home page">Fangorn</a></h3>

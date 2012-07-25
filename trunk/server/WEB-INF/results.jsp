@@ -34,6 +34,12 @@
 <link rel="shortcut icon" href="favicon.ico" type="image/x-icon" />
 <link rel="stylesheet" href="style.css" type="text/css" />
 <title>Results</title>
+<noscript>
+<div class="error">
+Your browser either doesn't support Javascript or you have
+turned it off. This page requires Javascript to display results.
+</div>
+</noscript>
 <script type="text/ecmascript" src="tree.js"></script>
 <script type="text/ecmascript">
 <![CDATA[
@@ -52,6 +58,8 @@
 <%}%>
 
 function render() {
+	if (navigator.userAgent.indexOf("Firefox") == -1)
+        	alert("To see this page as it is meant to appear please use a Mozilla Firefox browser.");
 	document.getElementById("query_fld_1").setAttribute("value","<%=request.getAttribute("query-view")%>");
 	var qryFld2 = document.getElementById("query_fld_2");
 	if (qryFld2 != null) qryFld2.setAttribute("value","<%=request.getAttribute("query-view")%>");
@@ -195,9 +203,6 @@ function defaultDisplay(num) {
 }
 ]]>
 </script>
-<noscript>It seems like you either have an early version
-browser or have Javascript disabled. We regret that the results can only
-be displayed using Javascript.</noscript>
 </head>
 <body onload="render();">
 <div id="top">
