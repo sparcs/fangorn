@@ -1,5 +1,4 @@
 <!--
-#-------------------------------------------------------------------------------
 # Copyright 2011 The fangorn project
 # 
 #        Author: Sumukh Ghodke
@@ -20,7 +19,6 @@
 #        KIND, either express or implied.  See the License for the
 #        specific language governing permissions and limitations
 #        under the License.
-#-------------------------------------------------------------------------------
 -->
 <%@ page import="au.edu.unimelb.csse.Corpora"%>
 <html>
