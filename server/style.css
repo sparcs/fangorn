@@ -131,3 +131,7 @@ hr{
 .highlight{
 	background-color:yellow;
 }
+
+.error{
+	background-color:red;
+}
