@@ -1,5 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<%
+	response.setContentType("application/xhtml+xml");
+%>
 <!--
-#-------------------------------------------------------------------------------
 # Copyright 2011 The fangorn project
 # 
 #        Author: Sumukh Ghodke
@@ -20,12 +23,7 @@
 #        KIND, either express or implied.  See the License for the
 #        specific language governing permissions and limitations
 #        under the License.
-#-------------------------------------------------------------------------------
 -->
-<?xml version="1.0" encoding="UTF-8"?>
-<%
-	response.setContentType("application/xhtml+xml");
-%>
 <%@ page
 	import="au.edu.unimelb.csse.search.complete.Result,au.edu.unimelb.csse.Corpora"%>
 
