@@ -202,7 +202,7 @@ public class QueryServletFull extends HttpServlet {
 	String getReturnQuery(String query)
 			throws UnsupportedEncodingException {
 		String queryStringReturned = query.replace("\\", "\\\\");
-		queryStringReturned = queryStringReturned.replace("\"", "\\\"");
+		queryStringReturned = queryStringReturned.replace("\"", "&quot;");
 		queryStringReturned = queryStringReturned.replace("<", "&lt;");
 		queryStringReturned = queryStringReturned.replace(">", "&gt;");
 		return queryStringReturned;

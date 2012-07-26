@@ -87,7 +87,7 @@ function render() {
 }
 
 function decodeSymbols(queryStr) {
-	return queryStr.replace(/&lt;/g, "<").replace(/&gt;/g, ">");
+	return queryStr.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/\\\\/g, "\\").replace(/&quot;/g, '"');
 }
 
 function enableDisablePageNavigation(pageNum, totalPages) {
@@ -437,7 +437,9 @@ function defaultDisplay(num) {
 %>
 <table width="100%">
 	<tr>
-		<td></td>
+		<td><form id="stateinf" action="paging" method="post">
+			<input type="hidden" name="p" value="<%=request.getAttribute("query-view")%>" /> 
+			</form></td>
 	</tr>
 	<tr>
 		<td>
