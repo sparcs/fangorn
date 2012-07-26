@@ -109,7 +109,6 @@ if (navigator.userAgent.indexOf("Firefox") == -1)
 			Q. How to find all non-3rd person singular present verbs (label:
 			VBP), allow, that are followed by a locative prepositional phrase
 			(label: PP-LOC)?<br />
-			A. //VBP[/allow AND ==>PP-LOC]</p>
 			A. //VBP[/allow AND ==>PP-LOC] <button class="trythisbutton" type="button" onclick="openExample('//VBP[/allow AND ==>PP-LOC]')">try this</button><br />
 			</td>
 			<td valign="top">
