@@ -60,9 +60,10 @@ turned it off. This page requires Javascript to display results.
 function render() {
 	if (navigator.userAgent.indexOf("Firefox") == -1)
         	alert("To see this page as it is meant to appear please use a Mozilla Firefox browser.");
-	document.getElementById("query_fld_1").setAttribute("value","<%=request.getAttribute("query-view")%>");
+    var dec_qry_str = decodeSymbols(document.forms["stateinf"].p.value);
+	document.getElementById("query_fld_1").setAttribute("value",dec_qry_str);
 	var qryFld2 = document.getElementById("query_fld_2");
-	if (qryFld2 != null) qryFld2.setAttribute("value","<%=request.getAttribute("query-view")%>");
+	if (qryFld2 != null) qryFld2.setAttribute("value",dec_qry_str);
 	selectInList("corpus_select_1", '<%=request.getAttribute("corpus")%>');
 	selectInList("corpus_select_2", '<%=request.getAttribute("corpus")%>');
 <%for (int i = 0; i < 10 && i < results.length; i++) {%>
@@ -83,6 +84,10 @@ function render() {
 		}
 <%}%>
 	enableDisablePageNavigation(<%=pageNum%>, <%=totalPages%>);    
+}
+
+function decodeSymbols(queryStr) {
+	return queryStr.replace(/&lt;/g, "<").replace(/&gt;/g, ">");
 }
 
 function enableDisablePageNavigation(pageNum, totalPages) {
@@ -356,33 +361,31 @@ function defaultDisplay(num) {
 	</tr>
 	<tr>
 		<td>
+			<form id="stateinf" action="paging" method="post">
+			<input type="hidden" name="j" /> 
+			<input type="hidden" name="h" value="<%=request.getAttribute("hash")%>" /> 
+			<input type="hidden" name="p" value="<%=request.getAttribute("query-view")%>" /> 
+			<input type="hidden" name="c" value="<%=request.getAttribute("corpus")%>" />
+			<input type="hidden" name="d" value="<%=request.getAttribute("docnums")%>" /> 
+			<input type="hidden" name="t" value="<%=totalhits%>" />
+			</form>
 		<%
 			int startPage = pageNum <= 5 ? 1 : pageNum - 5;
-				int endPage = startPage + 9 <= totalPages ? startPage + 9
-						: totalPages;
-				if (startPage != endPage) {
+			int endPage = startPage + 9 <= totalPages ? startPage + 9 : totalPages;
+			if (startPage != endPage) {
 		%>
-		<form id="stateinf" action="paging" method="post"><input
-			type="hidden" name="j" /> <input type="hidden" name="h"
-			value="<%=request.getAttribute("hash")%>" /> <input type="hidden"
-			name="p" value="<%=request.getAttribute("query-view")%>" /> <input
-			type="hidden" name="c" value="<%=request.getAttribute("corpus")%>" />
-		<input type="hidden" name="d"
-			value="<%=request.getAttribute("docnums")%>" /> <input type="hidden"
-			name="t" value="<%=totalhits%>" /></form>
-		<center><span> <span id='<%="page_scroll_prev"%>'
-			title='Previous page' onclick='page(<%=startPage - 1%>);'>&lt;&lt;</span>
+			<center><span> 
+				<span id='<%="page_scroll_prev"%>' title='Previous page' onclick='page(<%=startPage - 1%>);'>&lt;&lt;</span>
 		<%
 			for (int i = startPage; i <= endPage; i++) {
-						if (i == pageNum) {
-		%> <span class='greynav'><%=i%> </span> <%
- 	} else {
- %> <span class='normalnav' onclick='page(<%=i%>);'
-			title='Go to page <%=i%>'><u><%=i%></u> </span> <%
- 	}
+				if (i == pageNum) {
+		%> 			<span class='greynav'><%=i%> </span> <%
+ 				} else {
+ 		%> 			<span class='normalnav' onclick='page(<%=i%>);' title='Go to page <%=i%>'><u><%=i%></u> </span> 
+		<%		 }
  			}
- %> <span id='<%="page_scroll_next"%>' title='Next page'
-			onclick='page(<%=endPage + 1%>);'>&gt;&gt;</span></span></center>
+ 		%> 	<span id='<%="page_scroll_next"%>' title='Next page' onclick='page(<%=endPage + 1%>);'>&gt;&gt;</span>
+			</span></center>
 		<%
 			}
 		%>
