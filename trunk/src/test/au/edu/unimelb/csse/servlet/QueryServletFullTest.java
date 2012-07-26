@@ -22,5 +22,11 @@ public class QueryServletFullTest extends TestCase {
 		returnedQuery = qs.getReturnQuery("//NP-->VP");
 		assertEquals("//NP--&gt;VP", returnedQuery);
 	}
+	
+	public void testEscapesAmpersand() throws Exception {
+		QueryServletFull qs = new QueryServletFull();
+		String returnedQuery = qs.getReturnQuery("//NP[/NP & /VP]");
+		assertEquals("//NP[/NP &amp; /VP]", returnedQuery);
+	}
 
 }

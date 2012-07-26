@@ -62,6 +62,7 @@
 		</copy>		
 		<copy file="fangorn.jar" todir="${dist-project.dir}/server/WEB-INF/lib"/>
 		<copy file="README" todir="${dist-project.dir}"/>
+		<copy file="app.properties" todir="${dist-project.dir}"/>
 	</target>
 
 </project>
