@@ -1,5 +1,7 @@
 package au.edu.unimelb.csse.functional;
 
+import junit.framework.TestCase;
+
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
@@ -11,12 +13,10 @@ import au.edu.unimelb.csse.analyser.FastStringAnalyser;
 import au.edu.unimelb.csse.queryParser.QueryBuilder;
 import au.edu.unimelb.csse.search.SimpleHitCollector;
 import au.edu.unimelb.csse.search.TreebankQuery;
-import au.edu.unimelb.csse.search.join.DoNotUseJoinLogic;
 import au.edu.unimelb.csse.search.join.TermJoinType;
-import junit.framework.TestCase;
 
-public class SearchChildTest extends TestCase {
-	public void testFindsNodeAtRoot() throws Exception {
+public class StopAtFirstTest extends TestCase {
+	public void testReturnsFalseIfThereAreNoMatchesWhenStopAtFirstIsTrue() throws Exception {
 		Analyzer analyser = new FastStringAnalyser();
 		RAMDirectory dir = new RAMDirectory();
 		IndexWriter writer = new IndexWriter(dir, analyser, true,
@@ -44,7 +44,6 @@ public class SearchChildTest extends TestCase {
 		IndexSearcher searcher = new IndexSearcher(dir);
 		QueryBuilder builder = new QueryBuilder("/NP");
 		TreebankQuery query = builder.parse(TermJoinType.EARLY_STOP_WITH_FC, true);
-		int beforeTest = DoNotUseJoinLogic.getNumberOfComparisons();
 		SimpleHitCollector hitCollector = new SimpleHitCollector(10);
 		searcher.search(query, hitCollector);
 		assertEquals(1, hitCollector.totalHits);
