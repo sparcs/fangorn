@@ -96,7 +96,7 @@ if (navigator.userAgent.indexOf("Firefox") == -1)
 			Q. How to find 3 nested adverb phrases (label: ADVP)?<br/>
 			A. //ADVP//ADVP//ADVP <button class="trythisbutton" type="button" onclick="openExample('//ADVP//ADVP//ADVP')">try this</button><br />
 			<br/>
-			Q. How to find sentences where an adjective phrase (label: ADJP) has a noun phrase (label: NP) as its ancestor, the noun phrase has a verb phrase (label: VP) as its immediate following sibling, the verb phrase has a gerund or present participle (label: VBG) child and the child node has a noun phrase following it?<br/>
+			Q. How to find sentences where an adjective phrase (label: ADJP) has a noun phrase (label: NP) as its ancestor, the noun phrase has a verb phrase (label: VP) as its immediate following sibling, the verb phrase has a gerund or present participle (label: VBG) child and the gerund has a noun phrase sibling following it?<br/>
 			A. //ADJP\\NP=>VP/VBG==>NP <button class="trythisbutton" type="button" onclick="openExample('//ADJP\\\\NP=>VP/VBG==>NP')">try this</button><br />
 			<br/>
 			Q. How to find verb phrases (label: VP) that contain the word gave, immediately followed by a noun phrase (label: NP), which is either immediately followed by the word to and is immediately followed by a plural noun (label:NNS), or is immediately followed by the word for?<br />
