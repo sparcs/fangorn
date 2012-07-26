@@ -173,6 +173,7 @@ public class QueryServletFull extends HttpServlet {
 		try {
 			QueryBuilder builder = new QueryBuilder(query);
 			tq = builder.parse(TermJoinType.SIMPLE_WITH_FC, false);
+			logger.fine(req.getRemoteAddr());
 			if (page == null) {
 				logger.info("Q=\"" + tq.toString() + "\";C=\"" + corpus
 						+ "\";S=\"yes\"");
@@ -188,7 +189,7 @@ public class QueryServletFull extends HttpServlet {
 			view.forward(req, res);
 			return null;
 		}
-
+/*
 		if (tq == null) {
 			req.setAttribute("error", "Server Error! Contact Administrator");
 			RequestDispatcher view = req
@@ -196,16 +197,12 @@ public class QueryServletFull extends HttpServlet {
 			view.forward(req, res);
 			return null;
 		}
-		return tq;
+*/		return tq;
 	}
 
 	String getReturnQuery(String query)
 			throws UnsupportedEncodingException {
-		String queryStringReturned = query.replace("\\", "\\\\");
-		queryStringReturned = queryStringReturned.replace("\"", "&quot;");
-		queryStringReturned = queryStringReturned.replace("<", "&lt;");
-		queryStringReturned = queryStringReturned.replace(">", "&gt;");
-		return queryStringReturned;
+		return query.replace("&", "&amp;").replace("\\", "\\\\").replace("\"", "&quot;").replace("<", "&lt;").replace(">", "&gt;");
 	}
 
 	protected String getCorpus(String corpus) {

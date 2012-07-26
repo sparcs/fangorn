@@ -87,7 +87,7 @@ function render() {
 }
 
 function decodeSymbols(queryStr) {
-	return queryStr.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/\\\\/g, "\\").replace(/&quot;/g, '"');
+	return queryStr.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/\\\\/g, '\\').replace(/&quot;/g, '"').replace(/&amp;/g, '&');
 }
 
 function enableDisablePageNavigation(pageNum, totalPages) {
