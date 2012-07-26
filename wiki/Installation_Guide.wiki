@@ -1,0 +1,35 @@
+= Fangorn Installation Guide =
+
+== Requirements ==
+  * Java 5 and above
+  * Preferably more than 1 GB RAM
+  * Mozilla Firefox browser
+  * Apache Ant (if compiling from source)
+
+== Installing from binaries ==
+
+  # Download one of the archived binaries provided in the Downloads page
+  # Decompress the archive
+  # To start the app run the following command in the project's main directory
+    ** $ sh start-app.sh
+  # Point a Firefox browser to http://localhost:9090 to view the search page  
+
+== Installing from source ==
+
+  # Checkout the source code (lets call the checkout out directory PROJECT_HOME)
+  # Build the software by running ant from PROJECT_HOME
+    ** $ cd PROJECT_HOME
+    ** $ ant dist
+  # If the build is successful, the above command will create a fangorn folder in PROJECT_HOME/dist directory
+  # Change to the fangorn dist directory
+    ** $ cd PROJECT_HOME/dist/fangorn
+    ** Note that you can copy the PROJECT_HOME/dist/fangorn directory to any other directory on your computer and run the app from there
+  # Start the app by running the following command in PROJECT_HOME/dist/fangorn 
+    ** $ sh start-app.sh
+  # Point a Firefox browser to http://localhost:9090 to view the search page 
+  
+== Adding and removing corpora ==
+
+  * There are two files in the same directory as start-app.sh which support the addition and deletion of corpora
+  * create-index-GZ.sh indexes gzipped corpora
+  * create-index-MRG.sh indexes corpora formatted as plain text files with the extension .mrg 
