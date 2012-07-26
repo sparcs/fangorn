@@ -32,6 +32,12 @@ Your browser either doesn't support Javascript or you have
 turned it off. This page requires Javascript to display results.
 </div>
 </noscript>
+<script type="text/ecmascript">
+function openExample(queryStr) {
+	document.getElementById("query_fld").setAttribute("value", queryStr);
+	document.getElementById("qform").submit();
+}
+</script>
 </head>
 <body>
 <script type="text/javascript">
@@ -45,7 +51,7 @@ if (navigator.userAgent.indexOf("Firefox") == -1)
 <hr />
 <br />
 <center>
-<form method="post" action="search">
+<form id="qform" method="post" action="search">
 <table cellpadding="5">
 	<tr>
 		<td>
@@ -55,7 +61,7 @@ if (navigator.userAgent.indexOf("Firefox") == -1)
 			<%} %>
 			</select>
 		</td>
-		<td>Query: <input type="text" size="50" name="query" /></td>
+		<td>Query: <input id="query_fld" type="text" size="50" name="query" /></td>
 		<td><input type="submit" value="Search" /></td>
 	</tr>
 </table>
@@ -72,38 +78,39 @@ if (navigator.userAgent.indexOf("Firefox") == -1)
 			<td valign="top">
 			<center><b>Examples</b></center>
 			<p>Q. How to search for a word, say bank, in the corpus?<br />
-			A. //bank <br />
+			A. //bank <button class="trythisbutton" type="button" onclick="openExample('//bank')">try this</button><br />
 			<br />
 			Q. How to search for the word bank used as a noun (label: NN)?</br>
-			A. //bank\NN <br />
+			A. //bank\NN <button class="trythisbutton" type="button" onclick="openExample('//bank\\NN')">try this</button><br />
 			<br />
 			Q. How to find instances of bank not used as a noun (label: NN)?</br>
-			A. //bank[NOT\NN] <br />
+			A. //bank[NOT\NN] <button class="trythisbutton" type="button" onclick="openExample('//bank[NOT\\NN]')">try this</button><br />
 			<br />
-			Q. How to find sentences where a verb phrase (label: VP) is the root?<br />
-			A. /VP <br />
+			Q. How to find sentences where the root node is a noun phrase (label: NP)?<br />
+			A. /NP <button class="trythisbutton" type="button" onclick="openExample('/NP')">try this</button><br />
 			<br />
 			Q. How to find sentences with noun phrases that are logical subjects
 			(label: NP-LGS)?<br />
-			A. //NP-LGS <br />
+			A. //NP-LGS <button class="trythisbutton" type="button" onclick="openExample('//NP-LGS')">try this</button><br />
 			<br />
 			Q. How to find 3 nested adverb phrases (label: ADVP)?<br/>
-			A. //ADVP//ADVP//ADVP <br/>
+			A. //ADVP//ADVP//ADVP <button class="trythisbutton" type="button" onclick="openExample('//ADVP//ADVP//ADVP')">try this</button><br />
 			<br/>
 			Q. How to find sentences where an adjective phrase (label: ADJP) has a noun phrase (label: NP) as its ancestor, the noun phrase has a verb phrase (label: VP) as its immediate following sibling, the verb phrase has a gerund or present participle (label: VBG) child and the child node has a noun phrase following it?<br/>
-			A. //ADJP\\NP=>VP/VBG==>NP <br/>
+			A. //ADJP\\NP=>VP/VBG==>NP <button class="trythisbutton" type="button" onclick="openExample('//ADJP\\\\NP=>VP/VBG==>NP')">try this</button><br />
 			<br/>
 			Q. How to find verb phrases (label: VP) that contain the word gave, immediately followed by a noun phrase (label: NP), which is either immediately followed by the word to and is immediately followed by a plural noun (label:NNS), or is immediately followed by the word for?<br />
-			A. //VP//gave->NP[->to->NNS OR ->for] <br />
+			A. //VP//gave->NP[->to->NNS OR ->for] <button class="trythisbutton" type="button" onclick="openExample('//VP//gave->NP[->to->NNS OR ->for]')">try this</button><br />
 			<br />
 			Q. How to find simple declarative clauses (label: S) that contain the
 			words right and turn?<br />
-			A. //S[//right AND //turn] <br />
+			A. //S[//right AND //turn] <button class="trythisbutton" type="button" onclick="openExample('//S[//right AND //turn]')">try this</button><br />
 			<br />
 			Q. How to find all non-3rd person singular present verbs (label:
 			VBP), allow, that are followed by a locative prepositional phrase
 			(label: PP-LOC)?<br />
 			A. //VBP[/allow AND ==>PP-LOC]</p>
+			A. //VBP[/allow AND ==>PP-LOC] <button class="trythisbutton" type="button" onclick="openExample('//VBP[/allow AND ==>PP-LOC]')">try this</button><br />
 			</td>
 			<td valign="top">
 			<center><b>Query Language</b></center>
@@ -212,7 +219,8 @@ f">pdf</a></u> ]
 			<br/>
 			<br/>
 			<center><b>About</b></center>
-			<p>You are using a beta version of Fangorn - a treebank search application. For feedback and suggestions please send us an email at:<br />
+			<p>You are using a beta version of Fangorn - a treebank search application. This software can be downloaded from <u><a href="http://code.google.com/p/fangorn/">code.google.com/p/fangorn</a></u></p> 
+			<p>For feedback and suggestions please send us an email at:<br />
 			<OBJECT data="email.png" type="image/png"> </OBJECT></p>
 			<p>A related project: <u><a
 				href="http://projects.ldc.upenn.edu/QLDB/">QLDB</a></u></p>

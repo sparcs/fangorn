@@ -235,6 +235,7 @@ public class TreeTerm implements FilterChunkElement {
 					return true;
 				}
 			}
+			return false;
 		}
 		// validInstances < NodeDataBuffer.BUFFER_SIZE check is done to check
 		// for buffer overflow

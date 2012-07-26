@@ -7,8 +7,8 @@
 	<property name="dist-project.dir" location="${dist.dir}/fangorn"/>
 	<property name="javac.deprecation" value="off"/>
 	<property name="javac.debug" value="off"/>
-<!--	<property name="javac.source" value="1.6"/>
-	<property name="javac.target" value="1.6"/ -->
+	<property name="javac.source" value="1.6"/>
+	<property name="javac.target" value="1.6"/>
 
 	<target name="clean">
 		<delete includeemptydirs="true">
@@ -29,9 +29,9 @@
 	<target name="compile">
 		<javac srcdir="${src.dir}" 
 			destdir="${build.dir}" 
-			debug="${javac.debug}">
-		      <!-- source="${javac.source}"
-		        target="${javac.target}"-->
+			debug="${javac.debug}"
+		        source="${javac.source}"
+		        target="${javac.target}">
 			<classpath refid="compile.class.path" />
 		</javac>
 	</target>
