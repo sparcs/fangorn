@@ -12,7 +12,7 @@ public class QueryServletFullTest extends TestCase {
 	public void testEscapesDoubleQuoteInReturnedQueryString() throws Exception {
 		QueryServletFull qs = new QueryServletFull();
 		String returnedQuery = qs.getReturnQuery("//NP\\\"");
-		assertEquals("//NP\\\\\\\"", returnedQuery);
+		assertEquals("//NP\\\\&quot;", returnedQuery);
 	}
 	
 	public void testEscapesArrowsInReturnedQueryString() throws Exception {
