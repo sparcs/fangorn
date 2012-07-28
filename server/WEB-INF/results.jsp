@@ -284,14 +284,11 @@ function defaultDisplay(num) {
 							<tr>
 								<td align="left" class="navbarleft">
 								<button name="ExpandAll" type="button" class="navbarbtn"
-									onclick='expandAll(<%=i%>)'>Expand all<br />
-								Nodes</button>
+									onclick='expandAll(<%=i%>)'>Expand all<br /> nodes</button>
 								<button name="CollapseTree" type="button" class="navbarbtn"
-									onclick='collapseAll(<%=i%>)'>Collapse<br />
-								Tree</button>
+									onclick='collapseAll(<%=i%>)'>Collapse<br /> tree</button>
 								<button name="DefaultDisplay" type="button" class="navbarbtn"
-									onclick='defaultDisplay(<%=i%>)'>Default<br />
-								Display</button>
+									onclick='defaultDisplay(<%=i%>)'>Default<br /> display</button>
 								</td>
 								<td align="center" valign="middle" class="navbarmiddle"><span>
 								<span id='<%="row_" + i + "_match_prev"%>'
