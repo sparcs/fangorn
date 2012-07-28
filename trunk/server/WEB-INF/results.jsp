@@ -266,7 +266,7 @@ function defaultDisplay(num) {
 			<%
 				for (int i = 0; i < 10 && i < results.length; i++) {
 			%>
-			<tr id='<%=i % 2 == 0 ? "oddrow" : "evenrow"%>'>
+			<tr class='<%=i % 2 == 0 ? "oddrow" : "evenrow"%>'>
 				<td>
 				<div
 					style="overflow-x: auto; overflow-y: auto; text-align: center; margin: auto; width: 100%;">
@@ -283,13 +283,13 @@ function defaultDisplay(num) {
 						<table width="99.99%">
 							<tr>
 								<td align="left" class="navbarleft">
-								<button name="ExpandAll" type="button"
+								<button name="ExpandAll" type="button" class="navbarbtn"
 									onclick='expandAll(<%=i%>)'>Expand all<br />
 								Nodes</button>
-								<button name="CollapseTree" type="button"
+								<button name="CollapseTree" type="button" class="navbarbtn"
 									onclick='collapseAll(<%=i%>)'>Collapse<br />
 								Tree</button>
-								<button name="DefaultDisplay" type="button"
+								<button name="DefaultDisplay" type="button" class="navbarbtn"
 									onclick='defaultDisplay(<%=i%>)'>Default<br />
 								Display</button>
 								</td>
@@ -305,20 +305,16 @@ function defaultDisplay(num) {
 								<table>
 									<tr>
 										<td>
-										<button name="PennTreebankSentence" type="button"
-											onclick='openPennTreebankSentence(<%=i%>)' align='right'>View
-										Sentence in<br />
-										PennTreebank form</button>
+										<button name="PennTreebankSentence" type="button" class="navbarbtn"
+											onclick='openPennTreebankSentence(<%=i%>)' align='right'>View tree in<br />bracketed form</button>
 										</td>
 										<td>
-										<form id="sent<%=i%>" class="svgsentform"
-											action="sentence.svg" method="post" target="_blank"><input
-											type="hidden" name="json" /> <input type="hidden" name="h" />
-										<input type="hidden" name="w" />
-										<button name="SVGSentence" type="submit" value="submit"
-											onclick='openSVGSentence(<%=i%>)' align='right'>View
-										Sentence as<br />
-										SVG image</button>
+										<form id="sent<%=i%>" style="margin:0px;" action="sentence.svg" method="post" target="_blank">
+										    <input type="hidden" name="json" /> 
+										    <input type="hidden" name="h" />
+										    <input type="hidden" name="w" />
+										    <button name="SVGSentence" type="submit" value="submit" class="navbarbtn"
+											   onclick='openSVGSentence(<%=i%>)' align='right'>View tree as<br /> SVG image</button>
 										</form>
 										</td>
 									</tr>
@@ -330,7 +326,7 @@ function defaultDisplay(num) {
 					</tr>
 				</table>
 				</div>
-				<div><object id="row<%=i%>" name="svg" type="image/svg+xml"></object>
+				<div style="margin-top:-20px;"><object id="row<%=i%>" name="svg" type="image/svg+xml"></object>
 				</div>
 				</div>
 				</td>
