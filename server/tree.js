@@ -112,11 +112,7 @@ function Tree(data, varname, sentnum, matches) {
 
 	Tree.prototype.setDefaults = function(t) {
 		// expand flag
-		if (t["c"].length > 1) {
-			t["e"] = false;
-		} else {
-			t["e"] = true;
-		}
+		t["e"] = (t["c"].length > 1) ? false : true;
 		// disable collapse flag
 		t["disc"] = false;
 		t["h"] = false;
@@ -135,11 +131,7 @@ function Tree(data, varname, sentnum, matches) {
 	};	
 	
 	Tree.prototype.setDefaultExpandParam = function(t) {
-		if (t["disc"] == true || t["c"].length < 2) {
-			t["e"] = true;
-		} else {
-			t["e"] = false;
-		}
+		t["e"] = (t["disc"] == true || t["c"].length < 2) ? true : false;
 		for (var i = 0; i < t["c"].length; i++) {
 			this.setDefaultExpandParam(t["c"][i]);
 		}
@@ -159,6 +151,8 @@ function Tree(data, varname, sentnum, matches) {
 	};
 
 	Tree.prototype.selectMatch = function(index) {
+		// this.matches["ms"] -> matches list; ["ms"][index] -> match set; 
+		// ["ms"][index]["m"] -> list of match sets of type ["s":"start_id", "e":"end_id", "o":"operator_id"]
 		var m = this.matches["ms"][index]["m"];
 		for ( var p = 0; p < m.length; p++) {
 			// the e here has a different meaning
@@ -177,13 +171,9 @@ function Tree(data, varname, sentnum, matches) {
 					tarpi.push(parseInt(tarsp[j]));
 				}
 				var s = this.findNode(this.tree, target, tarpi);
-				this.addHighlightPath(s, e, m[p]["o"]);
+				this.highlightPaths.push([s, e, m[p]["o"]])
 			}
 		}
-	};
-
-	Tree.prototype.addHighlightPath = function(s, e, o) {
-		this.highlightPaths.push( [ s, e, o ]);
 	};
 
 	Tree.prototype.findNode = function(t, target, targetsplit) {
@@ -218,12 +208,10 @@ function Tree(data, varname, sentnum, matches) {
 				var i = 0;
 				while (i < t["c"].length) {
 					var cp = t["c"][i]["i"].split("_");
-					if (targetsplit[1] >= parseInt(cp[1])
-							&& targetsplit[0] <= parseInt(cp[0])) {
+					if (targetsplit[1] >= parseInt(cp[1]) && targetsplit[0] <= parseInt(cp[0])) {
 						t["disc"] = true;
 						t["e"] = true;
-						return this.findAndHighlight(t["c"][i], target,
-								targetsplit);
+						return this.findAndHighlight(t["c"][i], target, targetsplit);
 					}
 					i++;
 				}
@@ -240,13 +228,9 @@ function Tree(data, varname, sentnum, matches) {
 
 	Tree.prototype.recAddXAndYPositions = function(t) {
 		var c = t["c"];
-		var lengthOfTLabel;
-		if (this.mainlyNarrowChars(t["n"])) {
-			lengthOfTLabel = t["n"].length * Tree.prototype.WIDTH_OF_NARROW_CHAR;
-			t["s"] = true;
-		} else {
-			lengthOfTLabel = t["n"].length * Tree.prototype.WIDTH_OF_CHAR;
-		}
+		var narrow = this.mainlyNarrowChars(t["n"]);
+		var lengthOfTLabel = t["n"].length * ((narrow) ? Tree.prototype.WIDTH_OF_NARROW_CHAR : Tree.prototype.WIDTH_OF_CHAR);
+		t["s"] = (narrow) ? true : false; 
 		if (t["e"] && c.length > 0) {
 			for ( var i = 0; i < c.length; i++) {
 				this.recAddXAndYPositions(c[i]);
@@ -254,12 +238,7 @@ function Tree(data, varname, sentnum, matches) {
 			mid = (c[0]["x"] + c[0]["x-end"] + c[c.length - 1]["x"] + c[c.length - 1]["x-end"]) / 4;
 			t["x"] = mid - (lengthOfTLabel / 2);
 			if (t["x"] < c[0]["x"] || t["x"] < 0) {
-				var dist = 0;
-				if (t["x"] < 0) {
-					dist = 0 - t["x"]; 
-				} else {
-					dist = c[0]["x"] - t["x"];
-				}
+				var dist = (t["x"] < 0) ? 0 - t["x"] : c[0]["x"] - t["x"];
 				for (var i = 0; i < c.length; i++) {
 					this.recShiftX(c[i], dist);
 				}
@@ -310,230 +289,107 @@ function Tree(data, varname, sentnum, matches) {
 	Tree.prototype.drawHighlightPaths = function(svgElement) {
 		for ( var i = 0; i < this.highlightPaths.length; i++) {
 			var p = this.highlightPaths[i];
-			var colour = Tree.prototype.RED_LINE_COLOUR;
 			/**
 			 * The numerical comparisons are based on TreeAxis's constants
 			 */
-			if (p[2] < 4) {
-				colour = Tree.prototype.BLUE_LINE_COLOUR;
-			}
-			var singleLine = true;
-			if (p[2] > 3 && p[2] < 8) {
-				singleLine = false;
-			}
-			var dashedLine = false;
-			if (p[2] == 0 || p[2] == 1 || p[2] == 4 || p[2] == 5 || p[2] == 8
-					|| [ 2 ] == 9) {
-				dashedLine = true;
-			}
-			var width = Tree.prototype.WIDTH_OF_CHAR;
-			if (p[2] < 4) {
-				var b = p[0];
-				var a = p[1];
-				if (p[2] % 2 == 1) {
-					b = p[1];
-					a = p[0];
-				}
-				var lineElem = document.createElementNS(
-						'http://www.w3.org/2000/svg', 'svg:line');
-				if (b["s"]) {
-					width = Tree.prototype.WIDTH_OF_NARROW_CHAR;
-				}
-				var x1 = b["x"]
-						+ (b["n"].length * width) / 2;
-				lineElem.setAttribute("x1", x1 + "px");
-				lineElem.setAttribute("y1",
-						(b["y"] + 2 * Tree.prototype.YPADDING) + "px");
-				width = Tree.prototype.WIDTH_OF_CHAR;
-				if (a["s"]) {
-					width = Tree.prototype.WIDTH_OF_NARROW_CHAR;
-				}
-				lineElem.setAttribute("x2", (a["x"] + (a["n"].length * width) / 2) + "px");
-				lineElem.setAttribute("y2", (a["y"]
-						- Tree.prototype.TEXT_HEIGHT - Tree.prototype.YPADDING)
-						+ "px");
-				if (dashedLine) {
-					lineElem.setAttribute("style", "stroke:" + colour
-							+ ";stroke-width:2;stroke-dasharray:9,5;");
-				} else {
-					lineElem.setAttribute("style", "stroke:" + colour
-							+ ";stroke-width:2");
-				}
-				svgElement.appendChild(lineElem);
-			} else {
-				var b = p[0];
-				var a = p[1];
-				//All the preceding axis codes are odd numbers 
-				if (p[2] % 2 == 1) {
-					b = p[1];
-					a = p[0];
-				}
+			var singleLine = (p[2] > 3 && p[2] < 8) ? false : true;
+			var dashedLine = (p[2] == 0 || p[2] == 1 || p[2] == 4 || p[2] == 5 || p[2] == 8
+					|| [ 2 ] == 9) ? true : false;
+			var colour = (p[2] < 4) ? Tree.prototype.BLUE_LINE_COLOUR : Tree.prototype.RED_LINE_COLOUR;
+			var lineStyle = "stroke:" + colour + ";stroke-width:2;" + ((dashedLine) ? "stroke-dasharray:9,5;" : "");
+			//All the preceding axis codes are odd numbers 
+			var b = (p[2] % 2 == 1) ? p[1] : p[0];
+			var a = (p[2] % 2 == 1) ? p[0] : p[1];
+			var width = (b["s"]) ? Tree.prototype.WIDTH_OF_NARROW_CHAR : Tree.prototype.WIDTH_OF_CHAR;
+			if (p[2] < 4) { // vertical lines
+				var x1 = b["x"] + (b["n"].length * width) / 2;
+				var y1 = b["y"] + 2 * Tree.prototype.YPADDING
+				width = (a["s"]) ? Tree.prototype.WIDTH_OF_NARROW_CHAR : Tree.prototype.WIDTH_OF_CHAR;
+				var x2 = a["x"] + (a["n"].length * width) / 2;
+				var y2 = a["y"] - Tree.prototype.TEXT_HEIGHT - Tree.prototype.YPADDING;
+				svgElement.appendChild(this.getSVGLine(x1, y1, x2, y2, lineStyle));
+			} else { // horizontal lines
+				var x1 = b["x"] + (b["n"].length * width) + 5;
+				var y1 = b["y"] - Tree.prototype.TEXT_HEIGHT / 2 + 1;
+				var x2 = a["x"] - 5;
+				var y2 = a["y"] - Tree.prototype.TEXT_HEIGHT / 2 + 1;
 				if (singleLine) {
-					var lineElem = document.createElementNS(
-							'http://www.w3.org/2000/svg', 'svg:line');
-					width = Tree.prototype.WIDTH_OF_CHAR;
-					if (b["s"]) {
-						width = Tree.prototype.WIDTH_OF_NARROW_CHAR;
-					}
-					var x1 = b["x"] + (b["n"].length * width) + 5;
-					lineElem.setAttribute("x1", x1 + "px");
-					lineElem.setAttribute("y1",
-							(b["y"] - Tree.prototype.TEXT_HEIGHT / 2 + 1) + "px");
-					lineElem
-							.setAttribute(
-									"x2",
-									a["x"] - 5
-											+ "px");
-					lineElem
-							.setAttribute(
-									"y2",
-									(a["y"] - Tree.prototype.TEXT_HEIGHT / 2 + 1)
-											+ "px");
-					if (dashedLine) {
-						lineElem.setAttribute("style", "stroke:" + colour
-								+ ";stroke-width:2;stroke-dasharray:9,5;");
-					} else {
-						lineElem.setAttribute("style", "stroke:" + colour
-								+ ";stroke-width:2");
-					}
-					svgElement.appendChild(lineElem);
+					svgElement.appendChild(this.getSVGLine(x1, y1, x2, y2, lineStyle));
 				} else {
-					var lineElem1 = document.createElementNS(
-							'http://www.w3.org/2000/svg', 'svg:line');
-					width = Tree.prototype.WIDTH_OF_CHAR;
-					if (b["s"]) {
-						width = Tree.prototype.WIDTH_OF_NARROW_CHAR;
-					}
-					var x1 = b["x"] + (b["n"].length * width) + 5;
-					var x2 = a["x"] - 5;
-					var y1 = b["y"] - Tree.prototype.TEXT_HEIGHT / 2 + 1;
-					var y2 = a["y"] - Tree.prototype.TEXT_HEIGHT / 2 + 1;
-					lineElem1.setAttribute("x1", x1 + "px");
-					lineElem1.setAttribute("y1", (y1 - 2) + "px");
-					lineElem1.setAttribute("x2", x2 + "px");
-					lineElem1.setAttribute("y2", (y2 - 2) + "px");
-					svgElement.appendChild(lineElem1);
-					var lineElem2 = document.createElementNS(
-							'http://www.w3.org/2000/svg', 'svg:line');
-
-					lineElem2.setAttribute("x1", x1 + "px");
-					lineElem2.setAttribute("y1", (y1 + 2) + "px");
-					lineElem2.setAttribute("x2", x2 + "px");
-					lineElem2.setAttribute("y2", (y2 + 2) + "px");
-					if (dashedLine) {
-						lineElem1.setAttribute("style", "stroke:" + colour
-								+ ";stroke-width:2;stroke-dasharray:9,5;");
-						lineElem2.setAttribute("style", "stroke:" + colour
-								+ ";stroke-width:2;stroke-dasharray:9,5;");
-					} else {
-						lineElem1.setAttribute("style", "stroke:" + colour
-								+ ";stroke-width:2");
-						lineElem2.setAttribute("style", "stroke:" + colour
-								+ ";stroke-width:2");
-					}
-					svgElement.appendChild(lineElem1);
-					svgElement.appendChild(lineElem2);
+					svgElement.appendChild(this.getSVGLine(x1, y1 - 2, x2, y2 - 2, lineStyle));
+					svgElement.appendChild(this.getSVGLine(x1, y1 + 2, x2, y2 + 2, lineStyle));
 				}
 			}
 		}
 	};
 
+	Tree.prototype.getSVGLine = function(x1, y1, x2, y2, style) {
+		var lineElem = document.createElementNS('http://www.w3.org/2000/svg', 'svg:line');
+		lineElem.setAttribute("x1", x1 + "px");
+		lineElem.setAttribute("y1", y1 + "px");
+		lineElem.setAttribute("x2", x2 + "px");
+		lineElem.setAttribute("y2", y2 + "px");
+		lineElem.setAttribute("style", style);
+		return lineElem;
+	};
+
 	Tree.prototype.recToSVG = function(svgElement, objid, t) {
-		var textElem = document.createElementNS('http://www.w3.org/2000/svg',
-				'svg:text');
+		//this function is called for each displayed node
+		var textElem = document.createElementNS('http://www.w3.org/2000/svg', 'svg:text');
 		textElem.appendChild(document.createTextNode(t["n"]));
 		textElem.setAttribute("x", t["x"] + "px");
 		textElem.setAttribute("y", t["y"] + "px");
-		width = Tree.prototype.WIDTH_OF_CHAR;
-		if (t["s"]) {
-			width = Tree.prototype.WIDTH_OF_NARROW_CHAR;
-		}
+		width = (t["s"]) ? Tree.prototype.WIDTH_OF_NARROW_CHAR : Tree.prototype.WIDTH_OF_CHAR;
 		var x1 = t["x"] + (t["n"].length * width) / 2;
 		var y1 = t["y"] + Tree.prototype.YPADDING;
 		textElem.setAttribute("id", t["domid"]);
+		var mouseoverFunc = this.varname + ".mouseoverNode('" + t["domid"] + "', " + ((t["disc"]) ? "false" : "true") + ");";
+		var mouseoutFunc = this.varname + ".mouseoutNode('" + t["domid"] + "', " + ((t["disc"]) ? "false" : "true") + ");";
+		textElem.setAttribute("onmouseover", mouseoverFunc);
+		textElem.setAttribute("onmouseout", mouseoutFunc);			
 		if (!t["disc"]) {
-			textElem.setAttribute("onmouseover", this.varname
-					+ ".mouseoverNode('" + t["domid"] + "', true);");
-			textElem.setAttribute("onmouseout", this.varname
-					+ ".mouseoutNode('" + t["domid"] + "', true);");
-			textElem.setAttribute("onclick", this.varname + ".clickNode('"
-					+ objid + "', '" + t["domid"] + "');");
-		} else {
-			textElem.setAttribute("onmouseover", this.varname
-					+ ".mouseoverNode('" + t["domid"] + "', false);");
-			textElem.setAttribute("onmouseout", this.varname
-					+ ".mouseoutNode('" + t["domid"] + "', false);");			
+			textElem.setAttribute("onclick", this.varname + ".clickNode('"	+ objid + "', '" + t["domid"] + "');");
 		}
 		if (t["h"]) {
 			textElem.setAttribute("style",
 					"stroke:" + Tree.prototype.HIGHLIGHT_TEXT_COLOUR + ";fill:" + Tree.prototype.HIGHLIGHT_TEXT_COLOUR + ";");
 		}
 		svgElement.appendChild(textElem);
-		if (t["e"] && t["c"].length > 0) {
+		if (t["e"] && t["c"].length > 0) { //draw black lines to all child nodes
+			var lineStyle = "stroke:" + Tree.prototype.LINE_COLOUR + ";stroke-width:1";
 			for ( var i = 0; i < t["c"].length; i++) {
-				var lineElem = document.createElementNS(
-						'http://www.w3.org/2000/svg', 'svg:line');
-				lineElem.setAttribute("x1", x1 + "px");
-				lineElem.setAttribute("y1", (y1 + Tree.prototype.YPADDING)
-						+ "px");
-				width = Tree.prototype.WIDTH_OF_CHAR;
-				if (t["c"][i]["s"]) {
-					width = Tree.prototype.WIDTH_OF_NARROW_CHAR;
-				}
-				lineElem
-						.setAttribute(
-								"x2",
-								(t["c"][i]["x"] + (t["c"][i]["n"].length * width) / 2)
-										+ "px");
-				lineElem.setAttribute("y2", (t["c"][i]["y"]
-						- Tree.prototype.TEXT_HEIGHT - Tree.prototype.YPADDING)
-						+ "px");
-				lineElem.setAttribute("style",
-						"stroke:" + Tree.prototype.LINE_COLOUR + ";stroke-width:1");
-				svgElement.appendChild(lineElem);
+				width = (t["c"][i]["s"]) ?  Tree.prototype.WIDTH_OF_NARROW_CHAR : Tree.prototype.WIDTH_OF_CHAR;
+				var x2 = t["c"][i]["x"] + (t["c"][i]["n"].length * width) / 2;
+				var y2 = t["c"][i]["y"] - Tree.prototype.TEXT_HEIGHT - Tree.prototype.YPADDING;
+				svgElement.appendChild(this.getSVGLine(x1, y1 + Tree.prototype.YPADDING, x2, y2, lineStyle));
 				this.recToSVG(svgElement, objid, t["c"][i]);
 			}
 		}
-		if (!t["e"] && t["c"].length > 0) {
+		if (!t["e"] && t["c"].length > 0) { //draw a triangle below this node
 			var x11 = x1 - Tree.prototype.TRIANGLE_OFFSET;
 			var x2 = x1 - Tree.prototype.TRIANGLE_WIDTH_2;
 			var x3 = x1 + Tree.prototype.TRIANGLE_WIDTH_2;
-			var y2 = y1 + Tree.prototype.TRIANGLE_OFFSET
-					+ Tree.prototype.TRIANGLE_HEIGHT;
+			var y2 = y1 + Tree.prototype.TRIANGLE_OFFSET	+ Tree.prototype.TRIANGLE_HEIGHT;
 
-			var pg = document.createElementNS('http://www.w3.org/2000/svg',
-					'svg:polygon');
-			var points_str = (x1) + "," + (y1 + 2) + " " + (x2) + "," + (y2)
-					+ " " + (x3) + "," + (y2);
+			var pg = document.createElementNS('http://www.w3.org/2000/svg', 'svg:polygon');
+			var points_str = (x1) + "," + (y1 + 2) + " " + (x2) + "," + (y2) + " " + (x3) + "," + (y2);
 			pg.setAttribute("points", points_str);
-			pg.setAttribute("onmouseover", this.varname + ".mouseoverNode('"
-					+ t["domid"] + "', true);");
-			pg.setAttribute("onmouseout", this.varname + ".mouseoutNode('"
-					+ t["domid"] + "', true);");
-			pg.setAttribute("onclick", this.varname + ".clickNode('" + objid
-					+ "', '" + t["domid"] + "');");
-			pg.setAttribute("style",
-					"stroke:" + Tree.prototype.LINE_COLOUR + ";stroke-width:2;fill:white;cursor:pointer;");
-
+			pg.setAttribute("onmouseover", this.varname + ".mouseoverNode('" + t["domid"] + "', true);");
+			pg.setAttribute("onmouseout", this.varname + ".mouseoutNode('" + t["domid"] + "', true);");
+			pg.setAttribute("onclick", this.varname + ".clickNode('" + objid + "', '" + t["domid"] + "');");
+			pg.setAttribute("style", "stroke:" + Tree.prototype.LINE_COLOUR + ";stroke-width:2;fill:white;cursor:pointer;");
 			svgElement.appendChild(pg);
 		}
 	};
 
 	Tree.prototype.maxXY = function(nod, xyv) {
 		var maxx = xyv.x;
-		if (nod["x-end"] > maxx) {
-			maxx = nod["x-end"];
-		}
+		if (nod["x-end"] > maxx) { maxx = nod["x-end"]; }
 		var maxy = xyv.y;
-		if (nod["y"] > maxy) {
-			maxy = nod["y"];
-		}
-		if (nod["e"] && nod["c"].length > 0) {
+		if (nod["y"] > maxy) { maxy = nod["y"]; }
+		if (nod["e"] && nod["c"].length > 0) { //find max XY based on children's max
 			for ( var i = 0; i < nod["c"].length; i++) {
-				maxXYc = this.maxXY(nod["c"][i], {
-					x :maxx,
-					y :maxy
-				});
+				maxXYc = this.maxXY(nod["c"][i], {x:maxx, y:maxy});
 				if (maxXYc.x > maxx) {
 					maxx = maxXYc.x;
 				}
@@ -541,101 +397,80 @@ function Tree(data, varname, sentnum, matches) {
 					maxy = maxXYc.y;
 				}
 			}
-		} else if (!nod["e"] && nod["c"].length > 0) {
-			maxy = maxy + Tree.prototype.YPADDING
-					+ Tree.prototype.TRIANGLE_OFFSET
-					+ Tree.prototype.TRIANGLE_HEIGHT;
+		} else if (!nod["e"] && nod["c"].length > 0) { //adding triangle height
+			//shouldn't it be added only when maxy is already at max at this level?
+			maxy = maxy + Tree.prototype.YPADDING	+ Tree.prototype.TRIANGLE_OFFSET + Tree.prototype.TRIANGLE_HEIGHT;
 		}
-		return {
-			x :maxx,
-			y :maxy
-		};
+		return {x :maxx, y :maxy};
+	};
+
+	Tree.prototype.doOnWordRange = function(chosenElem, action) {
+		var s = document.getElementById(this.sentnum + '_sentence');
+		if (s != null) {
+			var cp = chosenElem["i"].split('_');
+			left = parseInt(cp[1]);
+			right = parseInt(cp[0]);
+			
+			for (k = 0; k < s.childNodes.length; k++) {
+				sid = s.childNodes[k].getAttribute("id");
+				if (sid != null) {
+					wnum = sid.split('_');//sentNum_wordNum
+					if (wnum != null && wnum.length > 1) {
+						num = parseInt(wnum[1]);
+						if (num >= left && num < right) {
+							action(s.childNodes[k]);
+						}
+						if (!(num < right)) break;
+					}
+				}
+			}
+		}
+	};	
+	
+	Tree.prototype.highlightSentence = function(obj) {
+		obj.setAttribute("class", "highlight")
+	};
+	
+	Tree.prototype.removeSentenceHighlight = function(obj) {
+		obj.removeAttribute("class");
 	};
 
 	Tree.prototype.mouseoverNode = function(id, clickable) {
 		var n = document.getElementById(id);
-		var domid = n.getAttribute("id");
-		var te = this.findTreeNodeFromDomId(domid);
+		var te = this.getTreeNode(n);
 		if (clickable) {
 			if (!te["disc"] && te["c"].length > 0) {
 				n.setAttribute('font-weight', 'bold');
 				n.setAttribute('cursor', 'pointer');
 			}
 		}
-		this.highlightSentence(te);
-	};
-	
-	Tree.prototype.highlightSentence = function(te) {
-		var s = document.getElementById(this.sentnum + '_sentence');
-		if (s != null) {
-			var cp = te["i"].split('_');
-			left = parseInt(cp[1]);
-			right = parseInt(cp[0]);
-			
-			for (k = 0; k < s.childNodes.length; k++) {
-				sid = s.childNodes[k].getAttribute("id");
-				if (sid != null) {
-					wnum = sid.split('_');
-					if (wnum != null && wnum.length > 1) {
-						num = parseInt(wnum[1]);
-						if (num >= left && num < right) {
-							s.childNodes[k].setAttribute("class", "highlight");
-						}
-						if (!(num < right)) break;
-					}
-				}
-			}
-		}
-	};
-	
-	Tree.prototype.removeSentenceHighlight = function(te) {
-		var s = document.getElementById(this.sentnum + '_sentence');
-		if (s != null) {
-			var cp = te["i"].split('_');
-			left = parseInt(cp[1]);
-			right = parseInt(cp[0]);
-			
-			for (k = 0; k < s.childNodes.length; k++) {
-				sid = s.childNodes[k].getAttribute("id");
-				if (sid != null) {
-					wnum = sid.split('_');
-					if (wnum != null && wnum.length > 1) {
-						num = parseInt(wnum[1]);
-						if (num >= left && num < right) {
-							s.childNodes[k].removeAttribute("class");
-						}
-						if (!(num < right)) break;
-					}
-				}
-			}
-		}
+		this.doOnWordRange(te, Tree.prototype.highlightSentence);
 	};
 	
 	Tree.prototype.mouseoutNode = function(id, clickable) {
 		var n = document.getElementById(id);
-		var domid = n.getAttribute("id");
-		var te = this.findTreeNodeFromDomId(domid);
+		var te = this.getTreeNode(n);
 		if (clickable) {
 			if (!te["disc"] && te["c"].length > 0) {
 				n.removeAttribute('font-weight');
 				n.removeAttribute('cursor');
 			}
 		}
-		this.removeSentenceHighlight(te);
+		this.doOnWordRange(te, Tree.prototype.removeSentenceHighlight);
 	};
 
 	Tree.prototype.clickNode = function(objid, id) {
 		var n = document.getElementById(id);
-		var domid = n.getAttribute("id");
-		var te = this.findTreeNodeFromDomId(domid);
+		var te = this.getTreeNode(n);
 		if (!te["disc"] && te["c"].length > 0) {
 			te["e"] = te["e"] ^ true;
 			this.calcPositionAndDrawSVG(objid);
 		}
-		this.removeSentenceHighlight(te);
+		this.doOnWordRange(te, Tree.prototype.removeSentenceHighlight);
 	};
 
-	Tree.prototype.findTreeNodeFromDomId = function(domid) {
+	Tree.prototype.getTreeNode = function(element) {
+		var domid = element.getAttribute("id");
 		var elements = domid.split("_");
 		var tt = this.tree;
 		for ( var i = 2; i < elements.length; i++) {
