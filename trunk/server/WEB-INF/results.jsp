@@ -41,6 +41,7 @@ turned it off. This page requires Javascript to display results.
 </div>
 </noscript>
 <script type="text/ecmascript" src="tree.js"></script>
+<script type="text/ecmascript" src="jquery-1.7.2.min.js"></script>
 <script type="text/ecmascript">
 <![CDATA[
 	var newwindow;
@@ -77,11 +78,7 @@ function render() {
 			sentence_row.appendChild(sp);
 		}
 		document.getElementById("row_<%=i%>_match_prev").className='greynav';
-		if (row_<%=i%>_match_total == 1) {
-			document.getElementById("row_<%=i%>_match_next").className='greynav';
-		} else {
-			document.getElementById("row_<%=i%>_match_next").className='normalnav';
-		}
+		document.getElementById("row_<%=i%>_match_next").className= row_<%=i%>_match_total == 1 ? 'greynav' : 'normalnav';
 <%}%>
 	enableDisablePageNavigation(<%=pageNum%>, <%=totalPages%>);    
 }
@@ -91,26 +88,10 @@ function decodeSymbols(queryStr) {
 }
 
 function enableDisablePageNavigation(pageNum, totalPages) {
-	if (pageNum == 1) {
-		document.getElementById("page_prev").className='greynav';
-	} else { 
-		document.getElementById("page_prev").className='normalnav';
-	}
-	if (pageNum == totalPages) {
-		document.getElementById("page_next").className='greynav';
-	} else {
-		document.getElementById("page_next").className='normalnav';
-	}
-	if (pageNum < 6) {
-		document.getElementById("page_scroll_prev").className='greynav';
-	} else {
-		document.getElementById("page_scroll_prev").className='normalnav';
-	}
-	if (pageNum >= totalPages - 5) {
-		document.getElementById("page_scroll_next").className='greynav';
-	} else {
-		document.getElementById("page_scroll_next").className='normalnav';
-	}
+	document.getElementById("page_prev").className= pageNum == 1 ? 'greynav' : 'normalnav';
+	document.getElementById("page_next").className= pageNum == totalPages ? 'greynav' : 'normalnav';
+	document.getElementById("page_scroll_prev").className= pageNum < 6 ? 'greynav' : 'normalnav';
+	document.getElementById("page_scroll_next").className= pageNum >= totalPages - 5 ? 'greynav' : 'normalnav';
 }
 
 function selectInList(listid, item) {
@@ -186,6 +167,31 @@ function openSVGSentence(num) {
 	frm.w.value = rowobj.getAttribute("width");
 	frm.json.value = str;
 	frm.submit();
+}
+
+function buildQuery(num) {
+	alert("X offset is:" +  window.pageXOffset + "<br/> Y offset is " + window.pageYOffset);
+	document.getElementById('overlay').className = 'overlayshow';
+	var rowObj = document.getElementById("row" + num);
+	var modalHeight = rowObj.height;
+	var modalWidth = rowObj.width;
+	var queryWindow = document.getElementById('querywindow');
+	queryWindow.className = 'querywindowshow';
+	var left = Math.max($(window).width() - modalWidth, 0) / 2;
+	$("#querywindow").css({
+		'left':left + $(window).scrollLeft()
+	});
+	document.getElementById('querywindowcontent').innerHTML = rowObj.innerHTML;
+}
+
+function setModalPosition(modalWin, height, width) {
+	modalWin.style.left = Math.max(window.innerWidth - parseInt(width), 0) / 2;
+}
+
+
+function closeQueryWindow(num) {
+	document.getElementById('overlay').className = 'overlayhide'
+	document.getElementById('querywindow').className = 'querywindowhide';
 }
 
 function page(num) {
@@ -301,6 +307,11 @@ function defaultDisplay(num) {
 								<td align="right" class="navbarright">
 								<table>
 									<tr>
+										<td>
+										    <button name="BuildQuery" type="button" class="navbarbtn"
+											   onclick='buildQuery(<%=i%>)' align='right'>Build query<br /> from tree</button>
+										</td>
+									
 										<td>
 										<button name="PennTreebankSentence" type="button" class="navbarbtn"
 											onclick='openPennTreebankSentence(<%=i%>)' align='right'>View tree in<br />bracketed form</button>
@@ -459,5 +470,10 @@ function defaultDisplay(num) {
 		</td>
 	</tr>
 </table>
+<div id="overlay" class="overlayhide"></div>
+<div id="querywindow" class="querywindowhide">
+	<div id="querywindowcontent"></div>
+	<a href="#" onclick="closeQueryWindow()"> close </a>
+</div>
 </body>
 </html>
