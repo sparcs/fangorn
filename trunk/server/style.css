@@ -138,7 +138,11 @@ hr{
 	top: 40px;
 }
 
-#querywindowcontent {
+#querywindowtext {
+	width: 100%;
+}
+
+#querywindowtree {
 	overflow-x: auto; 
 	overflow-y: auto;
 }

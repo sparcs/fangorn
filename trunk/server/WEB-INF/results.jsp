@@ -170,18 +170,15 @@ function openSVGSentence(num) {
 }
 
 function buildQuery(num) {
-	alert("X offset is:" +  window.pageXOffset + "<br/> Y offset is " + window.pageYOffset);
 	document.getElementById('overlay').className = 'overlayshow';
 	var rowObj = document.getElementById("row" + num);
-	var modalHeight = rowObj.height;
 	var modalWidth = rowObj.width;
 	var queryWindow = document.getElementById('querywindow');
 	queryWindow.className = 'querywindowshow';
-	var left = Math.max($(window).width() - modalWidth, 0) / 2;
 	$("#querywindow").css({
-		'left':left + $(window).scrollLeft()
+		left:Math.max($(window).width() - modalWidth, 0) / 2 + $(window).scrollLeft()
 	});
-	document.getElementById('querywindowcontent').innerHTML = rowObj.innerHTML;
+	document.getElementById('querywindowtree').innerHTML = rowObj.innerHTML;
 }
 
 function setModalPosition(modalWin, height, width) {
@@ -199,7 +196,6 @@ function page(num) {
 	frm.j.value = num;
 	frm.submit();
 }
-
 
 function expandAll(num) {
 	eval("tree" + num).displayAllExpanded("row" + num);
@@ -472,7 +468,8 @@ function defaultDisplay(num) {
 </table>
 <div id="overlay" class="overlayhide"></div>
 <div id="querywindow" class="querywindowhide">
-	<div id="querywindowcontent"></div>
+	<div id="querywindowtext"></div>
+	<div id="querywindowtree"></div>
 	<a href="#" onclick="closeQueryWindow()"> close </a>
 </div>
 </body>
