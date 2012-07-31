@@ -41,10 +41,12 @@ turned it off. This page requires Javascript to display results.
 </div>
 </noscript>
 <script type="text/ecmascript" src="tree.js"></script>
+<script type="text/ecmascript" src="query.js"></script>
 <script type="text/ecmascript" src="jquery-1.7.2.min.js"></script>
 <script type="text/ecmascript">
 <![CDATA[
 	var newwindow;
+	var queryTree;
 <%int totalhits = (Integer) request.getAttribute("totalhits");
 			String[] results = (String[]) request.getAttribute("results");
 			Result[] resultMeta = (Result[]) request.getAttribute("metadata");
@@ -56,7 +58,9 @@ turned it off. This page requires Javascript to display results.
 		var t<%=i%> = <%=results[i]%>;
 		var matches<%=i%> = <%=resultMeta[i].matchesAsJSONString()%>;
 		var tree<%=i%> = new Tree(t<%=i%>, "tree<%=i%>", "<%=i%>", matches<%=i%>);
+		
 <%}%>
+
 
 function render() {
 	if (navigator.userAgent.indexOf("Firefox") == -1)
@@ -178,8 +182,37 @@ function buildQuery(num) {
 	$("#querywindow").css({
 		left:Math.max($(window).width() - modalWidth, 0) / 2 + $(window).scrollLeft()
 	});
-	document.getElementById('querywindowtree').innerHTML = rowObj.innerHTML;
+	var resultTree = eval("tree" + num);
+	queryTree = new QueryTree(clone(resultTree.tree), 'queryTree', 11, null);
+	queryTree.draw('querywindowtree');
 }
+
+function clone(obj) {
+    // Handle the 3 simple types, and null or undefined
+    if (null == obj || "object" != typeof obj) return obj;
+
+    // Handle Array
+    if (obj instanceof Array) {
+        var copy = [];
+        var len = obj.length;
+        for (var i = 0; i < len; ++i) {
+            copy[i] = clone(obj[i]);
+        }
+        return copy;
+    }
+
+    // Handle Object
+    if (obj instanceof Object) {
+        var copy = {};
+        for (var attr in obj) {
+            if (obj.hasOwnProperty(attr)) copy[attr] = clone(obj[attr]);
+        }
+        return copy;
+    }
+
+    throw new Error("Unable to copy obj! Its type isn't supported.");
+}
+
 
 function setModalPosition(modalWin, height, width) {
 	modalWin.style.left = Math.max(window.innerWidth - parseInt(width), 0) / 2;
@@ -189,6 +222,16 @@ function setModalPosition(modalWin, height, width) {
 function closeQueryWindow(num) {
 	document.getElementById('overlay').className = 'overlayhide'
 	document.getElementById('querywindow').className = 'querywindowhide';
+	
+	var divNode = document.getElementById('querywindowtree');
+	removeAllChildren(divNode);
+}
+
+function removeAllChildren(myNode) {
+	while (myNode.firstChild) {
+		removeAllChildren(myNode.firstChild);
+    	myNode.removeChild(myNode.firstChild);
+	}
 }
 
 function page(num) {
