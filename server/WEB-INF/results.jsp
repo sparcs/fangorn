@@ -110,7 +110,7 @@ function selectInList(listid, item) {
 	}
 }
 
-function prev(id) {
+function prev(id) { // id is of the form row_i_match where i is the row number
 	if (eval(id) < 1) {
 		document.getElementById(id + "_prev").className='greynav';
 	} else {
@@ -130,7 +130,7 @@ function prev(id) {
 	}
 }
 
-function next(id) {
+function next(id) { // id is of the form row_i_match where i is the row number
 	if (eval(id) == eval(id + "_total") - 1) {
 		document.getElementById(id + "_next").className='greynav';
 	} else {
@@ -183,7 +183,10 @@ function buildQuery(num) {
 		left:Math.max($(window).width() - modalWidth, 0) / 2 + $(window).scrollLeft()
 	});
 	var resultTree = eval("tree" + num);
-	queryTree = new QueryTree(clone(resultTree.tree), 'queryTree', 11, null);
+	var matches = eval("matches" + num);
+	var match = parseInt(eval("row_" + num + "_match"));
+	var qry_str = decodeSymbols(document.forms["stateinf"].p.value);
+	var queryTree = new QueryTree(clone(resultTree.tree), 'queryTree', 11, clone(matches["ms"][match]["m"]), qry_str); //assigned an id 11 as the first 10 are already displayed
 	queryTree.draw('querywindowtree');
 }
 
