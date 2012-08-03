@@ -76,6 +76,7 @@ function QueryTree(data, varname, sentnum, matchedPairs, queryString) {
 	QueryTree.prototype.AXIS_OPRS.push({'name':'immediate-preceding', 'sym':'<-'});
 
 	this.root = this.buildQueryTree(queryString);
+	this.mapMatchesToQueryTree();
 }
 
 String.prototype.trim = function() {
@@ -682,6 +683,7 @@ QueryTree.prototype.addMatchIdsToTree = function(root, matches) {
 
 QueryTree.prototype.Matches = function(pairs) {
 	this.pairs = pairs,
+	this.root = null,
 	this.init = function() {
 		this.byStart = {};
 		this.byEnd = {};
@@ -694,6 +696,18 @@ QueryTree.prototype.Matches = function(pairs) {
 			this.byEnd[end] = (end in this.byEnd) ? this.byEnd[end] : [];
 			this.byEnd[end].push(i);
 		}
+		var rn = this.pairs[byStart[""]]
+		this.root = {'id':rn["e"], 'label':rn["e"]["n"] 'opr':rn["o"], 'children':[], 'parent':null};
+		
 	};
 	this.init();
 }
+
+QueryTree.prototype.matchesToTree = function(node) {
+	
+}
+
+QueryTree.prototype.mapMatchesToQueryTree = function() {
+	
+}
+

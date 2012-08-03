@@ -41,6 +41,7 @@ public class QueryParser {
 	private static final Map<String, TreeAxis> axes = new HashMap<String, TreeAxis>();
 	private static final Map<String, Operator> OperatorSyms = new HashMap<String, Operator>();
 	private static final Map<String, Operator> Operators = new HashMap<String, Operator>();
+	private int termId;
 	static {
 		axes.put(TreeAxis.DESCENDANT.symbol(), TreeAxis.DESCENDANT);
 		axes.put(TreeAxis.CHILD.symbol(), TreeAxis.CHILD);
@@ -67,6 +68,7 @@ public class QueryParser {
 
 	public QueryParser(String[] tokens) {
 		this.ts = tokens;
+		this.termId = 0;
 	}
 
 	public TreeExpr parse() throws ParseException {
@@ -92,7 +94,7 @@ public class QueryParser {
 			throw new ParseException();
 		}
 		if (pos + 2 == ts.length || !ts[pos + 2].equals(TermFilter.FILTER_OPEN)) {
-			expr.addTerm(new TreeTerm(axis, new Term(FIELD, next)));
+			expr.addTerm(new TreeTerm(termId++, axis, new Term(FIELD, next)));
 			return pos + 2;
 		}
 		return parseFilter(expr, axis, next, pos + 3);
@@ -106,6 +108,7 @@ public class QueryParser {
 		TermFilter filter = null;
 		Operator prevOperator = null;
 		TreeExpr newExpr = new TreeExpr();
+		int tid = this.termId++;
 		while (nextPos < ts.length && !ts[nextPos].equals(TermFilter.FILTER_CLOSE)) {
 			if (Operators.containsKey(ts[nextPos].toLowerCase())) {
 				Operator o = Operators.get(ts[nextPos].toLowerCase());
@@ -136,8 +139,9 @@ public class QueryParser {
 		if (!(nextPos < ts.length) || !prev.equals(PREV_TOKEN.TERM))
 			throw new ParseException();
 		nextPos++;// accounting for QueryParser.FC
+		
 		filter = addExprToFilter(filter, prevOperator, isNot, newExpr);
-		expr.addTerm(new TreeTerm(axis, new Term(FIELD, label), filter));
+		expr.addTerm(new TreeTerm(tid, axis, new Term(FIELD, label), filter));
 		return nextPos;
 	}
 

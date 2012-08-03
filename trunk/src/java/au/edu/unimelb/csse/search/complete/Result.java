@@ -358,11 +358,6 @@ public class Result implements JSONAble, Cloneable {
 			operators.remove(0);
 		}
 
-		public void flipStartAndEnd() {
-			List<ByteArrayWrapper> temp = ends;
-			ends = starts;
-			starts = temp;
-		}
 	}
 
 	public class MatchedPair implements EfficientJSONAble {
@@ -382,7 +377,7 @@ public class Result implements JSONAble, Cloneable {
 			asJSONString(b);
 			return b.toString();
 		}
-
+		
 		@Override
 		public void asJSONString(StringBuilder builder) {
 			builder.append("{\"s\":\"");

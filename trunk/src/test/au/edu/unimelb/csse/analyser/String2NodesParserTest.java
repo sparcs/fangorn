@@ -23,7 +23,6 @@
 package au.edu.unimelb.csse.analyser;
 
 import java.io.IOException;
-import java.util.Arrays;
 
 import junit.framework.TestCase;
 
