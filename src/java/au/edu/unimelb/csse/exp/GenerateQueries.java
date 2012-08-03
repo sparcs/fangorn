@@ -306,8 +306,8 @@ public class GenerateQueries {
 				firstOperatorIsDescendant = false;
 			}
 			TreeTerm term = new TreeTerm(
-					firstOperatorIsDescendant ? TreeAxis.DESCENDANT
-							: TreeAxis.CHILD, new Term("sent", getRandomTerm()));
+					0, firstOperatorIsDescendant ? TreeAxis.DESCENDANT
+									: TreeAxis.CHILD, new Term("sent", getRandomTerm()));
 			if (noResult.contains(term.toString())) {
 				System.out.println("Noresult contains " + term.toString()
 						+ "; starting again");

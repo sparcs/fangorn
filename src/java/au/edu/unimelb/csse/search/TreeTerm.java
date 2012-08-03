@@ -43,6 +43,7 @@ public class TreeTerm implements FilterChunkElement {
 	private TermJoinType joinType;
 	// Lookahead is only set if a term is a FilterChunkElement
 	private LookaheadOptimization optimization = LookaheadOptimization.NONE;
+	private int id;
 
 	// private variables made into fields to avoid instantiating a new
 	// instance each time
@@ -50,11 +51,12 @@ public class TreeTerm implements FilterChunkElement {
 	private int validInstances;
 	private boolean stopAtFirst = false;
 
-	public TreeTerm(TreeAxis axis, Term term) {
-		this(axis, term, null);
+	public TreeTerm(int id, TreeAxis axis, Term term) {
+		this(id, axis, term, null);
 	}
 
-	public TreeTerm(TreeAxis axis, Term term, TermFilter filter) {
+	public TreeTerm(int id, TreeAxis axis, Term term, TermFilter filter) {
+		this.id = id;
 		this.axis = axis;
 		this.term = term;
 		this.filter = filter;
@@ -429,6 +431,10 @@ public class TreeTerm implements FilterChunkElement {
 			builder = filter.toString(builder);
 		}
 		return builder;
+	}
+	
+	public int getId() {
+		return id;
 	}
 	
 	@Override

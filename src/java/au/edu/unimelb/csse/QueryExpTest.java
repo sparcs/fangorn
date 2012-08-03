@@ -73,7 +73,7 @@ public class QueryExpTest {
 
 	private void run() throws CorruptIndexException, IOException, ParseException {
 		IndexSearcher searcher = new IndexSearcher(indexPath);
-		TreeTerm starterTerm = new TreeTerm(TreeAxis.DESCENDANT, new Term("sent", "the"));
+		TreeTerm starterTerm = new TreeTerm(0, TreeAxis.DESCENDANT, new Term("sent", "the"));
 		TreeExpr starterExpr = new TreeExpr();
 		starterExpr.addTerm(starterTerm);
 		SimpleHitCollector collector = new SimpleHitCollector(1);

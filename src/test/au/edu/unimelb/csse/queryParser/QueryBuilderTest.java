@@ -428,9 +428,99 @@ public class QueryBuilderTest extends TestCase {
 		assertNotNull(query);
 		assertEquals("//Magnificient\"-RRB-.", query.getTreeExpr().toString());
 	}
-
-	public void testCharacterEncodings() throws Exception {
-		System.out.println(Charset.availableCharsets().keySet());
+	
+	public void testFilterIdsAreInIncreasingOrder() throws Exception {
+		QueryBuilder builder = new QueryBuilder(
+				"//AA[//BB OR //CC & !\\DD OR ==>EE]");
+		TreebankQuery query = builder.parse(TermJoinType.SIMPLE, false);
+		TreeExpr treeExpr = query.getTreeExpr();
+		TreeTerm aaTerm = treeExpr.getTerm(0);
+		assertEquals("AA", aaTerm.termLabel());
+		assertEquals(0, aaTerm.getId());
+		TreeTerm bbTerm = (TreeTerm) aaTerm.filter().chunks()[0].elements()[0];
+		assertEquals("BB", bbTerm.termLabel());
+		assertEquals(1, bbTerm.getId());
+		TreeTerm ccTerm = (TreeTerm) aaTerm.filter().chunks()[1].elements()[0];
+		assertEquals("CC", ccTerm.termLabel());
+		assertEquals(2, ccTerm.getId());
+		TreeTerm ddTerm = (TreeTerm) aaTerm.filter().chunks()[1].notElements()[0];
+		assertEquals("DD", ddTerm.termLabel());
+		assertEquals(3, ddTerm.getId());
+		TreeTerm eeTerm = (TreeTerm) aaTerm.filter().chunks()[2].elements()[0];
+		assertEquals("EE", eeTerm.termLabel());
+		assertEquals(4, eeTerm.getId());
+		
+		builder = new QueryBuilder("//NP[//NP-SBJ[//DT->JJ->NN] and //PP/IN/for]");
+		query = builder.parse(TermJoinType.SIMPLE, false);
+		TreeExpr mainExpr = query.getTreeExpr();
+		TreeTerm np = mainExpr.getTerm(0);
+		assertEquals("NP", np.termLabel());
+		assertEquals(0, np.getId());
+		TermFilter f = np.filter();
+		assertEquals(1, f.chunks().length);
+		TreeTerm npsbj = (TreeTerm) f.chunks()[0].elements()[0];
+		assertEquals("NP-SBJ", npsbj.termLabel());
+		assertEquals(1, npsbj.getId());
+		TreeExpr npsbjfexpr = (TreeExpr) npsbj.filter().chunks()[0].elements()[0];
+		TreeTerm dt = npsbjfexpr.getTerm(0);
+		assertEquals("DT", dt.termLabel());
+		assertEquals(2, dt.getId());
+		TreeTerm jj = npsbjfexpr.getTerm(1);
+		assertEquals("JJ", jj.termLabel());
+		assertEquals(3, jj.getId());
+		TreeTerm nn = npsbjfexpr.getTerm(2);
+		assertEquals("NN", nn.termLabel());
+		assertEquals(4, nn.getId());
+		TreeExpr exp3 = (TreeExpr) np.filter().chunks()[0].elements()[1];
+		TreeTerm pp = exp3.getTerm(0);
+		assertEquals("PP", pp.termLabel());
+		assertEquals(5, pp.getId());
+		TreeTerm interm = exp3.getTerm(1);
+		assertEquals("IN", interm.termLabel());
+		assertEquals(6, interm.getId());
+		TreeTerm wordFor = exp3.getTerm(2);
+		assertEquals("for", wordFor.termLabel());
+		assertEquals(7, wordFor.getId());
 	}
 
+	public void testNotFilterIdsAreInIncreasingOrder() throws Exception {
+		QueryBuilder builder = new QueryBuilder("//AA[//BB OR !//CC OR \\DD OR !==>EE]");
+		TreebankQuery query = builder.parse(TermJoinType.SIMPLE, false);
+		TreeExpr treeExpr = query.getTreeExpr();
+		TreeTerm aa = treeExpr.getTerm(0);
+		assertEquals("AA", aa.termLabel());
+		assertEquals(0, aa.getId());
+		TreeTerm bb = (TreeTerm) aa.filter().chunks()[0].elements()[0];
+		assertEquals("BB", bb.termLabel());
+		assertEquals(1,bb.getId());
+		TreeTerm cc = (TreeTerm) aa.filter().chunks()[1].notElements()[0];
+		assertEquals("CC", cc.termLabel());
+		assertEquals(2,cc.getId());
+		TreeTerm dd = (TreeTerm) aa.filter().chunks()[2].elements()[0];
+		assertEquals("DD", dd.termLabel());
+		assertEquals(3,dd.getId());
+		TreeTerm ee = (TreeTerm) aa.filter().chunks()[3].notElements()[0];
+		assertEquals("EE", ee.termLabel());
+		assertEquals(4,ee.getId());
+
+		builder = new QueryBuilder("//AA[//BB AND !//CC AND \\DD AND !==>EE]");
+		query = builder.parse(TermJoinType.SIMPLE, false);
+		treeExpr = query.getTreeExpr();
+		aa = treeExpr.getTerm(0);
+		assertEquals("AA", aa.termLabel());
+		assertEquals(0, aa.getId());
+		bb = (TreeTerm) aa.filter().chunks()[0].elements()[0];
+		assertEquals("BB", bb.termLabel());
+		assertEquals(1,bb.getId());
+		cc = (TreeTerm) aa.filter().chunks()[0].notElements()[0];
+		assertEquals("CC", cc.termLabel());
+		assertEquals(2,cc.getId());
+		dd = (TreeTerm) aa.filter().chunks()[0].elements()[1];
+		assertEquals("DD", dd.termLabel());
+		assertEquals(3,dd.getId());
+		ee = (TreeTerm) aa.filter().chunks()[0].notElements()[1];
+		assertEquals("EE", ee.termLabel());
+		assertEquals(4,ee.getId());
+
+	}
 }

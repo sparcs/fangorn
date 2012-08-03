@@ -25,7 +25,6 @@ package au.edu.unimelb.csse;
 import org.mortbay.jetty.Server;
 import org.mortbay.jetty.webapp.WebAppContext;
 import org.mortbay.thread.QueuedThreadPool;
-import org.mortbay.thread.ThreadPool;
 
 public class StartServer {
     public static void main(String[] args) throws Exception {
