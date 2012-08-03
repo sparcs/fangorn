@@ -305,7 +305,7 @@ public class TreeTerm implements FilterChunkElement {
 				System.arraycopy(payloadBuffer, NodeDataBuffer.PAYLOAD_LENGTH
 						* validInstances, bytes, 0,
 						NodeDataBuffer.PAYLOAD_LENGTH);
-				result.addNew(bytes, axis);
+				result.addNew(bytes, axis, id);
 				validInstances++;
 			}
 		}
@@ -346,7 +346,7 @@ public class TreeTerm implements FilterChunkElement {
 	public Result allStructureMatch(Result result, NodeDataBuffer data,
 			byte[] payloadBuffer, int[] positionsBuffer) throws IOException {
 		result = axis.termJoiner(joinType).joinTermAllMatches(result,
-				positions, data, payloadBuffer, positionsBuffer, axis);
+				positions, data, payloadBuffer, positionsBuffer, axis, id);
 		data
 				.set(
 						result.lastTermMatchSize() > NodeDataBuffer.BUFFER_SIZE ? NodeDataBuffer.BUFFER_SIZE

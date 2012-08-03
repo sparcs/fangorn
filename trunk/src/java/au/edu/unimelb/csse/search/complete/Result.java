@@ -67,13 +67,13 @@ public class Result implements JSONAble, Cloneable {
 		this.allowUknownElements = allowUnknownElements;
 	}
 
-	public void addNew(byte[] end, TreeAxis operator) {
+	public void addNew(byte[] end, TreeAxis operator, int termId) {
 		ByteArrayWrapper s = new ByteArrayWrapper(new byte[] {});
 		ByteArrayWrapper e = new ByteArrayWrapper(end);
-		addToMatchesUpdateIndex(new Match(), s, e, operator);
+		addToMatchesUpdateIndex(new Match(), s, e, operator, termId);
 	}
 
-	public void addNew(byte[] start, byte[] end, TreeAxis operator) {
+	public void addNew(byte[] start, byte[] end, TreeAxis operator, int termId) {
 		ByteArrayWrapper s = new ByteArrayWrapper(start);
 		ByteArrayWrapper e = new ByteArrayWrapper(end);
 
@@ -83,19 +83,19 @@ public class Result implements JSONAble, Cloneable {
 				Match old = matches.get(position);
 				try {
 					Match newMatch = (Match) old.clone();
-					addToMatchesUpdateIndex(newMatch, s, e, operator);
+					addToMatchesUpdateIndex(newMatch, s, e, operator, termId);
 				} catch (CloneNotSupportedException e1) { // Unreachable code!
 					throw new RuntimeException("Single result match should be cloneable.");
 				}
 			}
 		} else if (allowUknownElements) {
-			addToMatchesUpdateIndex(new Match(), s, e, operator);
+			addToMatchesUpdateIndex(new Match(), s, e, operator,termId);
 		}
 	}
 
 	private void addToMatchesUpdateIndex(Match match, ByteArrayWrapper s,
-			ByteArrayWrapper e, TreeAxis operator) {
-		match.add(s, e, operator);
+			ByteArrayWrapper e, TreeAxis operator, int termId) {
+		match.add(s, e, operator, termId);
 		newMatches.add(match);
 		List<Integer> list = (newIndex.containsKey(e) ? newIndex.get(e) : new ArrayList<Integer>());
 		list.add(newMatches.size() - 1); // latest match is always at the end of list
@@ -190,11 +190,13 @@ public class Result implements JSONAble, Cloneable {
 	public class Match implements Cloneable, EfficientJSONAble {
 		private List<ByteArrayWrapper> starts, ends;
 		private List<TreeAxis> operators;
+		private List<Integer> termIds;
 
 		public Match() {
 			starts = new ArrayList<ByteArrayWrapper>();
 			ends = new ArrayList<ByteArrayWrapper>();
 			operators = new ArrayList<TreeAxis>();
+			termIds = new ArrayList<Integer>();
 		}
 
 		public ByteArrayWrapper firstStart() {
@@ -206,9 +208,11 @@ public class Result implements JSONAble, Cloneable {
 			starts.addAll(match1.starts);
 			ends.addAll(match1.ends);
 			operators.addAll(match1.operators);
+			termIds.addAll(match1.termIds);
 			starts.addAll(match2.starts);
 			ends.addAll(match2.ends);
 			operators.addAll(match2.operators);
+			termIds.addAll(match2.termIds);
 		}
 
 		public String asJSONString() {
@@ -218,10 +222,11 @@ public class Result implements JSONAble, Cloneable {
 		}
 
 		public void add(ByteArrayWrapper s, ByteArrayWrapper e,
-				TreeAxis operator) {
+				TreeAxis operator, int termId) {
 			starts.add(s);
 			ends.add(e);
 			operators.add(operator);
+			termIds.add(termId);
 		}
 
 		@Override
@@ -230,6 +235,7 @@ public class Result implements JSONAble, Cloneable {
 			for (ByteArrayWrapper start : starts) result.starts.add((ByteArrayWrapper) start.clone());
 			for (ByteArrayWrapper end : ends) result.ends.add((ByteArrayWrapper) end.clone());
 			result.operators.addAll(operators);
+			result.termIds.addAll(termIds);
 			return result;
 		}
 
@@ -238,7 +244,7 @@ public class Result implements JSONAble, Cloneable {
 			StringBuilder b = new StringBuilder();
 			for (int i = 0; i < operators.size(); i++) {
 				b.append(starts.get(i) + operators.get(i).name()
-						+ ends.get(i) + "\n");
+						+ ends.get(i) + ":" + termIds.get(i) + "\n");
 			}
 			return b.toString();
 		}
@@ -249,41 +255,32 @@ public class Result implements JSONAble, Cloneable {
 				return false;
 			}
 			Match other = (Match) obj;
-			return equalByteArrayLists(starts, other.starts)
-					&& equalByteArrayLists(ends, other.ends)
-					&& equalOperatorLists(operators, other.operators);
+			return equalLists(starts, other.starts)
+					&& equalLists(ends, other.ends)
+					&& equalLists(operators, other.operators)
+					&& equalLists(termIds, other.termIds);
 		}
 
-		private boolean equalByteArrayLists(List<ByteArrayWrapper> list1, List<ByteArrayWrapper> list2) {
-			if (list1.size() != list2.size()) return false;
+		private boolean equalLists(List<? extends Object> list1, List<? extends Object> list2) {
+			if (list1.size() != list2.size()) return false; // we check size without null check coz the vars are always init in the constructor
 			int i = 0;
 			while (i < list1.size()) {
-				if (!Arrays.equals(list1.get(i).data, list2.get(i).data)) return false;
-				i++;
-			}
-			return true;
-		}
-
-		private boolean equalOperatorLists(List<TreeAxis> list1, List<TreeAxis> list2) {
-			if (list1.size() != list2.size())
-				return false;
-			int i = 0;
-			while (i < list1.size()) {
-				if (!(list1.get(i) == list2.get(i)))
+				if (!(list1.get(i).equals(list2.get(i))))
 					return false;
 				i++;
 			}
 			return true;
 		}
 
+
 		public List<MatchedPair> pairs() {
-			if (starts.size() != ends.size() || ends.size() != operators.size()) { //should not happen!
+			if (starts.size() != ends.size() || ends.size() != operators.size() || operators.size() != termIds.size()) { //should not happen!
 				return null;
 			}
 			List<MatchedPair> result = new ArrayList<MatchedPair>();
 			int i = 0;
 			while (i < starts.size()) {
-				result.add(new MatchedPair(starts.get(i), ends.get(i), operators.get(i)));
+				result.add(new MatchedPair(starts.get(i), ends.get(i), operators.get(i), termIds.get(i)));
 				i++;
 			}
 			return result;
@@ -300,24 +297,19 @@ public class Result implements JSONAble, Cloneable {
 			if (pairs.size() > 0) builder.deleteCharAt(builder.length() - 1);
 			builder.append("]}");
 		}
-
-		public void removeFirstLink() {
-			starts.remove(0);
-			ends.remove(0);
-			operators.remove(0);
-		}
-
 	}
 
 	public class MatchedPair implements EfficientJSONAble {
 		ByteArrayWrapper start;
 		ByteArrayWrapper end;
 		TreeAxis operator;
+		int termId;
 
-		public MatchedPair(ByteArrayWrapper start, ByteArrayWrapper end, TreeAxis operator) {
+		public MatchedPair(ByteArrayWrapper start, ByteArrayWrapper end, TreeAxis operator, int termId) {
 			this.start = start;
 			this.end = end;
 			this.operator = operator;
+			this.termId = termId;
 		}
 
 		public String asJSONString() {
@@ -344,6 +336,8 @@ public class Result implements JSONAble, Cloneable {
 				builder.deleteCharAt(builder.length() - 1);
 			builder.append("\",\"o\":\"");
 			builder.append(operator.id());
+			builder.append("\",\"t\":\"");
+			builder.append(termId);
 			builder.append("\"}");
 		}
 	}

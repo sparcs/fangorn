@@ -24,7 +24,6 @@ package au.edu.unimelb.csse.servlet;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.nio.charset.Charset;
 import java.util.logging.Logger;
 
 import javax.servlet.RequestDispatcher;
@@ -118,7 +117,8 @@ public class QueryServletFull extends HttpServlet {
 		} catch (Exception e) {
 			req.setAttribute("error", "Oops! An error has occurred. "
 					+ e.getMessage() + ". The administrator will be informed.");
-			logger.warning("Error searching: " + query);
+			logger.severe("Error searching: " + query);
+			logger.severe(e.getMessage());
 			RequestDispatcher view = req
 					.getRequestDispatcher("/WEB-INF/error.jsp");
 			view.forward(req, res);
@@ -155,10 +155,7 @@ public class QueryServletFull extends HttpServlet {
 
 	protected String getQuery(HttpServletRequest req, HttpServletResponse res)
 			throws UnsupportedEncodingException, ServletException, IOException {
-		final String q_ISO_8559_1 = req.getParameter("query");
-
-		String query = new String(q_ISO_8559_1.getBytes(Charset
-				.forName("ISO-8859-1")), "UTF-8");
+		final String query = req.getParameter("query");
 
 		if (query == null || query.trim().equals("")) {
 			doGet(req, res);
