@@ -251,7 +251,7 @@ public class TermFilter implements QueryElement {
 			NodeDataBuffer data, byte[] payloads, int[] positions)
 			throws IOException {
 		matched.clear(0, data.size);
-		boolean anOnlyNotsHasReturnedTrue = false;
+		boolean hasSingleNotExprMatched = false;
 		Map<ByteArrayWrapper, List<Match>> ms = new HashMap<ByteArrayWrapper, List<Match>>();
 		for (int i = 0; i < numChunksAtMinDoc; i++) {
 			filterBuffer.reset();
@@ -262,7 +262,7 @@ public class TermFilter implements QueryElement {
 						matchedPerFilter, payloads, positions);
 				if (rs.successful) {
 					if (c.isOnlyNots()) {
-						anOnlyNotsHasReturnedTrue = true;
+						hasSingleNotExprMatched = true;
 						matched.or(matchedPerFilter);
 					} else {
 						final Map<ByteArrayWrapper, List<Match>> matches = new HashMap<ByteArrayWrapper, List<Match>>();
@@ -320,7 +320,7 @@ public class TermFilter implements QueryElement {
 		}
 		//the order of the next two statements is important
 		result.retainInNew(toRetain);
-		result.addToMatches(ms, anOnlyNotsHasReturnedTrue);
+		result.addToMatches(ms, hasSingleNotExprMatched);
 		rs.result = result;
 		return rs;
 	}

@@ -22,7 +22,6 @@
  ******************************************************************************/
 package au.edu.unimelb.csse.queryParser;
 
-import java.nio.charset.Charset;
 import java.util.List;
 
 import junit.framework.TestCase;

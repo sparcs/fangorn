@@ -349,8 +349,8 @@ public class TreeTerm implements FilterChunkElement {
 				positions, data, payloadBuffer, positionsBuffer, axis);
 		data
 				.set(
-						result.newResultsIndexKeySize() > NodeDataBuffer.BUFFER_SIZE ? NodeDataBuffer.BUFFER_SIZE
-								: result.newResultsIndexKeySize(),
+						result.lastTermMatchSize() > NodeDataBuffer.BUFFER_SIZE ? NodeDataBuffer.BUFFER_SIZE
+								: result.lastTermMatchSize(),
 						payloadBuffer, positionsBuffer);
 		if (result.hasNewMatches() && filter != null) {
 			ResultStatus rsf = filter.allStructureMatches(result, data,
