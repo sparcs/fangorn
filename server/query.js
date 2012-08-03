@@ -557,8 +557,8 @@ QueryTree.prototype.getTokens = function(queryString) {
 			minToken = closeSym;
 		}
 		if (minToken['start'] > prevEnd) {
-			tokens.push({'start':prevEnd, 'end':axisStart, 'type':'text'});
-			prevEnd = axisStart;
+			tokens.push({'start':prevEnd, 'end':minToken['start'], 'type':'text'});
+			prevEnd = minToken['start'];
 		} else {
 			tokens.push(minToken);
 			prevEnd = minToken['end'];
@@ -684,9 +684,9 @@ QueryTree.prototype.addMatchIdsToTree = function(root, matches) {
 QueryTree.prototype.Matches = function(pairs) {
 	this.pairs = pairs,
 	this.root = null,
+	this.byStart = {},
+	this.byEnd = {},
 	this.init = function() {
-		this.byStart = {};
-		this.byEnd = {};
 		var len = this.pairs.length;
 		for (var i = 0 ; i < len; i++) {
 			var start = this.pairs[i]["s"];
@@ -696,14 +696,21 @@ QueryTree.prototype.Matches = function(pairs) {
 			this.byEnd[end] = (end in this.byEnd) ? this.byEnd[end] : [];
 			this.byEnd[end].push(i);
 		}
-		var rn = this.pairs[byStart[""]]
-		this.root = {'id':rn["e"], 'label':rn["e"]["n"] 'opr':rn["o"], 'children':[], 'parent':null};
-		
+		var rn = this.pairs[this.byStart[""]]
+		this.root = {'id':rn["e"]["i"], 'label':rn["e"]["n"], 'opr':rn["o"], 'children':[], 'parent':null};
+		node = this.root;
 	};
 	this.init();
 }
 
-QueryTree.prototype.matchesToTree = function(node) {
+QueryTree.prototype.matchesToTree = function(byStart, node) {
+//	var children = this.byStart[this.node['id']]
+//	for (var i = 0; i < children.length; i++ ) {
+//		var child = children[i];
+//		var childNode = {'id':child["e"]["i"], 'label':child["e"]["n"], 'opr':child["o"], 'children':[], 'parent':node}; 
+//		node.children.push(childNode);
+//		this.matchesToTree(byStart, childNode);
+//	} 
 	
 }
 

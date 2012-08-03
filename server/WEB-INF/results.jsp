@@ -24,8 +24,7 @@
 #        specific language governing permissions and limitations
 #        under the License.
 -->
-<%@ page
-	import="au.edu.unimelb.csse.search.complete.Result,au.edu.unimelb.csse.Corpora"%>
+<%@ page import="au.edu.unimelb.csse.search.complete.Result,au.edu.unimelb.csse.Corpora"%>
 
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -94,8 +93,10 @@ function decodeSymbols(queryStr) {
 function enableDisablePageNavigation(pageNum, totalPages) {
 	document.getElementById("page_prev").className= pageNum == 1 ? 'greynav' : 'normalnav';
 	document.getElementById("page_next").className= pageNum == totalPages ? 'greynav' : 'normalnav';
-	document.getElementById("page_scroll_prev").className= pageNum < 6 ? 'greynav' : 'normalnav';
-	document.getElementById("page_scroll_next").className= pageNum >= totalPages - 5 ? 'greynav' : 'normalnav';
+	var pagePrev = document.getElementById("page_scroll_prev");
+	if (pagePrev != null) { pagePrev.className= pageNum < 6 ? 'greynav' : 'normalnav'; }
+	var pageNext = document.getElementById("page_scroll_next"); 
+	if (pageNext != null) { pageNext.className= pageNum >= totalPages - 5 ? 'greynav' : 'normalnav'; }
 }
 
 function selectInList(listid, item) {
@@ -331,21 +332,15 @@ function defaultDisplay(num) {
 						<table width="99.99%">
 							<tr>
 								<td align="left" class="navbarleft">
-								<button name="ExpandAll" type="button" class="navbarbtn"
-									onclick='expandAll(<%=i%>)'>Expand all<br /> nodes</button>
-								<button name="CollapseTree" type="button" class="navbarbtn"
-									onclick='collapseAll(<%=i%>)'>Collapse<br /> tree</button>
-								<button name="DefaultDisplay" type="button" class="navbarbtn"
-									onclick='defaultDisplay(<%=i%>)'>Default<br /> display</button>
+								<button name="ExpandAll" type="button" class="navbarbtn" onclick='expandAll(<%=i%>)'>Expand all<br /> nodes</button>
+								<button name="CollapseTree" type="button" class="navbarbtn" onclick='collapseAll(<%=i%>)'>Collapse<br /> tree</button>
+								<button name="DefaultDisplay" type="button" class="navbarbtn" onclick='defaultDisplay(<%=i%>)'>Default<br /> display</button>
 								</td>
 								<td align="center" valign="middle" class="navbarmiddle"><span>
-								<span id='<%="row_" + i + "_match_prev"%>'
-									title='Previous match in tree'
-									onclick='prev("<%="row_" + i + "_match"%>");'>&lt;</span> Match
+								<span id='<%="row_" + i + "_match_prev"%>' title='Previous match in tree' onclick='prev("<%="row_" + i + "_match"%>");'>&lt;</span> Match
 								<span id='<%="row_" + i + "_match"%>'>1</span> of <%=resultMeta[i].numberOfMatches()%>
-								<span id='<%="row_" + i + "_match_next"%>'
-									title='Next match in tree'
-									onclick='next("<%="row_" + i + "_match"%>");'>&gt;</span> </span></td>
+								<span id='<%="row_" + i + "_match_next"%>' title='Next match in tree' onclick='next("<%="row_" + i + "_match"%>");'>&gt;</span> 
+								</span></td>
 								<td align="right" class="navbarright">
 								<table>
 									<tr>

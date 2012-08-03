@@ -70,12 +70,7 @@ public class Result implements JSONAble, Cloneable {
 	public void addNew(byte[] end, TreeAxis operator) {
 		ByteArrayWrapper s = new ByteArrayWrapper(new byte[] {});
 		ByteArrayWrapper e = new ByteArrayWrapper(end);
-		Match match = new Match();
-		match.add(s, e, operator);
-		newMatches.add(match);
-		List<Integer> positions = new ArrayList<Integer>();
-		positions.add(newMatches.size() - 1);
-		newIndex.put(e, positions);
+		addToMatchesUpdateIndex(new Match(), s, e, operator);
 	}
 
 	public void addNew(byte[] start, byte[] end, TreeAxis operator) {
@@ -86,41 +81,25 @@ public class Result implements JSONAble, Cloneable {
 			List<Integer> positions = index.get(s);
 			for (int position : positions) {
 				Match old = matches.get(position);
-				Match newMatch = null;
 				try {
-					newMatch = (Match) old.clone();
-				} catch (CloneNotSupportedException e1) {
-					// Unreachable code!
-					throw new RuntimeException(
-							"Single Result should be cloneable.");
-				}
-				newMatch.add(s, e, operator);
-				newMatches.add(newMatch);
-				if (newIndex.containsKey(e)) {
-					List<Integer> list = newIndex.get(e);
-					list.add(newMatches.size() - 1);
-					newIndex.put(e, list);
-				} else {
-					List<Integer> list = new ArrayList<Integer>();
-					// it is a size because we always add in the end
-					list.add(newMatches.size() - 1);
-					newIndex.put(e, list);
+					Match newMatch = (Match) old.clone();
+					addToMatchesUpdateIndex(newMatch, s, e, operator);
+				} catch (CloneNotSupportedException e1) { // Unreachable code!
+					throw new RuntimeException("Single result match should be cloneable.");
 				}
 			}
 		} else if (allowUknownElements) {
-			Match match = new Match();
-			match.add(s, e, operator);
-			newMatches.add(match);
-			if (newIndex.containsKey(e)) {
-				List<Integer> list = newIndex.get(e);
-				list.add(newMatches.size() - 1);
-				newIndex.put(e, list);
-			} else {
-				List<Integer> list = new ArrayList<Integer>();
-				list.add(newMatches.size() - 1);
-				newIndex.put(e, list);
-			}
+			addToMatchesUpdateIndex(new Match(), s, e, operator);
 		}
+	}
+
+	private void addToMatchesUpdateIndex(Match match, ByteArrayWrapper s,
+			ByteArrayWrapper e, TreeAxis operator) {
+		match.add(s, e, operator);
+		newMatches.add(match);
+		List<Integer> list = (newIndex.containsKey(e) ? newIndex.get(e) : new ArrayList<Integer>());
+		list.add(newMatches.size() - 1); // latest match is always at the end of list
+		newIndex.put(e, list);
 	}
 
 	public void commitAfterTerm() {
@@ -151,8 +130,8 @@ public class Result implements JSONAble, Cloneable {
 		return matches.size() > 0;
 	}
 
-	public int newResultsIndexKeySize() {
-		return newIndex.keySet().size();
+	public int lastTermMatchSize() {
+		return newIndex.size();
 	}
 
 	public List<Match> matches() {
@@ -168,8 +147,7 @@ public class Result implements JSONAble, Cloneable {
 			match.asJSONString(b);
 			b.append(",");
 		}
-		if (matches.size() > 0)
-			b.deleteCharAt(b.length() - 1);
+		if (matches.size() > 0) b.deleteCharAt(b.length() - 1);
 		b.append("]}");
 		return b.toString();
 	}
@@ -177,30 +155,13 @@ public class Result implements JSONAble, Cloneable {
 	@Override
 	protected Object clone() throws CloneNotSupportedException {
 		Result c = new Result();
-		for (Match m : matches) {
-			c.matches.add((Match) m.clone());
-		}
-		for (Match m : newMatches) {
-			c.newMatches.add((Match) m.clone());
-		}
-		for (ByteArrayWrapper baw : index.keySet()) {
-			c.index.put((ByteArrayWrapper) baw.clone(), index.get(baw));
-		}
-		for (ByteArrayWrapper baw : newIndex.keySet()) {
-			c.newIndex.put((ByteArrayWrapper) baw.clone(), newIndex.get(baw));
-		}
+		for (Match m : matches) c.matches.add((Match) m.clone());
+		for (Match m : newMatches) c.newMatches.add((Match) m.clone());
+		for (ByteArrayWrapper baw : index.keySet()) c.index.put((ByteArrayWrapper) baw.clone(), index.get(baw));
+		for (ByteArrayWrapper baw : newIndex.keySet()) c.newIndex.put((ByteArrayWrapper) baw.clone(), newIndex.get(baw));
 		return c;
 	}
-
-	public Result getClone() {
-		try {
-			return (Result) this.clone();
-		} catch (CloneNotSupportedException e) {
-			// Cannot happen
-		}
-		return null;
-	}
-
+	
 	public String matchesAsJSONString() {
 		StringBuilder b = new StringBuilder();
 		b.append("{\"ms\":[");
@@ -237,9 +198,7 @@ public class Result implements JSONAble, Cloneable {
 		}
 
 		public ByteArrayWrapper firstStart() {
-			if (starts.size() == 0)
-				return null;
-			return starts.get(0);
+			return starts.size() == 0 ? null : starts.get(0);
 		}
 
 		public Match(Match match1, Match match2) {
@@ -268,12 +227,8 @@ public class Result implements JSONAble, Cloneable {
 		@Override
 		protected Object clone() throws CloneNotSupportedException {
 			Match result = new Match();
-			for (ByteArrayWrapper start : starts) {
-				result.starts.add((ByteArrayWrapper) start.clone());
-			}
-			for (ByteArrayWrapper end : ends) {
-				result.ends.add((ByteArrayWrapper) end.clone());
-			}
+			for (ByteArrayWrapper start : starts) result.starts.add((ByteArrayWrapper) start.clone());
+			for (ByteArrayWrapper end : ends) result.ends.add((ByteArrayWrapper) end.clone());
 			result.operators.addAll(operators);
 			return result;
 		}
@@ -299,26 +254,22 @@ public class Result implements JSONAble, Cloneable {
 					&& equalOperatorLists(operators, other.operators);
 		}
 
-		private boolean equalByteArrayLists(List<ByteArrayWrapper> list1,
-				List<ByteArrayWrapper> list2) {
-			if (list1.size() != list2.size())
-				return false;
+		private boolean equalByteArrayLists(List<ByteArrayWrapper> list1, List<ByteArrayWrapper> list2) {
+			if (list1.size() != list2.size()) return false;
 			int i = 0;
 			while (i < list1.size()) {
-				if (!Arrays.equals(list1.get(i).data, list2.get(i).data))
-					return false;
+				if (!Arrays.equals(list1.get(i).data, list2.get(i).data)) return false;
 				i++;
 			}
 			return true;
 		}
 
-		private boolean equalOperatorLists(List<TreeAxis> list1,
-				List<TreeAxis> list2) {
+		private boolean equalOperatorLists(List<TreeAxis> list1, List<TreeAxis> list2) {
 			if (list1.size() != list2.size())
 				return false;
 			int i = 0;
 			while (i < list1.size()) {
-				if (!(list1.get(i) != list2.get(i)))
+				if (!(list1.get(i) == list2.get(i)))
 					return false;
 				i++;
 			}
@@ -326,14 +277,13 @@ public class Result implements JSONAble, Cloneable {
 		}
 
 		public List<MatchedPair> pairs() {
-			if (starts.size() != ends.size() || ends.size() != operators.size()) {
+			if (starts.size() != ends.size() || ends.size() != operators.size()) { //should not happen!
 				return null;
 			}
 			List<MatchedPair> result = new ArrayList<MatchedPair>();
 			int i = 0;
 			while (i < starts.size()) {
-				result.add(new MatchedPair(starts.get(i), ends.get(i),
-						operators.get(i)));
+				result.add(new MatchedPair(starts.get(i), ends.get(i), operators.get(i)));
 				i++;
 			}
 			return result;
@@ -347,8 +297,7 @@ public class Result implements JSONAble, Cloneable {
 				pair.asJSONString(builder);
 				builder.append(",");
 			}
-			if (pairs.size() > 0)
-				builder.deleteCharAt(builder.length() - 1);
+			if (pairs.size() > 0) builder.deleteCharAt(builder.length() - 1);
 			builder.append("]}");
 		}
 
@@ -365,8 +314,7 @@ public class Result implements JSONAble, Cloneable {
 		ByteArrayWrapper end;
 		TreeAxis operator;
 
-		public MatchedPair(ByteArrayWrapper start, ByteArrayWrapper end,
-				TreeAxis operator) {
+		public MatchedPair(ByteArrayWrapper start, ByteArrayWrapper end, TreeAxis operator) {
 			this.start = start;
 			this.end = end;
 			this.operator = operator;
@@ -462,21 +410,6 @@ public class Result implements JSONAble, Cloneable {
 	List<Integer> indexToNewMatches(ByteArrayWrapper baw) {
 		return newIndex.get(baw);
 	}
-
-	public void createEmptyMatch() {
-		matches.add(new Match());
-	}
-
-	public Set<ByteArrayWrapper> getLastByteArrays() {
-		return newIndex.keySet();
-	}
-
-	// public void addMatch(ByteArrayWrapper next, Result allStructureMatch) {
-	// if (index.containsKey(next)) {
-	// final List<Integer> matchesNext = index.get(next);
-	// matchesNext.add(allStructureMatch.matches);
-	// }
-	// }
 
 	public static class MatchStatus {
 		public Set<Match> matches;

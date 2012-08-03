@@ -154,7 +154,6 @@ hr{
 	height:100%;
 	background:#000;
 	opacity:0.9;
-	filter:alpha(opacity=50);
 }
 
 .overlayhide {
