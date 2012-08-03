@@ -70,11 +70,14 @@ public interface TermJoinAware {
 	 *            is the TreeAxis object containing this joinAware instance;
 	 *            this is used to avoid a cyclic dependency between
 	 *            TermJoinAware and TreeAxis
+	 * @param termId
+	 * 			  stores the term Id of the end element query term
+	 *            
 	 * @return returns all matches for the join
 	 * @throws IOException
 	 */
 	Result joinTermAllMatches(Result result, TermPositions term,
 			NodeDataBuffer previous, byte[] payloadBuffer,
-			int[] positionsBuffer, TreeAxis axis) throws IOException;
+			int[] positionsBuffer, TreeAxis axis, int termId) throws IOException;
 
 }

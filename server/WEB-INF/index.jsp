@@ -51,7 +51,7 @@ if (navigator.userAgent.indexOf("Firefox") == -1)
 <hr />
 <br />
 <center>
-<form id="qform" method="post" action="search">
+<form id="qform" accept-charset="UTF-8" method="post" action="search">
 <table cellpadding="5">
 	<tr>
 		<td>

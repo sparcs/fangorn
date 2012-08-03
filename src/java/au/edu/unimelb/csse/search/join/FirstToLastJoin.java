@@ -44,7 +44,7 @@ abstract class FirstToLastJoin extends AbstractJoin {
 	@Override
 	public Result joinTermAllMatches(Result result, TermPositions term,
 			NodeDataBuffer previous, byte[] payloadBuffer,
-			int[] positionsBuffer, TreeAxis axis) throws IOException {
+			int[] positionsBuffer, TreeAxis axis, int termId) throws IOException {
 		int freq = term.freq();
 		int bufferPtr = 0;
 		int validInstances = 0;
@@ -67,7 +67,7 @@ abstract class FirstToLastJoin extends AbstractJoin {
 							updatedValidInstanceFlag = true;
 						}
 						byte[] end = getByteArray(payloadBuffer, bufferPtr);
-						result.addNew(start, end, axis);
+						result.addNew(start, end, axis, termId);
 					}
 				}
 			}
