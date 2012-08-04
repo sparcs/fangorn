@@ -35,13 +35,14 @@
  * @return
  */
 
-function QueryTree(data, varname, sentnum, matchedPairs, queryString) {
+function QueryTree(data, varname, sentnum, queryDomId, treeDomId, matchedPairs, queryString) {
 	this.lastXOffset = 0;
-	this.sentnum = sentnum;
 	this.tree = data; // the actual tree
 	this.varname = varname; // used to fire callbacks from dom elements
+	this.sentnum = sentnum;
 	this.matches = new QueryTree.prototype.Matches(matchedPairs);
-	this.highlightPaths = new Array();
+	this.queryDomId = queryDomId;
+	this.treeDomId = treeDomId;
 
 	QueryTree.prototype.XSPACE = 15;
 	QueryTree.prototype.YSPACE = 45;
@@ -61,8 +62,7 @@ function QueryTree(data, varname, sentnum, matchedPairs, queryString) {
 	QueryTree.prototype.BLUE_LINE_COLOUR = "rgb(0,0,200)";
 	QueryTree.prototype.narrowRegex = /[a-z0-9]/g;
 
-	QueryTree.prototype.AXIS_OPRS = [];
-	QueryTree.prototype.AXIS_OPRS.push({'name':'descendant', 'sym':'//'});
+	QueryTree.prototype.AXIS_OPRS = [{'name':'descendant', 'sym':'//'}];
 	QueryTree.prototype.AXIS_OPRS.push({'name':'ancestor', 'sym':'\\\\'});
 	QueryTree.prototype.AXIS_OPRS.push({'name':'child', 'sym':'/'});
 	QueryTree.prototype.AXIS_OPRS.push({'name':'parent', 'sym':'\\'});
@@ -75,43 +75,74 @@ function QueryTree(data, varname, sentnum, matchedPairs, queryString) {
 	QueryTree.prototype.AXIS_OPRS.push({'name':'immediate-following', 'sym':'->'});
 	QueryTree.prototype.AXIS_OPRS.push({'name':'immediate-preceding', 'sym':'<-'});
 
+	this.setParentOnTreeNode(this.tree, null);
 	this.root = this.buildQueryTree(queryString);
-	this.mapMatchesToQueryTree();
+	this.addDOMID(this.tree, this.sentnum + "_0");
+	this.treeNodesByPositions = {};
+	this.indexByPosition(this.tree);
+
+	this.selectedState = this.noneSelected;
 }
 
 String.prototype.trim = function() {
 	return this.toString().replace(/^ +/, '').replace(/ +$/, '');
 }
 
-QueryTree.prototype.draw = function(objid) {
-	this.addDepth(this.tree, 1);
-	this.addDOMID(this.tree, this.sentnum + "_0");
-	//this.setDefaults(this.tree); retain the on-screen structure 
-	//this.selectMatch(matchnum);
-	this.calcPositionAndDrawSVG(objid);
+QueryTree.prototype.indexByPosition = function(node) {
+	this.treeNodesByPositions[node["i"]] = node;
+	for ( var i = 0; i < node["c"].length; i++) {
+		this.indexByPosition(node["c"][i]);
+	}
 }
 
-QueryTree.prototype.redraw = function(objid, matchnum) {
-	//this.setDefaults(this.tree);
-	//this.highlightPaths = new Array();
-	//this.selectMatch(matchnum);
-	this.calcPositionAndDrawSVG(objid);		
+QueryTree.prototype.noneSelected = function() {
+	this.mouseoverNode = function() {
+	},
+	this.mouseoutNode = function() {
+	};
 }
 
-QueryTree.prototype.calcPositionAndDrawSVG = function(objid) {
-	var obj = document.getElementById(objid);
+QueryTree.prototype.highlightedSelected = function() {
+	this.mouseoverNode = function() {
+
+	},
+	this.mouseoutNode = function() {
+
+	};
+}
+
+QueryTree.prototype.noMatchesNoneSelected = function() {
+
+}
+
+QueryTree.prototype.setParentOnTreeNode = function(node, parent) {
+	node["p"] = parent;
+	for ( var i = 0; i < node["c"].length; i++) {
+		this.setParentOnTreeNode(node["c"][i], node);
+	}
+}
+
+QueryTree.prototype.draw = function() {
+	//this.highlightMatchedPairs();
+	this.drawQuery();
+	this.calcPositionAndDrawSVG();
+}
+
+QueryTree.prototype.drawQuery = function() {
+	var obj = document.getElementById(this.treeDomId);
+	
+}
+
+QueryTree.prototype.calcPositionAndDrawSVG = function() {
+	var obj = document.getElementById(this.treeDomId);
 	this.addXAndYPositions();
-	var svg = this.toSVG(objid);
+	var svg = this.toSVG(this.treeDomId);
 	if (obj.childNodes.length > 0) {
 		while (obj.childNodes.length > 0) {
 			obj.removeChild(obj.firstChild);
 		}
 	}
-	// var xy = this.maxXY(svg);
-	var xy = {
-		x :0,
-		y :0
-	};
+	var xy = {x:0, y:0};
 	xy = this.maxXY(this.tree, xy);
 	obj.setAttribute("width", xy.x + 2 * QueryTree.prototype.SVG_PADDING);
 	obj.setAttribute("height", xy.y + QueryTree.prototype.SVG_PADDING);
@@ -129,113 +160,6 @@ QueryTree.prototype.addDOMID = function(t, domid) {
 		this.addDOMID(t["c"][i], domid + "_" + i);
 	}
 }
-
-QueryTree.prototype.setDefaults = function(t) {
-	// expand flag
-	t["e"] = (t["c"].length > 1) ? false : true;
-	// disable collapse flag
-	t["disc"] = false;
-	t["h"] = false;
-	for ( var i = 0; i < t["c"].length; i++) {
-		this.setDefaults(t["c"][i]);
-	}		
-}	
-
-QueryTree.prototype.setDefaultExpandParam = function(t) {
-	t["e"] = (t["disc"] == true || t["c"].length < 2) ? true : false;
-	for (var i = 0; i < t["c"].length; i++) {
-		this.setDefaultExpandParam(t["c"][i]);
-	}
-}
-		
-QueryTree.prototype.setExpandAllExpandParam = function(t) {
-	if (t["e"] == false) {
-		t["e"] = true;
-	}
-	for (var i = 0; i < t["c"].length; i++) {
-		this.setExpandAllExpandParam(t["c"][i]);
-	}
-}
-	
-QueryTree.prototype.setCollapseAllExpandParam = function() {
-	this.tree["e"] = false;
-}
-
-QueryTree.prototype.selectMatch = function(index) {
-	// this.matches["ms"] -> matches list; ["ms"][index] -> match set; 
-	// ["ms"][index]["m"] -> list of match sets of type ["s":"start_id", "e":"end_id", "o":"operator_id"]
-	var m = this.matches["ms"][index]["m"];
-	for ( var p = 0; p < m.length; p++) {
-		// the e here has a different meaning
-		var target = m[p]["e"];
-		var tarsp = target.split("_");
-		var tarpi = new Array();
-		for ( var j = 0; j < tarsp.length; j++) {
-			tarpi.push(parseInt(tarsp[j]));
-		}
-		var e = this.findAndHighlight(this.tree, target, tarpi);
-		if (m[p]["s"] != "") {
-			target = m[p]["s"]
-			tarsp = target.split("_");
-			tarpi = new Array();
-			for ( var j = 0; j < tarsp.length; j++) {
-				tarpi.push(parseInt(tarsp[j]));
-			}
-			var s = this.findNode(this.tree, target, tarpi);
-			this.highlightPaths.push([s, e, m[p]["o"]])
-		}
-	}
-}
-
-QueryTree.prototype.findNode = function(t, target, targetsplit) {
-	if (t["i"] == target) {
-		return t;
-	} else if (t["c"].length > 0) {
-		var i = 0;
-		while (i < t["c"].length) {
-			var cp = t["c"][i]["i"].split("_");
-			if (targetsplit[1] >= parseInt(cp[1])
-					&& targetsplit[0] <= parseInt(cp[0])) {
-				return this.findNode(t["c"][i], target, targetsplit);
-			}
-			i++;
-		}
-	}
-	return null;
-}
-
-QueryTree.prototype.findAndHighlight = function(t, target, targetsplit) {
-	if (t["i"] == target) {
-		t["disc"] = true;
-		t["e"] = true;
-		t["h"] = true;
-		return t;
-	} else if (t["c"].length > 0) {
-		if (t["c"].length == 1) {
-			t["disc"] = true;
-			t["e"] = true;
-			return this.findAndHighlight(t["c"][0], target, targetsplit);
-		} else {
-			var i = 0;
-			while (i < t["c"].length) {
-				var cp = t["c"][i]["i"].split("_");
-				if (targetsplit[1] >= parseInt(cp[1]) && targetsplit[0] <= parseInt(cp[0])) {
-					t["disc"] = true;
-					t["e"] = true;
-					return this.findAndHighlight(t["c"][i], target, targetsplit);
-				}
-				i++;
-			}
-		}
-	}
-}
-
-QueryTree.prototype.addDepth = function(t, start) {
-	t["depth"] = start;
-	for ( var i = 0; i < t["c"].length; i++) {
-		this.addDepth(t["c"][i], start + 1);
-	}
-};
 
 QueryTree.prototype.recAddXAndYPositions = function(t) {
 	var c = t["c"];
@@ -277,9 +201,9 @@ QueryTree.prototype.recShiftX = function(t, x) {
 }
 
 QueryTree.prototype.mainlyNarrowChars = function(name) {
-	var matches = name.match(QueryTree.prototype.narrowRegex);
-	if (matches == null) return false;
-	if (matches.length >= name.length / 2) return true;
+	var narrowChars = name.match(QueryTree.prototype.narrowRegex);
+	if (narrowChars == null) return false;
+	if (narrowChars.length >= name.length / 2) return true;
 	return false;
 }
 
@@ -287,32 +211,30 @@ QueryTree.prototype.toSVG = function(objid) {
 	var svg = document.createElementNS('http://www.w3.org/2000/svg',
 			'svg:svg');
 	this.recToSVG(svg, objid, this.tree);
-	//this.drawHighlightPaths(svg)
-	var m = this.maxXY(this.tree, {
-		x :0,
-		y :0
-	});
+	this.drawHighlightPaths(svg)
+	var m = this.maxXY(this.tree, {x:0, y:0});
 	svg.setAttribute("width", m.x + 2 * QueryTree.prototype.SVG_PADDING);
 	svg.setAttribute("height", m.y + QueryTree.prototype.SVG_PADDING);
 	return svg;
 }
 
 QueryTree.prototype.drawHighlightPaths = function(svgElement) {
-	for ( var i = 0; i < this.highlightPaths.length; i++) {
-		var p = this.highlightPaths[i];
+	for ( var i = 0; i < this.matches.pairs.length; i++) {
+		var p = this.matches.pairs[i];
+		if (p["s"] == "") { continue; }
 		/**
 		 * The numerical comparisons are based on TreeAxis's constants
 		 */
-		var singleLine = (p[2] > 3 && p[2] < 8) ? false : true;
-		var dashedLine = (p[2] == 0 || p[2] == 1 || p[2] == 4 || p[2] == 5 || p[2] == 8
-				|| [ 2 ] == 9) ? true : false;
-		var colour = (p[2] < 4) ? QueryTree.prototype.BLUE_LINE_COLOUR : QueryTree.prototype.RED_LINE_COLOUR;
+		var opr = p["o"];
+		var singleLine = (opr > 3 && opr < 8) ? false : true;
+		var dashedLine = (opr == 0 || opr == 1 || opr == 4 || opr == 5 || opr == 8 || opr == 9) ? true : false;
+		var colour = (opr < 4) ? QueryTree.prototype.BLUE_LINE_COLOUR : QueryTree.prototype.RED_LINE_COLOUR;
 		var lineStyle = "stroke:" + colour + ";stroke-width:2;" + ((dashedLine) ? "stroke-dasharray:9,5;" : "");
 		//All the preceding axis codes are odd numbers 
-		var b = (p[2] % 2 == 1) ? p[1] : p[0];
-		var a = (p[2] % 2 == 1) ? p[0] : p[1];
+		var b = this.treeNodesByPositions[(opr % 2 == 1) ? p["e"] : p["s"]];
+		var a = this.treeNodesByPositions[(opr % 2 == 1) ? p["s"] : p["e"]];
 		var width = (b["s"]) ? QueryTree.prototype.WIDTH_OF_NARROW_CHAR : QueryTree.prototype.WIDTH_OF_CHAR;
-		if (p[2] < 4) { // vertical lines
+		if (opr < 4) { // vertical lines
 			var x1 = b["x"] + (b["n"].length * width) / 2;
 			var y1 = b["y"] + 2 * QueryTree.prototype.YPADDING
 			width = (a["s"]) ? QueryTree.prototype.WIDTH_OF_NARROW_CHAR : QueryTree.prototype.WIDTH_OF_CHAR;
@@ -359,7 +281,7 @@ QueryTree.prototype.recToSVG = function(svgElement, objid, t) {
 	textElem.setAttribute("onmouseover", mouseoverFunc);
 	textElem.setAttribute("onmouseout", mouseoutFunc);			
 	if (!t["disc"]) {
-		textElem.setAttribute("onclick", this.varname + ".clickNode('"	+ objid + "', '" + t["domid"] + "');");
+		textElem.setAttribute("onclick", this.varname + ".clickNode('" + t["domid"] + "');");
 	}
 	if (t["h"]) {
 		textElem.setAttribute("style",
@@ -386,7 +308,7 @@ QueryTree.prototype.recToSVG = function(svgElement, objid, t) {
 		pg.setAttribute("points", points_str);
 		pg.setAttribute("onmouseover", this.varname + ".mouseoverNode('" + t["domid"] + "', true);");
 		pg.setAttribute("onmouseout", this.varname + ".mouseoutNode('" + t["domid"] + "', true);");
-		pg.setAttribute("onclick", this.varname + ".clickNode('" + objid + "', '" + t["domid"] + "');");
+		pg.setAttribute("onclick", this.varname + ".clickNode('" + t["domid"] + "');");
 		pg.setAttribute("style", "stroke:" + QueryTree.prototype.LINE_COLOUR + ";stroke-width:2;fill:white;cursor:pointer;");
 		svgElement.appendChild(pg);
 	}
@@ -413,29 +335,6 @@ QueryTree.prototype.maxXY = function(nod, xyv) {
 	}
 	return {x :maxx, y :maxy};
 }
-
-QueryTree.prototype.doOnWordRange = function(chosenElem, action) {
-	var s = document.getElementById(this.sentnum + '_sentence');
-	if (s != null) {
-		var cp = chosenElem["i"].split('_');
-		left = parseInt(cp[1]);
-		right = parseInt(cp[0]);
-		
-		for (k = 0; k < s.childNodes.length; k++) {
-			sid = s.childNodes[k].getAttribute("id");
-			if (sid != null) {
-				wnum = sid.split('_');//sentNum_wordNum
-				if (wnum != null && wnum.length > 1) {
-					num = parseInt(wnum[1]);
-					if (num >= left && num < right) {
-						action(s.childNodes[k]);
-					}
-					if (!(num < right)) break;
-				}
-			}
-		}
-	}
-}	
 	
 QueryTree.prototype.highlightSentence = function(obj) {
 	obj.setAttribute("class", "highlight")
@@ -454,7 +353,6 @@ QueryTree.prototype.mouseoverNode = function(id, clickable) {
 			n.setAttribute('cursor', 'pointer');
 		}
 	}
-	this.doOnWordRange(te, QueryTree.prototype.highlightSentence);
 }
 
 QueryTree.prototype.mouseoutNode = function(id, clickable) {
@@ -466,17 +364,15 @@ QueryTree.prototype.mouseoutNode = function(id, clickable) {
 			n.removeAttribute('cursor');
 		}
 	}
-	this.doOnWordRange(te, QueryTree.prototype.removeSentenceHighlight);
 }
 
-QueryTree.prototype.clickNode = function(objid, id) {
+QueryTree.prototype.clickNode = function(id) {
 	var n = document.getElementById(id);
 	var te = this.getTreeNode(n);
 	if (!te["disc"] && te["c"].length > 0) {
 		te["e"] = te["e"] ^ true;
-		this.calcPositionAndDrawSVG(objid);
+		this.calcPositionAndDrawSVG();
 	}
-	this.doOnWordRange(te, QueryTree.prototype.removeSentenceHighlight);
 }
 
 QueryTree.prototype.getTreeNode = function(element) {
@@ -498,9 +394,10 @@ Node.prototype.addChild = function(node) {
 	this.children.push(node);
 }
 
-var LabelNode = function(opr, label) {
+var LabelNode = function(opr, label, termId) {
 	this.opr = opr;
 	this.label = label;
+	this.termId = termId;
 }
 LabelNode.prototype.__proto__ = new Node("label");
 
@@ -592,6 +489,7 @@ QueryTree.prototype.buildQueryTree = function(queryString) {
 	queryString = queryString.replace(/ +/, ' ');
 	queryString = queryString.trim();
 	var root = new ExprNode(true, false);
+	var termId = 0;
 	var node = root;
 	var nodeStack = [];
 	var prev = node; // this is the prev node where control rests in the tree
@@ -606,7 +504,7 @@ QueryTree.prototype.buildQueryTree = function(queryString) {
 			if (token['type'] == 'text') { 
 				var opr = queryString.substring(prevToken['start'], prevToken['end']);
 				var text = queryString.substring(token['start'], token['end']).trim();
-				var node = new LabelNode(opr, text);
+				var node = new LabelNode(opr, text, termId++);
 				prev.addChild(node);
 				prev = node;
 			} 
@@ -676,34 +574,35 @@ QueryTree.prototype.buildQueryTree = function(queryString) {
 	return root;
 }
 
-QueryTree.prototype.addMatchIdsToTree = function(root, matches) {
-	var matched = matches.byStart[""];
-	root.ids = matched[0]['e'].split("_");
-} 
-
 QueryTree.prototype.Matches = function(pairs) {
 	this.pairs = pairs,
-	this.root = null,
-	this.byStart = {},
 	this.byEnd = {},
+	this.treeNodesMatchingMultipleQueryTerms = {},
+	this.treeNodesToQueryTerms = {},
 	this.init = function() {
 		var len = this.pairs.length;
 		for (var i = 0 ; i < len; i++) {
-			var start = this.pairs[i]["s"];
 			var end = this.pairs[i]["e"];
-			this.byStart[start] = (start in this.byStart) ? this.byStart[start] : [];
-			this.byStart[start].push(i);
 			this.byEnd[end] = (end in this.byEnd) ? this.byEnd[end] : [];
 			this.byEnd[end].push(i);
+			if (end in this.treeNodesToQueryTerms) {
+				this.treeNodesToQueryTerms[end].push(this.pairs[i]["t"]);
+				this.treeNodesMatchingMultipleQueryTerms[end].push(this.pairs[i]["t"]);
+			} else {
+				this.treeNodesToQueryTerms[end] = [this.pairs[i]["t"]];
+			}
 		}
-		var rn = this.pairs[this.byStart[""]]
-		this.root = {'id':rn["e"]["i"], 'label':rn["e"]["n"], 'opr':rn["o"], 'children':[], 'parent':null};
-		node = this.root;
+	},
+	this.hasTreeNodesMatchingMultipleQueryTerms = function() {
+		for (key in this.treeNodesMatchingMultipleQueryTerms) {
+			return true;
+		}
+		return false;
 	};
 	this.init();
 }
 
-QueryTree.prototype.matchesToTree = function(byStart, node) {
+//QueryTree.prototype.matchesToTree = function(byStart, node) {
 //	var children = this.byStart[this.node['id']]
 //	for (var i = 0; i < children.length; i++ ) {
 //		var child = children[i];
@@ -711,10 +610,5 @@ QueryTree.prototype.matchesToTree = function(byStart, node) {
 //		node.children.push(childNode);
 //		this.matchesToTree(byStart, childNode);
 //	} 
-	
-}
-
-QueryTree.prototype.mapMatchesToQueryTree = function() {
-	
-}
+//}
 
