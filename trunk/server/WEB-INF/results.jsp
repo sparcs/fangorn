@@ -187,8 +187,12 @@ function buildQuery(num) {
 	var matches = eval("matches" + num);
 	var match = parseInt(eval("row_" + num + "_match"));
 	var qry_str = decodeSymbols(document.forms["stateinf"].p.value);
-	var queryTree = new QueryTree(clone(resultTree.tree), 'queryTree', 11, clone(matches["ms"][match]["m"]), qry_str); //assigned an id 11 as the first 10 are already displayed
-	queryTree.draw('querywindowtree');
+	var queryTree = new QueryTree(clone(resultTree.tree), 'queryTree', 11, 'querywindowtext', 'querywindowtree', clone(matches["ms"][match]["m"]), qry_str); //assigned an id 11 as the first 10 are already displayed
+	if (queryTree.matches.hasTreeNodesMatchingMultipleQueryTerms()) {
+		queryTree.displayLoopError();
+	} else {
+		queryTree.draw();
+	}
 }
 
 function clone(obj) {
