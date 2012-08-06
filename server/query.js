@@ -401,7 +401,7 @@ QueryTree.prototype.mouseoutLine = function(matchNum) {
 
 QueryTree.prototype.clickLine = function(matchNum) {
 	var p = this.matches.pairs[matchNum];
-	if (p["o"] > 4) {
+	if (p["o"] > 4) {}
 }
 
 function Node(type) {
