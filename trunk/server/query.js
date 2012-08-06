@@ -127,6 +127,7 @@ QueryTree.prototype.draw = function() {
 
 QueryTree.prototype.drawQuery = function() {
 	var obj = document.getElementById(this.queryDomId);
+	this.clearDom(obj);
 	this.root.addToDom(obj);
 }
 
@@ -134,17 +135,21 @@ QueryTree.prototype.calcPositionAndDrawSVG = function() {
 	var obj = document.getElementById(this.treeDomId);
 	this.addXAndYPositions();
 	var svg = this.toSVG(this.treeDomId);
-	if (obj.childNodes.length > 0) {
-		while (obj.childNodes.length > 0) {
-			obj.removeChild(obj.firstChild);
-		}
-	}
+	this.clearDom(obj);
 	var xy = {x:0, y:0};
 	xy = this.maxXY(this.tree, xy);
 	obj.setAttribute("width", xy.x + 2 * QueryTree.prototype.SVG_PADDING);
 	obj.setAttribute("height", xy.y + QueryTree.prototype.SVG_PADDING);
 	obj.appendChild(svg);
 };
+
+QueryTree.prototype.clearDom = function(obj) {
+	if (obj.childNodes.length > 0) {
+		while (obj.childNodes.length > 0) {
+			obj.removeChild(obj.firstChild);
+		}
+	}
+}
 
 QueryTree.prototype.addXAndYPositions = function() {
 	this.lastXOffset = 0;
@@ -220,6 +225,7 @@ QueryTree.prototype.drawHighlightPaths = function(svgElement) {
 		var dashedLine = (opr == 0 || opr == 1 || opr == 4 || opr == 5 || opr == 8 || opr == 9) ? true : false;
 		var colour = (opr < 4) ? QueryTree.prototype.BLUE_LINE_COLOUR : QueryTree.prototype.RED_LINE_COLOUR;
 		var lineStyle = "stroke:" + colour + ";stroke-width:2;" + ((dashedLine) ? "stroke-dasharray:9,5;" : "");
+		var transStyle = "stroke-width:9;stroke-opacity:0.001;stroke:white;";//used to create a near transparent line to help click on the line
 		//All the preceding axis codes are odd numbers 
 		var b = this.treeNodeByPosition[(opr % 2 == 1) ? p["e"] : p["s"]];
 		var a = this.treeNodeByPosition[(opr % 2 == 1) ? p["s"] : p["e"]];
@@ -230,17 +236,20 @@ QueryTree.prototype.drawHighlightPaths = function(svgElement) {
 			width = (a["s"]) ? QueryTree.prototype.WIDTH_OF_NARROW_CHAR : QueryTree.prototype.WIDTH_OF_CHAR;
 			var x2 = a["x"] + (a["n"].length * width) / 2;
 			var y2 = a["y"] - QueryTree.prototype.TEXT_HEIGHT - QueryTree.prototype.YPADDING;
-			svgElement.appendChild(this.getSVGLine(x1, y1, x2, y2, lineStyle));
+			svgElement.appendChild(this.getClickableSVGLine(x1, y1, x2, y2, transStyle, i, 0));
+			svgElement.appendChild(this.getClickableSVGLine(x1, y1, x2, y2, lineStyle, i, 1));
 		} else { // horizontal lines
 			var x1 = b["x"] + (b["n"].length * width) + 5;
 			var y1 = b["y"] - QueryTree.prototype.TEXT_HEIGHT / 2 + 1;
 			var x2 = a["x"] - 5;
 			var y2 = a["y"] - QueryTree.prototype.TEXT_HEIGHT / 2 + 1;
 			if (singleLine) {
-				svgElement.appendChild(this.getSVGLine(x1, y1, x2, y2, lineStyle));
+				svgElement.appendChild(this.getClickableSVGLine(x1, y1, x2, y2, transStyle, i, 0));
+				svgElement.appendChild(this.getClickableSVGLine(x1, y1, x2, y2, lineStyle, i, 1));
 			} else {
-				svgElement.appendChild(this.getSVGLine(x1, y1 - 2, x2, y2 - 2, lineStyle));
-				svgElement.appendChild(this.getSVGLine(x1, y1 + 2, x2, y2 + 2, lineStyle));
+				svgElement.appendChild(this.getClickableSVGLine(x1, y1, x2, y2, transStyle, i, 0));
+				svgElement.appendChild(this.getClickableSVGLine(x1, y1 - 2, x2, y2 - 2, lineStyle, i, 1));
+				svgElement.appendChild(this.getClickableSVGLine(x1, y1 + 2, x2, y2 + 2, lineStyle, i, 2));
 			}
 		}
 	}
@@ -254,6 +263,15 @@ QueryTree.prototype.getSVGLine = function(x1, y1, x2, y2, style) {
 	lineElem.setAttribute("y2", y2 + "px");
 	lineElem.setAttribute("style", style);
 	return lineElem;
+}
+
+QueryTree.prototype.getClickableSVGLine = function(x1, y1, x2, y2, style, matchPos, lineNum) {
+	var line = this.getSVGLine(x1, y1, x2, y2, style);
+	line.setAttribute("id", "t_" + matchPos + "_" + lineNum);
+	line.setAttribute("onmouseover", this.varname + ".mouseoverLine('" + matchPos + "');");
+	line.setAttribute("onmouseout", this.varname + ".mouseoutLine('" + matchPos + "');");
+	line.setAttribute("onclick", this.varname + ".clickLine('" + matchPos + "');");
+	return line;
 }
 
 QueryTree.prototype.getNodeDomId = function(position) {
@@ -270,8 +288,8 @@ QueryTree.prototype.recToSVG = function(svgElement, objid, t) {
 	var x1 = t["x"] + (t["n"].length * width) / 2;
 	var y1 = t["y"] + QueryTree.prototype.YPADDING;
 	textElem.setAttribute("id", this.getNodeDomId(t["i"]));
-	var mouseoverFunc = this.varname + ".mouseoverNode('" + t["i"] + "', " + ((t["disc"]) ? "false" : "true") + ");";
-	var mouseoutFunc = this.varname + ".mouseoutNode('" + t["i"] + "', " + ((t["disc"]) ? "false" : "true") + ");";
+	var mouseoverFunc = this.varname + ".mouseoverNode('" + t["i"] + "', " + ((t["h"]) ? "false" : "true") + ");";
+	var mouseoutFunc = this.varname + ".mouseoutNode('" + t["i"] + "', " + ((t["h"]) ? "false" : "true") + ");";
 	textElem.setAttribute("onmouseover", mouseoverFunc);
 	textElem.setAttribute("onmouseout", mouseoutFunc);			
 	if (!t["disc"]) {
@@ -302,7 +320,7 @@ QueryTree.prototype.recToSVG = function(svgElement, objid, t) {
 		pg.setAttribute("points", points_str);
 		pg.setAttribute("onmouseover", this.varname + ".mouseoverNode('" + t["i"] + "', true);");
 		pg.setAttribute("onmouseout", this.varname + ".mouseoutNode('" + t["i"] + "', true);");
-		pg.setAttribute("onclick", this.varname + ".clickNode('" + t["i"] + "');");
+		pg.setAttribute("onclick", this.varname + ".expandNode('" + t["i"] + "');");
 		pg.setAttribute("style", "stroke:" + QueryTree.prototype.LINE_COLOUR + ";stroke-width:2;fill:white;cursor:pointer;");
 		svgElement.appendChild(pg);
 	}
@@ -323,46 +341,67 @@ QueryTree.prototype.maxXY = function(nod, xyv) {
 		//shouldn't it be added only when maxy is already at max at this level?
 		maxy = maxy + QueryTree.prototype.YPADDING	+ QueryTree.prototype.TRIANGLE_OFFSET + QueryTree.prototype.TRIANGLE_HEIGHT;
 	}
-	return {x :maxx, y :maxy};
-}
-	
-QueryTree.prototype.highlightSentence = function(obj) {
-	obj.setAttribute("class", "highlight")
-}
-
-QueryTree.prototype.removeSentenceHighlight = function(obj) {
-	obj.removeAttribute("class");
+	return {x:maxx, y:maxy};
 }
 
 QueryTree.prototype.mouseoverNode = function(pos, clickable) {
 	var n = document.getElementById(this.getNodeDomId(pos));
 	var te = this.treeNodeByPosition[pos];
-	if (clickable) {
-		if (!te["disc"] && te["c"].length > 0) {
-			n.setAttribute('font-weight', 'bold');
-			n.setAttribute('cursor', 'pointer');
-		}
-	}
+	n.setAttribute('font-weight', 'bold');
+	n.setAttribute('cursor', 'pointer');
+	var qn = document.getElementById("q_" + pos);
+	if (qn) { qn.setAttribute("class", "highlight"); }
 }
 
 QueryTree.prototype.mouseoutNode = function(pos, clickable) {
 	var n = document.getElementById(this.getNodeDomId(pos));
 	var te = this.treeNodeByPosition[pos];
-	if (clickable) {
-		if (!te["disc"] && te["c"].length > 0) {
-			n.removeAttribute('font-weight');
-			n.removeAttribute('cursor');
-		}
-	}
+	n.removeAttribute('font-weight');
+	n.removeAttribute('cursor');
+	var qn = document.getElementById("q_" + pos);
+	if (qn) { qn.removeAttribute("class"); }
 }
 
-QueryTree.prototype.clickNode = function(id) {
+QueryTree.prototype.clickNode = function(pos) {
+	var n = document.getElementById(this.getNodeDomId(pos));
+	var te = this.treeNodeByPosition[pos];
+
+}
+
+QueryTree.prototype.expandNode = function(pos) {
 	var n = document.getElementById(this.getNodeDomId(pos));
 	var te = this.treeNodeByPosition[pos];
 	if (!te["disc"] && te["c"].length > 0) {
 		te["e"] = te["e"] ^ true;
 		this.calcPositionAndDrawSVG();
 	}
+}
+
+QueryTree.prototype.mouseoverLine = function(matchNum) {
+	var l0 = document.getElementById("t_" + matchNum + "_0");
+	var l1 = document.getElementById("t_" + matchNum + "_1");
+	var l2 = document.getElementById("t_" + matchNum + "_2");
+	if (l0) { l0.setAttribute('cursor', 'pointer');}
+	if (l1) { l1.style.strokeWidth = 3; l1.setAttribute('cursor', 'pointer');}
+	if (l2) { l2.style.strokeWidth = 3; l2.setAttribute('cursor', 'pointer');}
+	var qn = document.getElementById("q_" + matchNum);
+	if (qn) { qn.setAttribute("class", "highlight"); }
+}
+
+QueryTree.prototype.mouseoutLine = function(matchNum) {
+	var l0 = document.getElementById("t_" + matchNum + "_0");
+	var l1 = document.getElementById("t_" + matchNum + "_1");
+	var l2 = document.getElementById("t_" + matchNum + "_2");
+	if (l0) { l0.removeAttribute('cursor'); }
+	if (l1) { l1.style.strokeWidth = 2; l1.removeAttribute('cursor'); }
+	if (l2) { l2.style.strokeWidth = 2; l2.removeAttribute('cursor'); }
+	var qn = document.getElementById("q_" + matchNum);
+	if (qn) { qn.removeAttribute("class"); }
+}
+
+QueryTree.prototype.clickLine = function(matchNum) {
+	var p = this.matches.pairs[matchNum];
+	if (p["o"] > 4) {
 }
 
 function Node(type) {
@@ -542,6 +581,7 @@ QueryTree.prototype.buildQueryTree = function(queryString) {
 				var text = queryString.substring(token['start'], token['end']).trim();
 				var mp = this.matches.pairs[termId];
 				var node = new LabelNode(opr, text, termId, mp["e"]);
+				termId++; //we have successfully processed one term in the query so increment it to point to the next one
 				prev.addChild(node);
 				prev = node;
 			} 
