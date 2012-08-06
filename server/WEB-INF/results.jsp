@@ -57,6 +57,7 @@ turned it off. This page requires Javascript to display results.
 		var t<%=i%> = <%=results[i]%>;
 		var matches<%=i%> = <%=resultMeta[i].matchesAsJSONString()%>;
 		var tree<%=i%> = new Tree(t<%=i%>, "tree<%=i%>", "<%=i%>", matches<%=i%>);
+		var queryTree = null;
 		
 <%}%>
 
@@ -176,18 +177,24 @@ function openSVGSentence(num) {
 
 function buildQuery(num) {
 	document.getElementById('overlay').className = 'overlayshow';
-	var rowObj = document.getElementById("row" + num);
-	var modalWidth = rowObj.width;
 	var queryWindow = document.getElementById('querywindow');
 	queryWindow.className = 'querywindowshow';
-	$("#querywindow").css({
-		left:Math.max($(window).width() - modalWidth, 0) / 2 + $(window).scrollLeft()
-	});
+	var modalWidth = $("#querywindow").width();
+	var ww = $(window).width();
+	if (modalWidth > ww) {
+		modalWidth = ww - 10;
+		$("#querywindow").width(modalWidth);
+		$("#querywindow").css({left:0});
+	} else {
+		$("#querywindow").css({
+		left:Math.max(ww - modalWidth, 0) / 2 + $(window).scrollLeft()
+		});
+	}
 	var resultTree = eval("tree" + num);
 	var matches = eval("matches" + num);
 	var match = parseInt(eval("row_" + num + "_match"));
 	var qry_str = decodeSymbols(document.forms["stateinf"].p.value);
-	var queryTree = new QueryTree(clone(resultTree.tree), 'queryTree', 11, 'querywindowtext', 'querywindowtree', clone(matches["ms"][match]["m"]), qry_str); //assigned an id 11 as the first 10 are already displayed
+	queryTree = new QueryTree(clone(resultTree.tree), 'queryTree', 11, 'querywindowtext', 'querywindowtree', clone(matches["ms"][match]["m"]), qry_str); //assigned an id 11 as the first 10 are already displayed
 	if (queryTree.matches.hasTreeNodesMatchingMultipleQueryTerms()) {
 		queryTree.displayLoopError();
 	} else {
@@ -523,9 +530,11 @@ function defaultDisplay(num) {
 	<td><button name="QuerySearch" type="button" class="navbarbtn" onclick='copyToSearchBar()' align='right'>Copy to <br/> search bar</button></td>
 	</tr></table>
 	<hr/>
+	<div style="overflow-x: auto; overflow-y: auto; text-align: center; margin: auto; width: 100%;">
 	<table id="querytreetable"><tr width="99%">
 	<td><div id="querywindowtree"> </div></td>
 	</tr></table>
+	</div>
 </div>
 </body>
 </html>
