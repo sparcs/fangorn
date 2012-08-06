@@ -233,6 +233,9 @@ function closeQueryWindow(num) {
 	
 	var divNode = document.getElementById('querywindowtree');
 	removeAllChildren(divNode);
+	
+	divNode = document.getElementById('querywindowtext');
+	removeAllChildren(divNode);
 }
 
 function removeAllChildren(myNode) {
@@ -513,9 +516,16 @@ function defaultDisplay(num) {
 </table>
 <div id="overlay" class="overlayhide"></div>
 <div id="querywindow" class="querywindowhide">
-	<div id="querywindowtext"></div>
-	<div id="querywindowtree"></div>
-	<a href="#" onclick="closeQueryWindow()"> close </a>
+	<img src="close.png" class="close" onclick="closeQueryWindow()"></img>
+	<table id="querytexttable"><tr>
+	<td><div id="querywindowtext"> </div></td>
+	<td><button name="QuerySearch" type="button" class="navbarbtn" onclick='searchQuery()' align='right'>Search</button></td>
+	<td><button name="QuerySearch" type="button" class="navbarbtn" onclick='copyToSearchBar()' align='right'>Copy to <br/> search bar</button></td>
+	</tr></table>
+	<hr/>
+	<table id="querytreetable"><tr width="99%">
+	<td><div id="querywindowtree"> </div></td>
+	</tr></table>
 </div>
 </body>
 </html>
