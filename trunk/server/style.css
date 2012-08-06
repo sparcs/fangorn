@@ -139,13 +139,34 @@ hr{
 }
 
 #querywindowtext {
-	width: 100%;
+	width: 70%;
+	height: 70px;
+	display:table-cell; 
+	vertical-align:middle;
 }
 
 #querywindowtree {
 	overflow-x: auto; 
 	overflow-y: auto;
 }
+
+#querytexttable {
+	margin-left:auto;
+	margin-right:auto;	
+}
+
+#querytreetable {
+	overflow-x: auto; 
+	overflow-y: auto;
+	margin-left:auto;
+	margin-right:auto;
+}
+
+.close {
+	float:right;
+	width: 12px;
+}
+
 .overlayshow {
 	position:fixed; 
 	top:0;
