@@ -95,6 +95,10 @@ QueryTree.prototype.indexTreeByPosition = function(node) {
 	}
 }
 
+QueryTree.prototype.getQuery = function() {
+	return this.root.toString();
+}
+
 QueryTree.prototype.noneSelected = function() {
 	this.mouseoverNode = function() {
 	},
@@ -322,6 +326,7 @@ QueryTree.prototype.getIdSVGLine = function(x1, y1, x2, y2, style, matchPos, lin
 	line.setAttribute("id", "t_" + matchPos + "_" + lineNum);
 	return line;
 }
+
 QueryTree.prototype.getClickableSVGLine = function(x1, y1, x2, y2, style, matchPos, lineNum, nextOpr) {
 	var line = this.getIdSVGLine(x1, y1, x2, y2, style, matchPos, lineNum);
 	line.setAttribute("onmouseover", this.varname + ".mouseoverLine('" + matchPos + "', " + nextOpr + ");");
@@ -469,8 +474,12 @@ QueryTree.prototype.clickLine = function(matchNum, nextOpr) {
 	var l2 = document.getElementById("t_" + matchNum + "_2");
 	if (nextOpr != null) {
 		this.matches.updatePair(matchNum, nextOpr);
-		var queryTextNode = document.getElementById("q_" + matchNum).firstChild;
-		queryTextNode.innerHTML = QueryTree.prototype.AXIS_OPRS[nextOpr]["sym"];
+		var queryNodeSpan = document.getElementById("q_" + matchNum);
+		var oprDom = document.createElement('span');
+		oprDom.appendChild(document.createTextNode(QueryTree.prototype.AXIS_OPRS[nextOpr]["sym"]));
+		oprDom.setAttribute("id", "q_" + matchNum);
+		queryNodeSpan.parentNode.insertBefore(oprDom, queryNodeSpan);
+		queryNodeSpan.parentNode.removeChild(queryNodeSpan);
 		var parent = l0.parentNode;
 		parent.removeChild(l0);
 		parent.removeChild(l1);
@@ -543,12 +552,12 @@ var ExprNode = function(isRoot, isNot) {
 	this.children = [];
 
 	this.getPreString = function() {
-		if (this.isRoot) { return ""; }
+		if (!this.hasBraces) { return ""; }
 		return "[" + ( this.isNot ? "NOT" : "");
 	};
 
 	this.getPostString = function() {
-		if (this.isRoot) { return ""; }
+		if (!this.hasBraces) { return ""; }
 		return "]";
 	};
 } 
