@@ -76,9 +76,11 @@ function QueryTree(data, varname, sentnum, queryDomId, treeDomId, matchedPairs, 
 	QueryTree.prototype.AXIS_OPRS.push({'name':'immediate-preceding', 'sym':'<-'});
 
 	this.setParentOnTreeNode(this.tree, null);
+	//here position indicates right_left_depth_parent
+	//this.queryNodeByPosition = {};
 	this.root = this.buildQueryTree(queryString);
 	this.treeNodeByPosition = {};
-	this.indexByPosition(this.tree);
+	this.indexTreeByPosition(this.tree);
 	this.selectedState = this.noneSelected;
 }
 
@@ -86,10 +88,10 @@ String.prototype.trim = function() {
 	return this.toString().replace(/^ +/, '').replace(/ +$/, '');
 }
 
-QueryTree.prototype.indexByPosition = function(node) {
+QueryTree.prototype.indexTreeByPosition = function(node) {
 	this.treeNodeByPosition[node["i"]] = node;
 	for ( var i = 0; i < node["c"].length; i++) {
-		this.indexByPosition(node["c"][i]);
+		this.indexTreeByPosition(node["c"][i]);
 	}
 }
 
@@ -215,44 +217,94 @@ QueryTree.prototype.toSVG = function(objid) {
 
 QueryTree.prototype.drawHighlightPaths = function(svgElement) {
 	for ( var i = 0; i < this.matches.pairs.length; i++) {
-		var p = this.matches.pairs[i];
-		if (p["s"] == "") { continue; }
-		/**
-		 * The numerical comparisons are based on TreeAxis's constants
-		 */
-		var opr = p["o"];
-		var singleLine = (opr > 3 && opr < 8) ? false : true;
-		var dashedLine = (opr == 0 || opr == 1 || opr == 4 || opr == 5 || opr == 8 || opr == 9) ? true : false;
-		var colour = (opr < 4) ? QueryTree.prototype.BLUE_LINE_COLOUR : QueryTree.prototype.RED_LINE_COLOUR;
-		var lineStyle = "stroke:" + colour + ";stroke-width:2;" + ((dashedLine) ? "stroke-dasharray:9,5;" : "");
-		var transStyle = "stroke-width:9;stroke-opacity:0.001;stroke:white;";//used to create a near transparent line to help click on the line
-		//All the preceding axis codes are odd numbers 
-		var b = this.treeNodeByPosition[(opr % 2 == 1) ? p["e"] : p["s"]];
-		var a = this.treeNodeByPosition[(opr % 2 == 1) ? p["s"] : p["e"]];
-		var width = (b["s"]) ? QueryTree.prototype.WIDTH_OF_NARROW_CHAR : QueryTree.prototype.WIDTH_OF_CHAR;
-		if (opr < 4) { // vertical lines
-			var x1 = b["x"] + (b["n"].length * width) / 2;
-			var y1 = b["y"] + 2 * QueryTree.prototype.YPADDING
-			width = (a["s"]) ? QueryTree.prototype.WIDTH_OF_NARROW_CHAR : QueryTree.prototype.WIDTH_OF_CHAR;
-			var x2 = a["x"] + (a["n"].length * width) / 2;
-			var y2 = a["y"] - QueryTree.prototype.TEXT_HEIGHT - QueryTree.prototype.YPADDING;
-			svgElement.appendChild(this.getClickableSVGLine(x1, y1, x2, y2, transStyle, i, 0));
-			svgElement.appendChild(this.getClickableSVGLine(x1, y1, x2, y2, lineStyle, i, 1));
-		} else { // horizontal lines
-			var x1 = b["x"] + (b["n"].length * width) + 5;
-			var y1 = b["y"] - QueryTree.prototype.TEXT_HEIGHT / 2 + 1;
-			var x2 = a["x"] - 5;
-			var y2 = a["y"] - QueryTree.prototype.TEXT_HEIGHT / 2 + 1;
-			if (singleLine) {
-				svgElement.appendChild(this.getClickableSVGLine(x1, y1, x2, y2, transStyle, i, 0));
-				svgElement.appendChild(this.getClickableSVGLine(x1, y1, x2, y2, lineStyle, i, 1));
-			} else {
-				svgElement.appendChild(this.getClickableSVGLine(x1, y1, x2, y2, transStyle, i, 0));
-				svgElement.appendChild(this.getClickableSVGLine(x1, y1 - 2, x2, y2 - 2, lineStyle, i, 1));
-				svgElement.appendChild(this.getClickableSVGLine(x1, y1 + 2, x2, y2 + 2, lineStyle, i, 2));
-			}
+		this.drawHighlightPath(svgElement, i);
+	}
+}
+
+QueryTree.prototype.drawHighlightPath = function(svgElement, i) {
+	var p = this.matches.pairs[i];
+	if (p["s"] == "") { return; }
+	/**
+	 * The numerical comparisons are based on TreeAxis's constants
+	 */
+	var opr = p["o"];
+	var singleLine = (opr > 3 && opr < 8) ? false : true;
+	var dashedLine = (opr == 0 || opr == 1 || opr == 4 || opr == 5 || opr == 8 || opr == 9) ? true : false;
+	var colour = (opr < 4) ? QueryTree.prototype.BLUE_LINE_COLOUR : QueryTree.prototype.RED_LINE_COLOUR;
+	var lineStyle = "stroke:" + colour + ";stroke-width:2;" + ((dashedLine) ? "stroke-dasharray:9,5;" : "");
+	var transStyle = "stroke-width:9;stroke-opacity:0.001;stroke:white;";//used to create a near transparent line to help click on the line
+	//All the preceding axis codes are odd numbers 
+	var b = this.treeNodeByPosition[(opr % 2 == 1) ? p["e"] : p["s"]];
+	var a = this.treeNodeByPosition[(opr % 2 == 1) ? p["s"] : p["e"]];
+	var width = (b["s"]) ? QueryTree.prototype.WIDTH_OF_NARROW_CHAR : QueryTree.prototype.WIDTH_OF_CHAR;
+	var nextOpr = this.getNextOpr(p["s"], p["e"], opr); //other possible operators
+	if (opr < 4) { // vertical lines
+		var x1 = b["x"] + (b["n"].length * width) / 2;
+		var y1 = b["y"] + 2 * QueryTree.prototype.YPADDING
+		width = (a["s"]) ? QueryTree.prototype.WIDTH_OF_NARROW_CHAR : QueryTree.prototype.WIDTH_OF_CHAR;
+		var x2 = a["x"] + (a["n"].length * width) / 2;
+		var y2 = a["y"] - QueryTree.prototype.TEXT_HEIGHT - QueryTree.prototype.YPADDING;
+		svgElement.appendChild(this.getClickableSVGLine(x1, y1, x2, y2, transStyle, i, 0, nextOpr));
+		svgElement.appendChild(this.getClickableSVGLine(x1, y1, x2, y2, lineStyle, i, 1, nextOpr));
+	} else { // horizontal lines
+		var x1 = b["x"] + (b["n"].length * width) + 5;
+		var y1 = b["y"] - QueryTree.prototype.TEXT_HEIGHT / 2 + 1;
+		var x2 = a["x"] - 5;
+		var y2 = a["y"] - QueryTree.prototype.TEXT_HEIGHT / 2 + 1;
+		if (singleLine) {
+			svgElement.appendChild(this.getClickableSVGLine(x1, y1, x2, y2, transStyle, i, 0, nextOpr));
+			svgElement.appendChild(this.getClickableSVGLine(x1, y1, x2, y2, lineStyle, i, 1, nextOpr));
+		} else {
+			svgElement.appendChild(this.getClickableSVGLine(x1, y1, x2, y2, transStyle, i, 0, nextOpr));
+			svgElement.appendChild(this.getClickableSVGLine(x1, y1 - 2, x2, y2 - 2, lineStyle, i, 1, nextOpr));
+			svgElement.appendChild(this.getClickableSVGLine(x1, y1 + 2, x2, y2 + 2, lineStyle, i, 2, nextOpr));
 		}
 	}
+	
+}
+
+QueryTree.prototype.getNextOpr = function(start, end, opr) {
+	var sPos = start.split('_');
+	var ePos = end.split('_');
+	if (opr < 4) {
+		if (opr == 2) {// child
+			return 0;
+		} else if (opr == 3) { // parent
+			return 1;
+		} else if (opr == 0) { // descendant
+			if (parseInt(sPos[2]) + 1 == parseInt(ePos[2])) { return 2; }
+			return null;
+		}  // ancestor opr == 1
+		if (parseInt(sPos[2]) == parseInt(ePos[2]) + 1) { return 3; }
+		return null;
+	} else if (opr % 2 == 0) { // following
+		if (opr == 6) { // immediate following sibling
+			return 4;
+		} else if (opr == 4) { // following sibling
+			if (ePos[1] == sPos[0]) { return 10; }
+			return 8;
+		} else if (opr == 10) { // immediate following
+			return 8;
+		} // following opr == 8
+		if (sPos[3] == ePos[3]) { // siblings
+			if (ePos[1] == sPos[0]) { return 6; }
+			return 4;
+		} else if (ePos[1] == sPos[0]) { return 10; }
+		return null;
+	} // preceding
+	if (opr == 7) { // immediate preceding sibling
+		return 5;
+	} else if (opr == 5) { // preceding sibling
+		if (ePos[0] == sPos[1]) { return 11; }
+		return 9;
+	} else if (opr == 11) { // immediate preceding
+		return 9;
+	} // preceding opr == 9
+	if (sPos[3] == ePos[3]) { // siblings
+		if (ePos[0] == sPos[1]) { return 7; }
+		return 5;
+	} else if (ePos[0] == sPos[1]) { return 11; }
+	return null;
 }
 
 QueryTree.prototype.getSVGLine = function(x1, y1, x2, y2, style) {
@@ -265,12 +317,16 @@ QueryTree.prototype.getSVGLine = function(x1, y1, x2, y2, style) {
 	return lineElem;
 }
 
-QueryTree.prototype.getClickableSVGLine = function(x1, y1, x2, y2, style, matchPos, lineNum) {
+QueryTree.prototype.getIdSVGLine = function(x1, y1, x2, y2, style, matchPos, lineNum) {
 	var line = this.getSVGLine(x1, y1, x2, y2, style);
 	line.setAttribute("id", "t_" + matchPos + "_" + lineNum);
-	line.setAttribute("onmouseover", this.varname + ".mouseoverLine('" + matchPos + "');");
-	line.setAttribute("onmouseout", this.varname + ".mouseoutLine('" + matchPos + "');");
-	line.setAttribute("onclick", this.varname + ".clickLine('" + matchPos + "');");
+	return line;
+}
+QueryTree.prototype.getClickableSVGLine = function(x1, y1, x2, y2, style, matchPos, lineNum, nextOpr) {
+	var line = this.getIdSVGLine(x1, y1, x2, y2, style, matchPos, lineNum);
+	line.setAttribute("onmouseover", this.varname + ".mouseoverLine('" + matchPos + "', " + nextOpr + ");");
+	line.setAttribute("onmouseout", this.varname + ".mouseoutLine('" + matchPos + "', " + nextOpr + ");");
+	line.setAttribute("onclick", this.varname + ".clickLine('" + matchPos + "', " + nextOpr + ");");
 	return line;
 }
 
@@ -377,31 +433,50 @@ QueryTree.prototype.expandNode = function(pos) {
 	}
 }
 
-QueryTree.prototype.mouseoverLine = function(matchNum) {
+QueryTree.prototype.mouseoverLine = function(matchNum, nextOpr) {
 	var l0 = document.getElementById("t_" + matchNum + "_0");
 	var l1 = document.getElementById("t_" + matchNum + "_1");
 	var l2 = document.getElementById("t_" + matchNum + "_2");
-	if (l0) { l0.setAttribute('cursor', 'pointer');}
-	if (l1) { l1.style.strokeWidth = 3; l1.setAttribute('cursor', 'pointer');}
-	if (l2) { l2.style.strokeWidth = 3; l2.setAttribute('cursor', 'pointer');}
+	if (nextOpr != null) {
+		l0.setAttribute('cursor', 'pointer');
+		l1.setAttribute('cursor', 'pointer');
+		if (l2) { l2.setAttribute('cursor', 'pointer');}
+	}
+	l1.style.strokeWidth = 3;
+	if (l2) { l2.style.strokeWidth = 3; }	
 	var qn = document.getElementById("q_" + matchNum);
 	if (qn) { qn.setAttribute("class", "highlight"); }
 }
 
-QueryTree.prototype.mouseoutLine = function(matchNum) {
+QueryTree.prototype.mouseoutLine = function(matchNum, nextOpr) {
 	var l0 = document.getElementById("t_" + matchNum + "_0");
 	var l1 = document.getElementById("t_" + matchNum + "_1");
 	var l2 = document.getElementById("t_" + matchNum + "_2");
-	if (l0) { l0.removeAttribute('cursor'); }
-	if (l1) { l1.style.strokeWidth = 2; l1.removeAttribute('cursor'); }
-	if (l2) { l2.style.strokeWidth = 2; l2.removeAttribute('cursor'); }
+	if (nextOpr != null) {
+		l0.removeAttribute('cursor');
+		l1.removeAttribute('cursor');
+		if (l2) { l2.removeAttribute('cursor'); }
+	}
+	l1.style.strokeWidth = 2;
+	if (l2) { l2.style.strokeWidth = 2; }
 	var qn = document.getElementById("q_" + matchNum);
 	if (qn) { qn.removeAttribute("class"); }
 }
 
-QueryTree.prototype.clickLine = function(matchNum) {
-	var p = this.matches.pairs[matchNum];
-	if (p["o"] > 4) {}
+QueryTree.prototype.clickLine = function(matchNum, nextOpr) {
+	var l0 = document.getElementById("t_" + matchNum + "_0");
+	var l1 = document.getElementById("t_" + matchNum + "_1");
+	var l2 = document.getElementById("t_" + matchNum + "_2");
+	if (nextOpr != null) {
+		this.matches.updatePair(matchNum, nextOpr);
+		var queryTextNode = document.getElementById("q_" + matchNum).firstChild;
+		queryTextNode.innerHTML = QueryTree.prototype.AXIS_OPRS[nextOpr]["sym"];
+		var parent = l0.parentNode;
+		parent.removeChild(l0);
+		parent.removeChild(l1);
+		if (l2) { parent.removeChild(l2); }
+		this.drawHighlightPath(parent, matchNum);		
+	}
 }
 
 function Node(type) {
@@ -581,6 +656,7 @@ QueryTree.prototype.buildQueryTree = function(queryString) {
 				var text = queryString.substring(token['start'], token['end']).trim();
 				var mp = this.matches.pairs[termId];
 				var node = new LabelNode(opr, text, termId, mp["e"]);
+				this.matches.updateQueryNodeByPairNum(termId, node);
 				termId++; //we have successfully processed one term in the query so increment it to point to the next one
 				prev.addChild(node);
 				prev = node;
@@ -654,6 +730,7 @@ QueryTree.prototype.Matches = function(pairs) {
 		this.pairs.sort(function(a, b) { return a["t"] - b["t"]; }); 
 		var len = this.pairs.length;
 		this.byEnd = {};
+		this.queryNodeByPairNum = {};
 		this.treeNodesMatchingMultipleQueryTerms = {};
 		this.treeNodesToQueryTerms = {};
 		for (var i = 0 ; i < len; i++) {
@@ -667,6 +744,13 @@ QueryTree.prototype.Matches = function(pairs) {
 				this.treeNodesToQueryTerms[end] = [this.pairs[i]["t"]];
 			}
 		}
+	},
+	this.updateQueryNodeByPairNum = function(pairNum, queryNode) {
+		this.queryNodeByPairNum[pairNum] = queryNode;
+	},
+	this.updatePair = function(pairNum, newOpr) {
+		this.pairs[pairNum]["o"] = newOpr;
+		this.queryNodeByPairNum[pairNum].opr = QueryTree.prototype.AXIS_OPRS[newOpr]["sym"];
 	},
 	this.hasTreeNodesMatchingMultipleQueryTerms = function() {
 		for (key in this.treeNodesMatchingMultipleQueryTerms) {
