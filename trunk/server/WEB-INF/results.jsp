@@ -234,7 +234,7 @@ function setModalPosition(modalWin, height, width) {
 }
 
 
-function closeQueryWindow(num) {
+function closeQueryWindow() {
 	document.getElementById('overlay').className = 'overlayhide'
 	document.getElementById('querywindow').className = 'querywindowhide';
 	
@@ -243,6 +243,21 @@ function closeQueryWindow(num) {
 	
 	divNode = document.getElementById('querywindowtext');
 	removeAllChildren(divNode);
+}
+
+function searchQuery() {
+	var q = queryTree.getQuery();
+	document.searchBarTop.query.value = q;
+	document.searchBarBtm.query.value = q;
+	closeQueryWindow();
+	document.forms["searchBarTop"].submit();
+}
+
+function copyToSearchBar() {
+	var q = queryTree.getQuery();
+	document.searchBarTop.query.value = q;
+	document.searchBarBtm.query.value = q;
+	closeQueryWindow();
 }
 
 function removeAllChildren(myNode) {
@@ -280,7 +295,7 @@ function defaultDisplay(num) {
 <hr />
 <br />
 <center>
-<form method="post" action="search">
+<form name="searchBarTop" method="post" action="search">
 <table cellpadding="5">
 	<tr>
 		<td>Corpus: <select id="corpus_select_1" name="corpus">
@@ -464,7 +479,7 @@ function defaultDisplay(num) {
 	<tr>
 		<td><br />
 		<center>
-		<form method="post" action="search">
+		<form name="searchBarBtm" method="post" action="search">
 		<table cellpadding="5">
 			<tr>
 				<td>Corpus: <select id="corpus_select_2" name="corpus">
