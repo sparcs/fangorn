@@ -31,6 +31,12 @@ import org.apache.lucene.store.RAMDirectory;
 import junit.framework.TestCase;
 
 public class NodeCacheTest extends TestCase {
+	@Override
+	protected void setUp() throws Exception {
+		super.setUp();
+		NodeCache.clear();
+	}
+	
 	public void testReusesNodesWhileIndexing() throws Exception {
 		String[] sents = new String[]{"(A(B C)(D(E F)))", "(A(B(C D)))", "(A(B C)(D(E(F(G H)))))", "(A(B C))"};
 		String[] jsonSents = new String[sents.length];

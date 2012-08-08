@@ -32,6 +32,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.lucene.search.IndexSearcher;
 
+import au.edu.unimelb.csse.ParseException;
 import au.edu.unimelb.csse.search.SimpleHitCollector;
 import au.edu.unimelb.csse.search.TreebankQuery;
 import au.edu.unimelb.csse.search.complete.AllResults;
@@ -55,7 +56,11 @@ public class PagingServlet extends QueryServletFull {
 				|| docNumsParam == null || prevCorpus == null || totalHits == null)
 				|| (hashValue(prevQuery, prevCorpus, docNumsParam, totalHits) != Integer
 						.parseInt(hash))) {
-			doGet(req, res);
+			req.setAttribute("error", "Oops! An error has occurred.");
+			logger.warning("Error searching: " + prevQuery + ". Incorrect hidden parameters in page.");
+			RequestDispatcher view = req
+					.getRequestDispatcher("/WEB-INF/error.jsp");
+			view.forward(req, res);
 			return;
 		}
 		int requestedPage = Integer.valueOf(pageNumParam);
@@ -67,7 +72,11 @@ public class PagingServlet extends QueryServletFull {
 		}
 
 		if (requestedPage - 1 > docNums.length) {
-			doGet(req, res);
+			req.setAttribute("error", "Oops! An error has occurred.");
+			logger.warning("Error searching: " + prevQuery + ". Requested page exceeds number of result pages.");
+			RequestDispatcher view = req
+					.getRequestDispatcher("/WEB-INF/error.jsp");
+			view.forward(req, res);
 			return;
 		}
 
@@ -76,17 +85,20 @@ public class PagingServlet extends QueryServletFull {
 		res.setCharacterEncoding("UTF-8");
 
 		IndexSearcher searcher = getSearcher(corpus, req, res);
-		if (searcher == null)
+		if (searcher == null) {
+			req.setAttribute("error", "Oops! An error has occurred. Search engine not initialized.");
+			logger.warning("Error searching: " + prevQuery + ". Search engine not initialized.");
+			RequestDispatcher view = req
+					.getRequestDispatcher("/WEB-INF/error.jsp");
+			view.forward(req, res);
 			return;
+		}
 
-		String queryView = prevQuery;
+		String queryView = getReturnQuery(prevQuery);
 		req.setAttribute("query-view", queryView);
 
-		TreebankQuery tq = getTreebankQuery(req, res, corpus, prevQuery, pageNumParam);
-		if (tq == null)
-			return;
-
 		try {
+			TreebankQuery tq = getTreebankQuery(req, res, corpus, prevQuery, pageNumParam);
 			long start = System.nanoTime();
 			SimpleHitCollector hitCollector = null;
 			if (requestedPage == 1) {
@@ -130,8 +142,7 @@ public class PagingServlet extends QueryServletFull {
 			req.setAttribute("totalhits", Integer.valueOf(totalHits));
 			req.setAttribute("pagenum", requestedPage);
 			req.setAttribute("docnums", docNumsParam);
-			req.setAttribute("hash", hashValue(queryView, prevCorpus, docNumsParam,
-					totalHits));
+			req.setAttribute("hash", hashValue(prevQuery, prevCorpus, docNumsParam, totalHits)); //should hash prevQuery and not queryview
 			String[] results = new String[numberOfResults];
 			for (int i = 0; i < numberOfResults; i++) {
 				results[i] = searcher.doc(hitCollector.hits[i]).get("sent")
@@ -141,6 +152,11 @@ public class PagingServlet extends QueryServletFull {
 			req.setAttribute("metadata", resultMeta);
 			RequestDispatcher view = req
 					.getRequestDispatcher("/WEB-INF/results.jsp");
+			view.forward(req, res);
+		} catch (ParseException e) {
+			req.setAttribute("error", "Sorry! Cannot parse your query");
+			logger.info("Q=\"" + prevQuery + "\";C=\"" + corpus + "\";S=\"no\"");
+			RequestDispatcher view = req.getRequestDispatcher("/WEB-INF/error.jsp");
 			view.forward(req, res);
 		} catch (Exception e) {
 			req.setAttribute("error", "Oops! An error has occurred. "

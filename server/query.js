@@ -527,7 +527,7 @@ var LabelNode = function(opr, label, queryTreePos, treePos) {
 	this.label = label;
 	this.children = [];
 	this.queryTreePos = queryTreePos;
-	this.treePos = treePos;
+	this.treePos = treePos; //this can be null because sometimes parts of the query will not be in the matches list eg. NOT expressions and ORed expressions
 
 	this.getPreString = function() {
 		return this.opr + this.label;
@@ -559,6 +559,10 @@ var ExprNode = function(isRoot, isNot) {
 	this.getPostString = function() {
 		if (!this.hasBraces) { return ""; }
 		return "]";
+	};
+
+	this.isUnmatched = function() {
+		return isNot || (this.children.length > 0 ? this.children[0].isUnmatched() : true);
 	};
 } 
 ExprNode.prototype = new Node("expr");
@@ -663,8 +667,9 @@ QueryTree.prototype.buildQueryTree = function(queryString) {
 			if (token['type'] == 'text') { 
 				var opr = queryString.substring(prevToken['start'], prevToken['end']);
 				var text = queryString.substring(token['start'], token['end']).trim();
-				var mp = this.matches.pairs[termId];
-				var node = new LabelNode(opr, text, termId, mp["e"]);
+				var matchPosition = null;
+				if (termId < matches.pairs.length) { matchPosition = this.matches.pairs[termId]["e"]; }
+				var node = new LabelNode(opr, text, termId, matchPosition);
 				this.matches.updateQueryNodeByPairNum(termId, node);
 				termId++; //we have successfully processed one term in the query so increment it to point to the next one
 				prev.addChild(node);
@@ -730,7 +735,12 @@ QueryTree.prototype.buildQueryTree = function(queryString) {
 		}
 		prevToken = token;
 	}
+	this.removeUnmatchedQueryNodes(root);
 	return root;
+}
+
+QueryTree.prototype.removeUnmatchedQueryNodes = function(node) {
+	if (node
 }
 
 QueryTree.prototype.Matches = function(pairs) {

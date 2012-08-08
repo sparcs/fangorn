@@ -47,4 +47,8 @@ public class NodeCache {
 	public static int cacheSize() {
 		return cache.size();
 	}
+	
+	public static void clear() {
+		cache.clear();
+	}
 }

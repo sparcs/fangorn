@@ -71,11 +71,8 @@ public class QueryServletFull extends HttpServlet {
 		String queryView = getReturnQuery(query);
 		req.setAttribute("query-view", queryView);
 
-		TreebankQuery tq = getTreebankQuery(req, res, corpus, query, null);
-		if (tq == null)
-			return;
-
 		try {
+			TreebankQuery tq = getTreebankQuery(req, res, corpus, query, null);
 			SimpleHitCollector hitCollector = new SimpleHitCollector(100);
 			long start = System.nanoTime();
 			searcher.search(tq, hitCollector);
@@ -109,18 +106,21 @@ public class QueryServletFull extends HttpServlet {
 			req.setAttribute("pagenum", 1);
 			final String docNums = sb.toString();
 			req.setAttribute("docnums", docNums);
-			req.setAttribute("hash", hashValue(queryView, corpusParam, docNums,
-					String.valueOf(hitCollector.totalHits)));
-			RequestDispatcher view = req
-					.getRequestDispatcher("/WEB-INF/results.jsp");
+			req.setAttribute("hash", hashValue(query, corpusParam, docNums,
+					String.valueOf(hitCollector.totalHits))); //should hash value of `query' and not `queryview' 
+			RequestDispatcher view = req.getRequestDispatcher("/WEB-INF/results.jsp");
+			view.forward(req, res);
+		} catch (ParseException e) {
+			req.setAttribute("error", "Sorry! Cannot parse your query");
+			logger.info("Q=\"" + query + "\";C=\"" + corpus + "\";S=\"no\"");
+			RequestDispatcher view = req.getRequestDispatcher("/WEB-INF/error.jsp");
 			view.forward(req, res);
 		} catch (Exception e) {
 			req.setAttribute("error", "Oops! An error has occurred. "
 					+ e.getMessage() + ". The administrator will be informed.");
 			logger.severe("Error searching: " + query);
 			logger.severe(e.getMessage());
-			RequestDispatcher view = req
-					.getRequestDispatcher("/WEB-INF/error.jsp");
+			RequestDispatcher view = req.getRequestDispatcher("/WEB-INF/error.jsp");
 			view.forward(req, res);
 		}
 	}
@@ -165,26 +165,17 @@ public class QueryServletFull extends HttpServlet {
 
 	protected TreebankQuery getTreebankQuery(HttpServletRequest req,
 			HttpServletResponse res, String corpus, String query, String page)
-			throws ServletException, IOException {
+			throws ServletException, IOException, ParseException {
 		TreebankQuery tq = null;
-		try {
-			QueryBuilder builder = new QueryBuilder(query);
-			tq = builder.parse(TermJoinType.SIMPLE_WITH_FC, false);
-			logger.fine(req.getRemoteAddr());
-			if (page == null) {
-				logger.info("Q=\"" + tq.toString() + "\";C=\"" + corpus
-						+ "\";S=\"yes\"");
-			} else {
-				logger.info("Q=\"" + tq.toString() + "\";C=\"" + corpus
-						+ "\";PAGE=\"" + page + "\"");
-			}
-		} catch (ParseException e) {
-			req.setAttribute("error", "Sorry! Cannot parse your query");
-			logger.info("Q=\"" + query + "\";C=\"" + corpus + "\";S=\"no\"");
-			RequestDispatcher view = req
-					.getRequestDispatcher("/WEB-INF/error.jsp");
-			view.forward(req, res);
-			return null;
+		QueryBuilder builder = new QueryBuilder(query);
+		tq = builder.parse(TermJoinType.SIMPLE_WITH_FC, false);
+		logger.fine(req.getRemoteAddr());
+		if (page == null) {
+			logger.info("Q=\"" + tq.toString() + "\";C=\"" + corpus
+					+ "\";S=\"yes\"");
+		} else {
+			logger.info("Q=\"" + tq.toString() + "\";C=\"" + corpus
+					+ "\";PAGE=\"" + page + "\"");
 		}
 /*
 		if (tq == null) {
