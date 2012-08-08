@@ -68,7 +68,7 @@ public class QueryParser {
 
 	public QueryParser(String[] tokens) {
 		this.ts = tokens;
-		this.termId = 0;
+		this.termId = 0; //this is the number assigned to consecutive nodes in the query string; incremented after each term
 	}
 
 	public TreeExpr parse() throws ParseException {
