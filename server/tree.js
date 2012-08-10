@@ -153,7 +153,8 @@ Tree.prototype.setCollapseAllExpandParam = function() {
 
 Tree.prototype.selectMatch = function(index) {
 	// this.matches["ms"] -> matches list; ["ms"][index] -> match set; 
-	// ["ms"][index]["m"] -> list of match sets of type ["s":"start_id", "e":"end_id", "o":"operator_id"]
+	// ["ms"][index]["m"] -> list of match sets of type ["s":"start_id", "e":"end_id", "o":"operator_id", "t":"query_node_seq_no"]
+	// where query_node_seq_no -> id assigned to each query node; ranges from 0 to query.numOfNodes - 1
 	var m = this.matches["ms"][index]["m"];
 	for ( var p = 0; p < m.length; p++) {
 		// the e here has a different meaning
