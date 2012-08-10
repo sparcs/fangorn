@@ -75,14 +75,18 @@ function QueryTree(data, varname, sentnum, queryDomId, treeDomId, matchedPairs, 
 	QueryTree.prototype.AXIS_OPRS.push({'name':'immediate-following', 'sym':'->'});
 	QueryTree.prototype.AXIS_OPRS.push({'name':'immediate-preceding', 'sym':'<-'});
 
+	this.HIGHLIGHTED_SELECTED_STATE = new QueryTree.prototype.HighlightedSelected();
+	this.NONE_SELECTED_STATE = new QueryTree.prototype.NoneSelected();
 	this.setParentOnTreeNode(this.tree, null);
 	this.queryNodeByTermId = {};
 	//here position indicates right_left_depth_parent
-	//this.queryNodeByPosition = {};
+	this.queryNodeByPosition = {};
 	this.root = this.buildQueryTree(queryString);
 	this.treeNodeByPosition = {};
 	this.indexTreeByPosition(this.tree);
-	this.selectedState = this.noneSelected;
+	this.currentState = this.NONE_SELECTED_STATE;
+	this.highlightedDomElement = null;
+	this.highlightedTreeNode = null;
 }
 
 String.prototype.trim = function() {
@@ -100,19 +104,50 @@ QueryTree.prototype.getQuery = function() {
 	return this.root.toString();
 }
 
-QueryTree.prototype.noneSelected = function() {
-	this.mouseoverNode = function() {
+QueryTree.prototype.NoneSelected = function() {
+	this.mouseoverNode = function(n, te) {
+		n.setAttribute('font-weight', 'bold');
+		if (te["h"]) { n.setAttribute('cursor', 'pointer'); }
 	},
-	this.mouseoutNode = function() {
+	this.mouseoutNode = function(n ,te) {
+		n.removeAttribute('font-weight');
+		if (te["h"]) { n.removeAttribute('cursor'); }
+	},
+	this.clickNode = function(n, te, qt) {
+		if (te["h"]) { 
+			qt.highlightElement(n, te);
+			qt.currentState = qt.HIGHLIGHTED_SELECTED_STATE;
+		}
 	};
 }
 
-QueryTree.prototype.highlightedSelected = function() {
-	this.mouseoverNode = function() {
-
+QueryTree.prototype.HighlightedSelected = function() {
+	this.mouseoverNode = function(n, te) {
+		n.setAttribute('font-weight', 'bold');
+		n.setAttribute('cursor', 'pointer');
 	},
-	this.mouseoutNode = function() {
-
+	this.mouseoutNode = function(n, te) {
+		n.removeAttribute('font-weight');
+		n.removeAttribute('cursor');
+	},
+	this.clickNode = function(n, te, qt) {
+		if (te["h"]) {
+			qt.removePrevHighlight();
+			qt.highlightElement(n, te);
+		} else { //
+			var startNode = qt.highlightedTreeNode;
+			var svgElement = qt.highlightedDomElement.parentNode;
+			qt.removePrevHighlight();
+			te["h"] = true;
+			qt.highlightElement(n, te);//draw box around new node
+			n.setAttribute("style", "stroke:" + QueryTree.prototype.HIGHLIGHT_TEXT_COLOUR + ";fill:" + QueryTree.prototype.HIGHLIGHT_TEXT_COLOUR + ";"); //change colour of new node text to green
+			var newTermId = qt.matches.pairs.length;
+			var opr = qt.getOpr(startNode["i"], te["i"]);
+			qt.matches.pairs.push({"s": startNode["i"], "e": te["i"], "o": opr, "t": newTermId});
+			qt.updateQueryTree(startNode, opr, te["n"], newTermId, te["i"]);
+			qt.drawHighlightPath(svgElement, newTermId); //draw the line from old node to new node
+			qt.drawQuery(); // redraw the entire query because it is complicated to modify in-place
+		}
 	};
 }
 
@@ -269,6 +304,29 @@ QueryTree.prototype.drawHighlightPath = function(svgElement, i) {
 	
 }
 
+QueryTree.prototype.getOpr = function(start, end) {
+	var sPos = start.split('_');
+	sPos = [parseInt(sPos[0]), parseInt(sPos[1]), parseInt(sPos[2]), parseInt(sPos[3])]; 
+	var ePos = end.split('_');
+	ePos = [parseInt(ePos[0]), parseInt(ePos[1]), parseInt(ePos[2]), parseInt(ePos[3])];
+	if (sPos[0] >= ePos[0] && sPos[1] <= ePos[1]) {
+		if (sPos[2] + 1 == ePos[2]) { return 2;}
+		return 0;
+	} else if (sPos[0] <= ePos[0] && sPos[1] >= ePos[1]) {
+		if (sPos[2] == ePos[2] + 1) { return 3;}
+		return 1;
+	} else if (sPos[0] <= ePos[1]) { //following
+		if (sPos[0] == ePos[1]	&& sPos[3] == ePos[3]) { return 6;}
+		else if (sPos[3] == ePos[3]) { return 4;}
+		else if (sPos[0] == ePos[1]) { return 10; }
+		return 8;
+	} //preceding 
+	if (ePos[0] == sPos[1]	&& sPos[3] == ePos[3]) { return 7;}
+	else if (sPos[3] == ePos[3]) { return 5;}
+	else if (ePos[0] == sPos[1]) { return 11; }
+	return 9;
+}
+
 QueryTree.prototype.getNextOpr = function(start, end, opr) {
 	var sPos = start.split('_');
 	var ePos = end.split('_');
@@ -355,12 +413,9 @@ QueryTree.prototype.recToSVG = function(svgElement, objid, t) {
 	var mouseoutFunc = this.varname + ".mouseoutNode('" + t["i"] + "', " + ((t["h"]) ? "false" : "true") + ");";
 	textElem.setAttribute("onmouseover", mouseoverFunc);
 	textElem.setAttribute("onmouseout", mouseoutFunc);			
-	if (!t["disc"]) {
-		textElem.setAttribute("onclick", this.varname + ".clickNode('" + t["i"] + "');");
-	}
+	textElem.setAttribute("onclick", this.varname + ".clickNode('" + t["i"] + "');");
 	if (t["h"]) {
-		textElem.setAttribute("style",
-				"stroke:" + QueryTree.prototype.HIGHLIGHT_TEXT_COLOUR + ";fill:" + QueryTree.prototype.HIGHLIGHT_TEXT_COLOUR + ";");
+		textElem.setAttribute("style", "stroke:" + QueryTree.prototype.HIGHLIGHT_TEXT_COLOUR + ";fill:" + QueryTree.prototype.HIGHLIGHT_TEXT_COLOUR + ";");
 	}
 	svgElement.appendChild(textElem);
 	if (t["e"] && t["c"].length > 0) { //draw black lines to all child nodes
@@ -389,6 +444,18 @@ QueryTree.prototype.recToSVG = function(svgElement, objid, t) {
 	}
 }
 
+QueryTree.prototype.getHighlightSVGBox = function(x, y, width, height) {
+	var box = document.createElementNS('http://www.w3.org/2000/svg', 'svg:rect');
+	box.setAttribute("x", x);
+	box.setAttribute("y", y);
+	box.setAttribute("width", width);
+	box.setAttribute("height", height);
+	box.setAttribute("rx", 2);
+	box.setAttribute("ry", 2);
+	box.setAttribute("style", "stroke:black; stroke-width:3; fill:none;");
+	return box;
+}
+
 QueryTree.prototype.maxXY = function(nod, xyv) {
 	var maxx = xyv.x;
 	if (nod["x-end"] > maxx) { maxx = nod["x-end"]; }
@@ -410,25 +477,43 @@ QueryTree.prototype.maxXY = function(nod, xyv) {
 QueryTree.prototype.mouseoverNode = function(pos, clickable) {
 	var n = document.getElementById(this.getNodeDomId(pos));
 	var te = this.treeNodeByPosition[pos];
-	n.setAttribute('font-weight', 'bold');
-	n.setAttribute('cursor', 'pointer');
 	var qn = document.getElementById("q_" + pos);
 	if (qn) { qn.setAttribute("class", "highlight"); }
+	this.currentState.mouseoverNode(n, te);
 }
 
 QueryTree.prototype.mouseoutNode = function(pos, clickable) {
 	var n = document.getElementById(this.getNodeDomId(pos));
 	var te = this.treeNodeByPosition[pos];
-	n.removeAttribute('font-weight');
-	n.removeAttribute('cursor');
 	var qn = document.getElementById("q_" + pos);
 	if (qn) { qn.removeAttribute("class"); }
+	this.currentState.mouseoutNode(n, te);
 }
 
 QueryTree.prototype.clickNode = function(pos) {
 	var n = document.getElementById(this.getNodeDomId(pos));
 	var te = this.treeNodeByPosition[pos];
+	this.currentState.clickNode(n, te, this);
+}
 
+QueryTree.prototype.highlightElement = function(n, te) {
+	var width = ((te["s"]) ? QueryTree.prototype.WIDTH_OF_NARROW_CHAR : QueryTree.prototype.WIDTH_OF_CHAR) * te["n"].length;
+	var x = n.getAttribute("x");
+	x = x.substring(0, x.length - 2) - 5;
+	var y = n.getAttribute("y");
+	y = y.substring(0, y.length - 2) - 15;
+	var box = this.getHighlightSVGBox(x, y, width + 10, 20);
+	this.highlightedDomElement = box;
+	this.highlightedTreeNode = te;
+	n.parentNode.appendChild(box);
+}
+
+QueryTree.prototype.removePrevHighlight = function() {
+	if (this.highlightedDomElement != null) { 
+		this.highlightedDomElement.parentNode.removeChild(this.highlightedDomElement);
+		this.highlightedDomElement = null;
+		this.highlightedTreeNode = null;
+	}
 }
 
 QueryTree.prototype.expandNode = function(pos) {
@@ -674,7 +759,10 @@ QueryTree.prototype.buildQueryTree = function(queryString) {
 				var matchPosition = null;
 				if (termId in this.matches.byPairNum) { matchPosition = this.matches.byPairNum[termId]; }
 				var node = new LabelNode(opr, text, termId, matchPosition);
-				if (matchPosition != null) { this.queryNodeByTermId[termId] = node; }
+				if (matchPosition != null) { 
+					this.queryNodeByTermId[termId] = node; 
+					this.queryNodeByPosition[matchPosition] = node;
+				}
 				termId++; //we have successfully processed one term in the query so increment it to point to the next one
 				prev.addChild(node);
 				prev = node;
@@ -745,6 +833,27 @@ QueryTree.prototype.buildQueryTree = function(queryString) {
 		prevToken = token;
 	}
 	return root;
+}
+
+QueryTree.prototype.updateQueryTree = function(startTreeNode, oprId, label, queryTreePos, treePos) {
+	var opr = QueryTree.prototype.AXIS_OPRS[oprId]["sym"];
+	var labelNode = new LabelNode(opr, label, queryTreePos, treePos);
+	var startQueryNode = this.queryNodeByPosition[startTreeNode["i"]];
+	if (startQueryNode.children.length == 0 || (startQueryNode.children.length == 1 && startQueryNode.children[0].type == "filter")) {
+		startQueryNode.addChild(labelNode);
+	} else if (startQueryNode.children.length == 2) { // the first child is the filter
+		var filter = startQueryNode.children[0];
+		filter.addChild(new AndOrNode("AND"));
+		filter.addChild(labelNode);
+	} else if (startQueryNode.children.length == 1 && startQueryNode.children[0].type == "label") {
+		var currentChild = startQueryNode.children.pop();
+		var filter = new FilterNode();
+		filter.addChild(labelNode);
+		startQueryNode.addChild(filter);
+		startQueryNode.addChild(currentChild);
+	}
+	this.queryNodeByPosition[treePos] = labelNode;
+	this.queryNodeByTermId[queryTreePos] = labelNode;
 }
 
 QueryTree.prototype.Matches = function(pairs) {
