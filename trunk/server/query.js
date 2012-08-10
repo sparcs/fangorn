@@ -309,7 +309,7 @@ QueryTree.prototype.getOpr = function(start, end) {
 	sPos = [parseInt(sPos[0]), parseInt(sPos[1]), parseInt(sPos[2]), parseInt(sPos[3])]; 
 	var ePos = end.split('_');
 	ePos = [parseInt(ePos[0]), parseInt(ePos[1]), parseInt(ePos[2]), parseInt(ePos[3])];
-	if (sPos[0] >= ePos[0] && sPos[1] <= ePos[1]) {
+	if (sPos[0] >= ePos[0] && sPos[1] <= ePos[1] && sPos[2] < ePos[2]) {
 		if (sPos[2] + 1 == ePos[2]) { return 2;}
 		return 0;
 	} else if (sPos[0] <= ePos[0] && sPos[1] >= ePos[1]) {
@@ -409,8 +409,8 @@ QueryTree.prototype.recToSVG = function(svgElement, objid, t) {
 	var x1 = t["x"] + (t["n"].length * width) / 2;
 	var y1 = t["y"] + QueryTree.prototype.YPADDING;
 	textElem.setAttribute("id", this.getNodeDomId(t["i"]));
-	var mouseoverFunc = this.varname + ".mouseoverNode('" + t["i"] + "', " + ((t["h"]) ? "false" : "true") + ");";
-	var mouseoutFunc = this.varname + ".mouseoutNode('" + t["i"] + "', " + ((t["h"]) ? "false" : "true") + ");";
+	var mouseoverFunc = this.varname + ".mouseoverNode('" + t["i"] + "');";
+	var mouseoutFunc = this.varname + ".mouseoutNode('" + t["i"] + "');";
 	textElem.setAttribute("onmouseover", mouseoverFunc);
 	textElem.setAttribute("onmouseout", mouseoutFunc);			
 	textElem.setAttribute("onclick", this.varname + ".clickNode('" + t["i"] + "');");
@@ -418,7 +418,7 @@ QueryTree.prototype.recToSVG = function(svgElement, objid, t) {
 		textElem.setAttribute("style", "stroke:" + QueryTree.prototype.HIGHLIGHT_TEXT_COLOUR + ";fill:" + QueryTree.prototype.HIGHLIGHT_TEXT_COLOUR + ";");
 	}
 	svgElement.appendChild(textElem);
-	if (t["e"] && t["c"].length > 0) { //draw black lines to all child nodes
+	if (t["e"] && t["c"].length > 0) { //draw blackish lines to all child nodes
 		var lineStyle = "stroke:" + QueryTree.prototype.LINE_COLOUR + ";stroke-width:1";
 		for ( var i = 0; i < t["c"].length; i++) {
 			width = (t["c"][i]["s"]) ?  QueryTree.prototype.WIDTH_OF_NARROW_CHAR : QueryTree.prototype.WIDTH_OF_CHAR;
@@ -436,8 +436,9 @@ QueryTree.prototype.recToSVG = function(svgElement, objid, t) {
 		var pg = document.createElementNS('http://www.w3.org/2000/svg', 'svg:polygon');
 		var points_str = (x1) + "," + (y1 + 2) + " " + (x2) + "," + (y2) + " " + (x3) + "," + (y2);
 		pg.setAttribute("points", points_str);
-		pg.setAttribute("onmouseover", this.varname + ".mouseoverNode('" + t["i"] + "', true);");
-		pg.setAttribute("onmouseout", this.varname + ".mouseoutNode('" + t["i"] + "', true);");
+		pg.setAttribute("id", "coll_" + t["i"]);
+		pg.setAttribute("onmouseover", this.varname + ".mouseoverCollapsed('" + t["i"] + "');");
+		pg.setAttribute("onmouseout", this.varname + ".mouseoutCollapsed('" + t["i"] + "');");
 		pg.setAttribute("onclick", this.varname + ".expandNode('" + t["i"] + "');");
 		pg.setAttribute("style", "stroke:" + QueryTree.prototype.LINE_COLOUR + ";stroke-width:2;fill:white;cursor:pointer;");
 		svgElement.appendChild(pg);
@@ -452,7 +453,7 @@ QueryTree.prototype.getHighlightSVGBox = function(x, y, width, height) {
 	box.setAttribute("height", height);
 	box.setAttribute("rx", 2);
 	box.setAttribute("ry", 2);
-	box.setAttribute("style", "stroke:black; stroke-width:3; fill:none;");
+	box.setAttribute("style", "stroke:black; stroke-width:2; fill:none;");
 	return box;
 }
 
@@ -474,7 +475,7 @@ QueryTree.prototype.maxXY = function(nod, xyv) {
 	return {x:maxx, y:maxy};
 }
 
-QueryTree.prototype.mouseoverNode = function(pos, clickable) {
+QueryTree.prototype.mouseoverNode = function(pos) {
 	var n = document.getElementById(this.getNodeDomId(pos));
 	var te = this.treeNodeByPosition[pos];
 	var qn = document.getElementById("q_" + pos);
@@ -482,7 +483,7 @@ QueryTree.prototype.mouseoverNode = function(pos, clickable) {
 	this.currentState.mouseoverNode(n, te);
 }
 
-QueryTree.prototype.mouseoutNode = function(pos, clickable) {
+QueryTree.prototype.mouseoutNode = function(pos) {
 	var n = document.getElementById(this.getNodeDomId(pos));
 	var te = this.treeNodeByPosition[pos];
 	var qn = document.getElementById("q_" + pos);
@@ -525,6 +526,20 @@ QueryTree.prototype.expandNode = function(pos) {
 	}
 }
 
+QueryTree.prototype.mouseoverCollapsed = function(pos) {
+	var n = document.getElementById("coll_" + pos);
+	n.style.strokeWidth = 3;
+	n.style.stroke = "black";
+	n.setAttribute('cursor', 'pointer');
+}
+
+QueryTree.prototype.mouseoutCollapsed = function(pos) {
+	var n = document.getElementById("coll_" + pos);
+	n.style.strokeWidth = 2;
+	n.style.stroke = QueryTree.prototype.LINE_COLOUR;
+	n.removeAttribute('cursor');
+}
+
 QueryTree.prototype.mouseoverLine = function(termId, nextOpr) {
 	var l0 = document.getElementById("t_" + termId + "_0");
 	var l1 = document.getElementById("t_" + termId + "_1");
@@ -556,6 +571,10 @@ QueryTree.prototype.mouseoutLine = function(termId, nextOpr) {
 }
 
 QueryTree.prototype.clickLine = function(termId, matchNum, nextOpr) {
+	if (this.currentState == this.HIGHLIGHTED_SELECTED_STATE) {
+		this.currentState = this.NONE_SELECTED_STATE;
+		this.removePrevHighlight();
+	}
 	var l0 = document.getElementById("t_" + termId + "_0");
 	var l1 = document.getElementById("t_" + termId + "_1");
 	var l2 = document.getElementById("t_" + termId + "_2");
