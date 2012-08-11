@@ -235,8 +235,8 @@ function setModalPosition(modalWin, height, width) {
 
 
 function closeQueryWindow() {
-	document.getElementById('overlay').className = 'overlayhide'
-	document.getElementById('querywindow').className = 'querywindowhide';
+	document.getElementById('overlay').className = 'hide'
+	document.getElementById('querywindow').className = 'hide';
 	
 	var divNode = document.getElementById('querywindowtree');
 	removeAllChildren(divNode);
@@ -536,8 +536,8 @@ function defaultDisplay(num) {
 		</td>
 	</tr>
 </table>
-<div id="overlay" class="overlayhide"></div>
-<div id="querywindow" class="querywindowhide">
+<div id="overlay" class="hide"></div>
+<div id="querywindow" class="hide">
 	<img src="close.png" class="close" onclick="closeQueryWindow()"></img>
 	<table id="querytexttable"><tr>
 	<td><div id="querywindowtext"> </div></td>
@@ -545,11 +545,25 @@ function defaultDisplay(num) {
 	<td><button name="QuerySearch" type="button" class="navbarbtn" onclick='copyToSearchBar()' align='right'>Copy to <br/> search bar</button></td>
 	</tr></table>
 	<hr/>
-	<div style="overflow-x: auto; overflow-y: auto; text-align: center; margin: auto; width: 100%;">
+	<div style="overflow-x: auto; overflow-y: auto; text-align: center; margin: auto; width: 100%; height: 394px;">
 	<table id="querytreetable"><tr width="99%">
 	<td><div id="querywindowtree"> </div></td>
 	</tr></table>
 	</div>
+	<table width="100%" style="height:35">
+	<tr>
+		<td align="left" class="infocol"><div id="infodiv"> </div></td>
+		<td align="right" class="editcol">	<div id="modifynode" class="hide"> 
+				<input type="text" name="editText" id="editnodelabel" size="10" align="right"/>
+				<button type="button" name="editButton" class="navbarbtn" onclick='updateNodeLabel()' align='right' style="padding: 0px 3px 0px 3px;">Edit label</button>
+				<button type="button" name="deleteButton" class="navbarbtn" onclick='deleteNode()' align='right' style="padding: 0px 3px 0px 3px;">Delete node</button>
+				</div>
+				<div id="modifyopr" class="hide">
+				<input type="checkbox" name="negate" value="yes" onclick="toggleOpr()" align='right'>Negate operator</input>
+				</div>
+		</td>
+	</tr>
+	</table>
 </div>
 </body>
 </html>
