@@ -62,21 +62,28 @@ function QueryTree(data, varname, sentnum, queryDomId, treeDomId, matchedPairs, 
 	QueryTree.prototype.BLUE_LINE_COLOUR = "rgb(0,0,200)";
 	QueryTree.prototype.narrowRegex = /[a-z0-9]/g;
 
-	QueryTree.prototype.AXIS_OPRS = [{'name':'descendant', 'sym':'//'}];
-	QueryTree.prototype.AXIS_OPRS.push({'name':'ancestor', 'sym':'\\\\'});
-	QueryTree.prototype.AXIS_OPRS.push({'name':'child', 'sym':'/'});
-	QueryTree.prototype.AXIS_OPRS.push({'name':'parent', 'sym':'\\'});
-	QueryTree.prototype.AXIS_OPRS.push({'name':'following-sibling', 'sym':'==>'});
-	QueryTree.prototype.AXIS_OPRS.push({'name':'preceding-sibling', 'sym':'<=='});
-	QueryTree.prototype.AXIS_OPRS.push({'name':'immediate-following-sibling', 'sym':'=>'});
-	QueryTree.prototype.AXIS_OPRS.push({'name':'immediate-preceding-sibling', 'sym':'<='}); 
-	QueryTree.prototype.AXIS_OPRS.push({'name':'following', 'sym':'-->'});
-	QueryTree.prototype.AXIS_OPRS.push({'name':'preceding', 'sym':'<--'});
-	QueryTree.prototype.AXIS_OPRS.push({'name':'immediate-following', 'sym':'->'});
-	QueryTree.prototype.AXIS_OPRS.push({'name':'immediate-preceding', 'sym':'<-'});
+	QueryTree.prototype.AXIS_OPRS = [{'name':'Descendant', 'sym':'//'}];
+	QueryTree.prototype.AXIS_OPRS.push({'name':'Ancestor', 'sym':'\\\\'});
+	QueryTree.prototype.AXIS_OPRS.push({'name':'Child', 'sym':'/'});
+	QueryTree.prototype.AXIS_OPRS.push({'name':'Parent', 'sym':'\\'});
+	QueryTree.prototype.AXIS_OPRS.push({'name':'Following-sibling', 'sym':'==>'});
+	QueryTree.prototype.AXIS_OPRS.push({'name':'Preceding-sibling', 'sym':'<=='});
+	QueryTree.prototype.AXIS_OPRS.push({'name':'Immediate-following-sibling', 'sym':'=>'});
+	QueryTree.prototype.AXIS_OPRS.push({'name':'Immediate-preceding-sibling', 'sym':'<='}); 
+	QueryTree.prototype.AXIS_OPRS.push({'name':'Following', 'sym':'-->'});
+	QueryTree.prototype.AXIS_OPRS.push({'name':'Preceding', 'sym':'<--'});
+	QueryTree.prototype.AXIS_OPRS.push({'name':'Immediate-following', 'sym':'->'});
+	QueryTree.prototype.AXIS_OPRS.push({'name':'Immediate-preceding', 'sym':'<-'});
 
-	this.HIGHLIGHTED_SELECTED_STATE = new QueryTree.prototype.HighlightedSelected();
-	this.NONE_SELECTED_STATE = new QueryTree.prototype.NoneSelected();
+	QueryTree.prototype.START_MESG = "Click on highlighted nodes and lines to edit query.";
+	QueryTree.prototype.NODE_SEL_MESG = "Edit node or create path by selecting a new node.";
+	QueryTree.prototype.OPR_SEL_EDIT_MESG = " operator selected. Click line to switch operator.";
+	QueryTree.prototype.OPR_SEL_UNEDIT_MESG = " is the only possible operator between the nodes.";
+	QueryTree.prototype.CHR_NOTALLOWED_MESG = "Node labels cannot contain these characters: <whitespace> [ ] { } ( ) < > & ^ = \\ / !";
+
+	this.NODE_SELECTED_STATE = new QueryTree.prototype.NodeSelected();
+	this.UNSELECTED_STATE = new QueryTree.prototype.Unselected();
+	this.LINE_SELECTED_STATE = new QueryTree.prototype.LineSelected(this);
 	this.setParentOnTreeNode(this.tree, null);
 	this.queryNodeByTermId = {};
 	//here position indicates right_left_depth_parent
@@ -84,9 +91,10 @@ function QueryTree(data, varname, sentnum, queryDomId, treeDomId, matchedPairs, 
 	this.root = this.buildQueryTree(queryString);
 	this.treeNodeByPosition = {};
 	this.indexTreeByPosition(this.tree);
-	this.currentState = this.NONE_SELECTED_STATE;
-	this.highlightedDomElement = null;
-	this.highlightedTreeNode = null;
+	this.currentState = this.UNSELECTED_STATE;
+	this.selectedNodeDom = null;
+	this.selectedNodeTreeNode = null;
+	this.selectedLineTermId = null;
 }
 
 String.prototype.trim = function() {
@@ -104,24 +112,68 @@ QueryTree.prototype.getQuery = function() {
 	return this.root.toString();
 }
 
-QueryTree.prototype.NoneSelected = function() {
-	this.mouseoverNode = function(n, te) {
-		n.setAttribute('font-weight', 'bold');
-		if (te["h"]) { n.setAttribute('cursor', 'pointer'); }
-	},
-	this.mouseoutNode = function(n ,te) {
-		n.removeAttribute('font-weight');
-		if (te["h"]) { n.removeAttribute('cursor'); }
-	},
+QueryTree.prototype.LineSelected = function(qt) {
+	this.mouseoverNode = qt.UNSELECTED_STATE.mouseoverNode,
+	this.mouseoutNode = qt.UNSELECTED_STATE.mouseoutNode,
 	this.clickNode = function(n, te, qt) {
 		if (te["h"]) { 
-			qt.highlightElement(n, te);
-			qt.currentState = qt.HIGHLIGHTED_SELECTED_STATE;
+			qt.selectNode(n, te);
+			qt.currentState = qt.NODE_SELECTED_STATE;
+			qt.removeLineSelection();
+		}
+	},
+	this.clickLine = function(termId, matchNum, nextOpr, qt){
+		if (qt.selectedLineTermId != termId) {
+			qt.selectLine(termId, qt.matches.pairs[matchNum]["o"], nextOpr);
+		} else {
+			var l0 = document.getElementById("t_" + termId + "_0");
+			var l1 = document.getElementById("t_" + termId + "_1");
+			var l2 = document.getElementById("t_" + termId + "_2");
+			if (nextOpr != null) {
+				qt.matches.updatePair(matchNum, nextOpr);
+				qt.queryNodeByTermId[termId].opr = QueryTree.prototype.AXIS_OPRS[nextOpr]["sym"];
+				var queryNodeSpan = document.getElementById("q_" + termId);
+				var oprDom = document.createElement('span');
+				oprDom.appendChild(document.createTextNode(QueryTree.prototype.AXIS_OPRS[nextOpr]["sym"]));
+				oprDom.setAttribute("id", "q_" + termId);
+				queryNodeSpan.parentNode.insertBefore(oprDom, queryNodeSpan);
+				queryNodeSpan.parentNode.removeChild(queryNodeSpan);
+				var parent = l0.parentNode;
+				parent.removeChild(l0);
+				parent.removeChild(l1);
+				if (l2) { parent.removeChild(l2); }
+				qt.drawHighlightPath(parent, matchNum);		
+			}
 		}
 	};
 }
 
-QueryTree.prototype.HighlightedSelected = function() {
+QueryTree.prototype.Unselected = function() {
+	this.mouseoverNode = function(n, te) {
+		if (te["h"]) { 
+			n.setAttribute('font-weight', 'bold');
+			n.setAttribute('cursor', 'pointer'); 
+		}
+	},
+	this.mouseoutNode = function(n ,te) {
+		if (te["h"]) { 
+			n.removeAttribute('font-weight');
+			n.removeAttribute('cursor'); 
+		}
+	},
+	this.clickNode = function(n, te, qt) {
+		if (te["h"]) { 
+			qt.selectNode(n, te);
+			qt.currentState = qt.NODE_SELECTED_STATE;
+		}
+	},
+	this.clickLine = function(termId, matchNum, nextOpr, qt){
+		qt.currentState = qt.LINE_SELECTED_STATE;
+		qt.selectLine(termId, qt.matches.pairs[matchNum]["o"], nextOpr);
+	};
+}
+
+QueryTree.prototype.NodeSelected = function() {
 	this.mouseoverNode = function(n, te) {
 		n.setAttribute('font-weight', 'bold');
 		n.setAttribute('cursor', 'pointer');
@@ -132,14 +184,16 @@ QueryTree.prototype.HighlightedSelected = function() {
 	},
 	this.clickNode = function(n, te, qt) {
 		if (te["h"]) {
-			qt.removePrevHighlight();
-			qt.highlightElement(n, te);
+			if (te != this.selectedNodeTreeNode) {
+				qt.removePrevSelectedNode();
+				qt.selectNode(n, te);
+			}
 		} else { //
-			var startNode = qt.highlightedTreeNode;
-			var svgElement = qt.highlightedDomElement.parentNode;
-			qt.removePrevHighlight();
+			var startNode = qt.selectedNodeTreeNode;
+			var svgElement = qt.selectedNodeDom.parentNode;
+			qt.removePrevSelectedNode();
 			te["h"] = true;
-			qt.highlightElement(n, te);//draw box around new node
+			qt.selectNode(n, te);//draw box around new node and set edit and info box
 			n.setAttribute("style", "stroke:" + QueryTree.prototype.HIGHLIGHT_TEXT_COLOUR + ";fill:" + QueryTree.prototype.HIGHLIGHT_TEXT_COLOUR + ";"); //change colour of new node text to green
 			var newTermId = qt.matches.pairs.length;
 			var opr = qt.getOpr(startNode["i"], te["i"]);
@@ -148,11 +202,12 @@ QueryTree.prototype.HighlightedSelected = function() {
 			qt.drawHighlightPath(svgElement, newTermId); //draw the line from old node to new node
 			qt.drawQuery(); // redraw the entire query because it is complicated to modify in-place
 		}
+	},
+	this.clickLine = function(termId, matchNum, nextOpr, qt){
+		qt.currentState = qt.LINE_SELECTED_STATE;
+		qt.removePrevSelectedNode();
+		qt.selectLine(termId, qt.matches.pairs[matchNum]["o"], nextOpr);
 	};
-}
-
-QueryTree.prototype.noMatchesNoneSelected = function() {
-	
 }
 
 QueryTree.prototype.setParentOnTreeNode = function(node, parent) {
@@ -165,6 +220,15 @@ QueryTree.prototype.setParentOnTreeNode = function(node, parent) {
 QueryTree.prototype.draw = function() {
 	this.drawQuery();
 	this.calcPositionAndDrawSVG();
+	this.updateInfoDiv(QueryTree.prototype.START_MESG);
+}
+
+QueryTree.prototype.updateInfoDiv = function(message) {
+	var infoDiv = document.getElementById('infodiv')
+	while (infoDiv.firstChild) {
+		infoDiv.removeChild(infoDiv.firstChild);
+	}
+	infoDiv.appendChild(document.createTextNode(message));
 }
 
 QueryTree.prototype.drawQuery = function() {
@@ -497,23 +561,30 @@ QueryTree.prototype.clickNode = function(pos) {
 	this.currentState.clickNode(n, te, this);
 }
 
-QueryTree.prototype.highlightElement = function(n, te) {
+QueryTree.prototype.selectNode = function(n, te) {
 	var width = ((te["s"]) ? QueryTree.prototype.WIDTH_OF_NARROW_CHAR : QueryTree.prototype.WIDTH_OF_CHAR) * te["n"].length;
 	var x = n.getAttribute("x");
 	x = x.substring(0, x.length - 2) - 5;
 	var y = n.getAttribute("y");
 	y = y.substring(0, y.length - 2) - 15;
 	var box = this.getHighlightSVGBox(x, y, width + 10, 20);
-	this.highlightedDomElement = box;
-	this.highlightedTreeNode = te;
+	this.selectedNodeDom = box;
+	this.selectedNodeTreeNode = te;
 	n.parentNode.appendChild(box);
+	var modifyNodeDiv = document.getElementById('modifynode');
+	modifyNodeDiv.removeAttribute('class');
+	var editNodeText = document.getElementById('editnodelabel');
+	editNodeText.value = te["n"];
+	this.updateInfoDiv(QueryTree.prototype.NODE_SEL_MESG);
 }
 
-QueryTree.prototype.removePrevHighlight = function() {
-	if (this.highlightedDomElement != null) { 
-		this.highlightedDomElement.parentNode.removeChild(this.highlightedDomElement);
-		this.highlightedDomElement = null;
-		this.highlightedTreeNode = null;
+QueryTree.prototype.removePrevSelectedNode = function() {
+	if (this.selectedNodeDom != null) { 
+		this.selectedNodeDom.parentNode.removeChild(this.selectedNodeDom);
+		this.selectedNodeDom = null;
+		this.selectedNodeTreeNode = null;
+		var modifyNodeDiv = document.getElementById('modifynode');
+		modifyNodeDiv.setAttribute('class', 'hide');
 	}
 }
 
@@ -538,6 +609,24 @@ QueryTree.prototype.mouseoutCollapsed = function(pos) {
 	n.style.strokeWidth = 2;
 	n.style.stroke = QueryTree.prototype.LINE_COLOUR;
 	n.removeAttribute('cursor');
+}
+
+QueryTree.prototype.selectLine = function(termId, currOpr, nextOpr) {
+	this.selectedLineTermId = termId;
+	var l0 = document.getElementById("t_" + termId + "_0");//have to set stroke width for an appropriate element
+	var modifyOprDiv = document.getElementById('modifyopr');
+	modifyOprDiv.removeAttribute('class');
+	var msg = QueryTree.prototype.AXIS_OPRS[currOpr]['name'] + (nextOpr == null ? QueryTree.prototype.OPR_SEL_UNEDIT_MESG : QueryTree.prototype.OPR_SEL_EDIT_MESG);
+	this.updateInfoDiv(msg);
+}
+
+QueryTree.prototype.removeLineSelection = function() {
+	if (this.selectedLineTermId != null) {
+		var l0 = document.getElementById("t_" + this.selectedLineTermId + "_0");//have to reset stroke width for the element
+		var modifyOprDiv = document.getElementById('modifyopr');
+		modifyOprDiv.setAttribute('class', 'hide');
+		this.selectedLineTermId = null;
+	}
 }
 
 QueryTree.prototype.mouseoverLine = function(termId, nextOpr) {
@@ -571,28 +660,11 @@ QueryTree.prototype.mouseoutLine = function(termId, nextOpr) {
 }
 
 QueryTree.prototype.clickLine = function(termId, matchNum, nextOpr) {
-	if (this.currentState == this.HIGHLIGHTED_SELECTED_STATE) {
-		this.currentState = this.NONE_SELECTED_STATE;
-		this.removePrevHighlight();
-	}
-	var l0 = document.getElementById("t_" + termId + "_0");
-	var l1 = document.getElementById("t_" + termId + "_1");
-	var l2 = document.getElementById("t_" + termId + "_2");
-	if (nextOpr != null) {
-		this.matches.updatePair(matchNum, nextOpr);
-		this.queryNodeByTermId[termId].opr = QueryTree.prototype.AXIS_OPRS[nextOpr]["sym"];
-		var queryNodeSpan = document.getElementById("q_" + termId);
-		var oprDom = document.createElement('span');
-		oprDom.appendChild(document.createTextNode(QueryTree.prototype.AXIS_OPRS[nextOpr]["sym"]));
-		oprDom.setAttribute("id", "q_" + termId);
-		queryNodeSpan.parentNode.insertBefore(oprDom, queryNodeSpan);
-		queryNodeSpan.parentNode.removeChild(queryNodeSpan);
-		var parent = l0.parentNode;
-		parent.removeChild(l0);
-		parent.removeChild(l1);
-		if (l2) { parent.removeChild(l2); }
-		this.drawHighlightPath(parent, matchNum);		
-	}
+	this.currentState.clickLine(termId, matchNum, nextOpr, this);
+}
+
+QueryTree.prototype.editLabel = function(te) {
+	
 }
 
 function Node(type) {
