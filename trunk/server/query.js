@@ -142,7 +142,8 @@ QueryTree.prototype.LineSelected = function(qt) {
 				parent.removeChild(l0);
 				parent.removeChild(l1);
 				if (l2) { parent.removeChild(l2); }
-				qt.drawHighlightPath(parent, matchNum);		
+				qt.drawHighlightPath(parent, matchNum);
+				qt.selectLine(termId, qt.matches.pairs[matchNum]["o"], nextOpr);	
 			}
 		}
 	};
@@ -204,8 +205,8 @@ QueryTree.prototype.NodeSelected = function() {
 		}
 	},
 	this.clickLine = function(termId, matchNum, nextOpr, qt){
-		qt.currentState = qt.LINE_SELECTED_STATE;
 		qt.removePrevSelectedNode();
+		qt.currentState = qt.LINE_SELECTED_STATE;
 		qt.selectLine(termId, qt.matches.pairs[matchNum]["o"], nextOpr);
 	};
 }
@@ -336,7 +337,7 @@ QueryTree.prototype.drawHighlightPath = function(svgElement, i) {
 	var dashedLine = (opr == 0 || opr == 1 || opr == 4 || opr == 5 || opr == 8 || opr == 9) ? true : false;
 	var colour = (opr < 4) ? QueryTree.prototype.BLUE_LINE_COLOUR : QueryTree.prototype.RED_LINE_COLOUR;
 	var lineStyle = "stroke:" + colour + ";stroke-width:2;" + ((dashedLine) ? "stroke-dasharray:9,5;" : "");
-	var transStyle = "stroke-width:9;stroke-opacity:0.001;stroke:white;";//used to create a near transparent line to help click on the line
+	var transStyle = "stroke:black;stroke-width:0;fill:white;fill-opacity:0.001";//used to create a polygon to help click on the line and also highlight the line
 	//All the preceding axis codes are odd numbers 
 	var b = this.treeNodeByPosition[(opr % 2 == 1) ? p["e"] : p["s"]];
 	var a = this.treeNodeByPosition[(opr % 2 == 1) ? p["s"] : p["e"]];
@@ -349,7 +350,8 @@ QueryTree.prototype.drawHighlightPath = function(svgElement, i) {
 		width = (a["s"]) ? QueryTree.prototype.WIDTH_OF_NARROW_CHAR : QueryTree.prototype.WIDTH_OF_CHAR;
 		var x2 = a["x"] + (a["n"].length * width) / 2;
 		var y2 = a["y"] - QueryTree.prototype.TEXT_HEIGHT - QueryTree.prototype.YPADDING;
-		svgElement.appendChild(this.getClickableSVGLine(x1, y1, x2, y2, transStyle, termId, i, 0, nextOpr));
+		var corners = this.getCorners(x1, y1, x2, y2, true);
+		svgElement.appendChild(this.getClickableSVGPolygon(corners, true, true, transStyle, termId, i, 0, nextOpr));
 		svgElement.appendChild(this.getClickableSVGLine(x1, y1, x2, y2, lineStyle, termId, i, 1, nextOpr));
 	} else { // horizontal lines
 		var x1 = b["x"] + (b["n"].length * width) + 5;
@@ -357,15 +359,125 @@ QueryTree.prototype.drawHighlightPath = function(svgElement, i) {
 		var x2 = a["x"] - 5;
 		var y2 = a["y"] - QueryTree.prototype.TEXT_HEIGHT / 2 + 1;
 		if (singleLine) {
-			svgElement.appendChild(this.getClickableSVGLine(x1, y1, x2, y2, transStyle, termId, i, 0, nextOpr));
+			var corners = this.getCorners(x1, y1, x2, y2, true);
+			svgElement.appendChild(this.getClickableSVGPolygon(corners, false, true, transStyle, termId, i, 0, nextOpr));
 			svgElement.appendChild(this.getClickableSVGLine(x1, y1, x2, y2, lineStyle, termId, i, 1, nextOpr));
 		} else {
-			svgElement.appendChild(this.getClickableSVGLine(x1, y1, x2, y2, transStyle, termId, i, 0, nextOpr));
+			var corners = this.getCorners(x1, y1, x2, y2, false);
+			svgElement.appendChild(this.getClickableSVGPolygon(corners, false, false, transStyle, termId, i, 0, nextOpr));
 			svgElement.appendChild(this.getClickableSVGLine(x1, y1 - 2, x2, y2 - 2, lineStyle, termId, i, 1, nextOpr));
 			svgElement.appendChild(this.getClickableSVGLine(x1, y1 + 2, x2, y2 + 2, lineStyle, termId, i, 2, nextOpr));
 		}
 	}
+}
+
+QueryTree.prototype.getClickableSVGPolygon = function(corners, vertical, single, style, termId, matchPos, lineNum, nextOpr) {
+	var gap = single ? 5 : 8;	
+/*	var midx = (x1 + x2) / 2;
+	var midy = (y1 + y2) / 2;
+	var width = gap * 2;
+	var height = Math.sqrt(((x2 - x1) * (x2 - x1)) + ((y2 - y1) * (y2 - y1))); 
+	var rotate = "rotate(" + this.getRotateAngle(x1, y1, x2, y2) + ", " + midx + ", " + midy + ")";
+	var topleftx = midx - gap;
+	var toplefty = midy + height / 2;
+	var box = document.createElementNS('http://www.w3.org/2000/svg', 'svg:rect');
+	box.setAttribute("x", topleftx);
+	box.setAttribute("y", toplefty);
+	box.setAttribute("width", width);
+	box.setAttribute("height", height);
+	box.setAttribute("rx", 2);
+	box.setAttribute("ry", 2);
+	box.setAttribute("transform", rotate);
+	box.setAttribute("style", style);
+	box.setAttribute("id", "t_" + termId + "_" + lineNum);
+	box.setAttribute("onmouseover", this.varname + ".mouseoverLine('" + termId + "', " + nextOpr + ");");
+	box.setAttribute("onmouseout", this.varname + ".mouseoutLine('" + termId + "', " + nextOpr + ");");
+	box.setAttribute("onclick", this.varname + ".clickLine('" + termId + "', " + matchPos + ", " + nextOpr + ");");
+	return box;
+*/      
+	var pg = document.createElementNS('http://www.w3.org/2000/svg', 'svg:polygon');
+	var points_str = corners.x1 + "," + corners.y1 + " " + corners.x2 + "," + corners.y2 + " " + corners.x3 + "," + corners.y3 + " " + corners.x4 + "," + corners.y4;
+/*	if (vertical) {
+		points_str = (x1 - gap) + "," + y1 + " " + (x2 - gap) + "," + y2 + " " + (x2 + gap) + "," + y2 + " " + (x1 + gap) + "," + y1;
+	} else {
+		points_str = x1 + "," + (y1 - gap) + " " + x2 + "," + (y2 - gap) + " " + x2 + "," + (y2 + gap) + " " + x1 + "," + (y1 + gap);
+	}
+*/
+	pg.setAttribute("points", points_str);
+	pg.setAttribute("id", "t_" + termId + "_" + lineNum);
+	pg.setAttribute("style", style);
+	pg.setAttribute("onmouseover", this.varname + ".mouseoverLine('" + termId + "', " + nextOpr + ");");
+	pg.setAttribute("onmouseout", this.varname + ".mouseoutLine('" + termId + "', " + nextOpr + ");");
+	pg.setAttribute("onclick", this.varname + ".clickLine('" + termId + "', " + matchPos + ", " + nextOpr + ");");
+	return pg;
+}
+
+/*
+QueryTree.prototype.getRotateAngle = function(x1, y1, x2, y2) {
+	if (x1 - x2 == 0) { // line is vertical
+		return 90;
+	} else if (y1 - y2 == 0) { // line is horizontal
+		return 0;
+	} // line is at some angle
+	var slope = (y2 - y1) / (x2 - x1);
+	var thetha = (180/Math.PI) * Math.atan(slope);
+	return 180 - thetha; //svg rotate calculates angles from the bottom
 	
+}
+*/
+
+QueryTree.prototype.getCorners = function(x1, y1, x2, y2, single) {
+	var gap = single ? 4 : 6;
+	var corners = new Object();
+	if (x1 - x2 == 0) { // line is vertical
+		corners.x1 = x1 - gap;
+		corners.y1 = y1;
+		corners.x2 = x1 + gap;
+		corners.y2 = y1;
+		corners.x3 = x2 + gap;
+		corners.y3 = y2;
+		corners.x4 = x2 - gap;
+		corners.y4 = y2;
+	} else if (y1 - y2 == 0) { // line is horizontal
+		corners.x1 = x1;
+		corners.y1 = y1 - gap;
+		corners.x2 = x1;
+		corners.y2 = y1 + gap;
+		corners.x3 = x2;
+		corners.y3 = y2 + gap;
+		corners.x4 = x2;
+		corners.y4 = y2 - gap;		
+	} else { // calculate using slope
+		var m = (y1 - y2) / (x1 - x2);
+		var points = this.circleLineIntercept(-1/m, x1, y1, gap);		
+		corners.x1 = points.x1;
+		corners.y1 = points.y1;
+		corners.x2 = points.x2;
+		corners.y2 = points.y2;
+		points = this.circleLineIntercept(-1/m, x2, y2, gap);		
+		corners.x4 = points.x1;
+		corners.y4 = points.y1;
+		corners.x3 = points.x2;
+		corners.y3 = points.y2;
+	}	
+	return corners;
+}
+
+QueryTree.prototype.circleLineIntercept = function(m, x1, y1, rad) {
+	var points = new Object();
+	var c = y1 - m * x1;
+	var x2cf = m * m + 1;
+	var xcf = -2 * x1 + 2 * m * c - 2 * m * y1;
+	var con = c * c - 2 * y1 * c + x1 * x1 + y1 * y1 - rad * rad;
+	var twoa = 2 * x2cf;
+	var mbBy2a = -1 * xcf / twoa;
+	var dis = xcf * xcf - 4 * x2cf * con; // this has to be greater than 0 because the line passes through the center of the circle
+	var disSqBy2a = Math.sqrt(dis) / twoa;
+	points.x1 = mbBy2a + disSqBy2a;
+	points.x2 = mbBy2a - disSqBy2a;
+	points.y1 = m * points.x1 + c;
+	points.y2 = m * points.x2 + c;
+	return points;
 }
 
 QueryTree.prototype.getOpr = function(start, end) {
@@ -445,14 +557,9 @@ QueryTree.prototype.getSVGLine = function(x1, y1, x2, y2, style) {
 	return lineElem;
 }
 
-QueryTree.prototype.getIdSVGLine = function(x1, y1, x2, y2, style, termId, lineNum) {
+QueryTree.prototype.getClickableSVGLine = function(x1, y1, x2, y2, style, termId, matchPos, lineNum, nextOpr) {
 	var line = this.getSVGLine(x1, y1, x2, y2, style);
 	line.setAttribute("id", "t_" + termId + "_" + lineNum);
-	return line;
-}
-
-QueryTree.prototype.getClickableSVGLine = function(x1, y1, x2, y2, style, termId, matchPos, lineNum, nextOpr) {
-	var line = this.getIdSVGLine(x1, y1, x2, y2, style, termId, lineNum);
 	line.setAttribute("onmouseover", this.varname + ".mouseoverLine('" + termId + "', " + nextOpr + ");");
 	line.setAttribute("onmouseout", this.varname + ".mouseoutLine('" + termId + "', " + nextOpr + ");");
 	line.setAttribute("onclick", this.varname + ".clickLine('" + termId + "', " + matchPos + ", " + nextOpr + ");");
@@ -517,7 +624,7 @@ QueryTree.prototype.getHighlightSVGBox = function(x, y, width, height) {
 	box.setAttribute("height", height);
 	box.setAttribute("rx", 2);
 	box.setAttribute("ry", 2);
-	box.setAttribute("style", "stroke:black; stroke-width:2; fill:none;");
+	box.setAttribute("style", "stroke:black; stroke-width:1; fill:none;");
 	return box;
 }
 
@@ -612,8 +719,10 @@ QueryTree.prototype.mouseoutCollapsed = function(pos) {
 }
 
 QueryTree.prototype.selectLine = function(termId, currOpr, nextOpr) {
+	if (this.selectedLineTermId != null && this.selectedLineTermId != termId) { this.removeLineSelection(); }
 	this.selectedLineTermId = termId;
-	var l0 = document.getElementById("t_" + termId + "_0");//have to set stroke width for an appropriate element
+	var l0 = document.getElementById("t_" + termId + "_0");
+	l0.style.strokeWidth = 1;
 	var modifyOprDiv = document.getElementById('modifyopr');
 	modifyOprDiv.removeAttribute('class');
 	var msg = QueryTree.prototype.AXIS_OPRS[currOpr]['name'] + (nextOpr == null ? QueryTree.prototype.OPR_SEL_UNEDIT_MESG : QueryTree.prototype.OPR_SEL_EDIT_MESG);
@@ -622,7 +731,8 @@ QueryTree.prototype.selectLine = function(termId, currOpr, nextOpr) {
 
 QueryTree.prototype.removeLineSelection = function() {
 	if (this.selectedLineTermId != null) {
-		var l0 = document.getElementById("t_" + this.selectedLineTermId + "_0");//have to reset stroke width for the element
+		var l0 = document.getElementById("t_" + this.selectedLineTermId + "_0");
+		l0.style.strokeWidth = 0;
 		var modifyOprDiv = document.getElementById('modifyopr');
 		modifyOprDiv.setAttribute('class', 'hide');
 		this.selectedLineTermId = null;
