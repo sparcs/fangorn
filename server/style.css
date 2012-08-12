@@ -185,10 +185,16 @@ hr{
 }
 
 .infocol {
-	width:55%;
+	height:26px;
+	width:65%;
+	text-align:middle;
 }
 
 .editcol {
-	width:45%;
+	width:33%;
 	vertical-align:middle;
+}
+
+#modifyopr {
+	font-size: 8pt;	
 }

@@ -61,7 +61,6 @@ turned it off. This page requires Javascript to display results.
 		
 <%}%>
 
-
 function render() {
 	if (navigator.userAgent.indexOf("Firefox") == -1)
         	alert("To see this page as it is meant to appear please use a Mozilla Firefox browser.");
@@ -235,8 +234,10 @@ function setModalPosition(modalWin, height, width) {
 
 
 function closeQueryWindow() {
-	document.getElementById('overlay').className = 'hide'
+	document.getElementById('overlay').className = 'hide';
 	document.getElementById('querywindow').className = 'hide';
+	document.getElementById('modifynode').className = 'hide';
+	document.getElementById('modifyopr').className = 'hide';
 	
 	var divNode = document.getElementById('querywindowtree');
 	removeAllChildren(divNode);
@@ -559,7 +560,7 @@ function defaultDisplay(num) {
 				<button type="button" name="deleteButton" class="navbarbtn" onclick='deleteNode()' align='right' style="padding: 0px 3px 0px 3px;">Delete node</button>
 				</div>
 				<div id="modifyopr" class="hide">
-				<input type="checkbox" name="negate" value="yes" onclick="toggleOpr()" align='right'>Negate operator</input>
+				<input type="checkbox" name="negate" value="yes" onclick="toggleOpr()" align='right'></input>Negated
 				</div>
 		</td>
 	</tr>
