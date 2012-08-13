@@ -555,9 +555,11 @@ function defaultDisplay(num) {
 	<tr>
 		<td align="left" class="infocol"><div id="infodiv"> </div></td>
 		<td align="right" class="editcol">	<div id="modifynode" class="hide"> 
+				<form onsubmit="javascript:return false;" style="padding:0;margin:0;">
 				<input type="text" name="editText" id="editnodelabel" size="10" align="right"/>
-				<button type="button" name="editButton" class="navbarbtn" onclick='updateNodeLabel()' align='right' style="padding: 0px 3px 0px 3px;">Edit label</button>
-				<button type="button" name="deleteButton" class="navbarbtn" onclick='deleteNode()' align='right' style="padding: 0px 3px 0px 3px;">Delete node</button>
+				<input type="submit" name="editButton" class="navbarbtn" value="Edit label" onclick='queryTree.updateNodeLabel()' align='right' style="padding: 0px 3px 0px 3px;"/>
+				<button type="button" name="deleteButton" class="navbarbtn" onclick='queryTree.deleteNode()' align='right' style="padding: 0px 3px 0px 3px;">Delete node</button>
+				</form>
 				</div>
 				<div id="modifyopr" class="hide">
 				<input type="checkbox" name="negate" value="yes" onclick="toggleOpr()" align='right'></input>Negated
