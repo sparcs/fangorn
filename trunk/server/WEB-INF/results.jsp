@@ -558,7 +558,7 @@ function defaultDisplay(num) {
 				<form onsubmit="javascript:return false;" style="padding:0;margin:0;">
 				<input type="text" name="editText" id="editnodelabel" size="10" align="right"/>
 				<input type="submit" name="editButton" class="navbarbtn" value="Edit label" onclick='queryTree.updateNodeLabel()' align='right' style="padding: 0px 3px 0px 3px;"/>
-				<button type="button" name="deleteButton" class="navbarbtn" onclick='queryTree.deleteNode()' align='right' style="padding: 0px 3px 0px 3px;">Delete node</button>
+				<button type="button" id="deletebutton" name="deleteButton" class="navbarbtn" onclick='queryTree.deleteNode()' align='right' style="padding: 0px 3px 0px 3px;">Delete node</button>
 				</form>
 				</div>
 				<div id="modifyopr" class="hide">

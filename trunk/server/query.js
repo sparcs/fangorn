@@ -684,6 +684,11 @@ QueryTree.prototype.selectNode = function(n, te) {
 	var editNodeText = document.getElementById('editnodelabel');
 	editNodeText.value = te["n"];
 	this.updateInfoDiv(QueryTree.prototype.NODE_SEL_MESG);
+	if (!this.queryNodeByPosition[te["i"]].isDeleteable()) {
+		document.getElementById('deletebutton').setAttribute("disabled", "disabled");
+	} else {
+		document.getElementById('deletebutton').removeAttribute("disabled");
+	}
 }
 
 QueryTree.prototype.removePrevSelectedNode = function() {
@@ -796,9 +801,49 @@ QueryTree.prototype.updateNodeLabel = function() {
 	}
 }
 
+QueryTree.prototype.deleteNode = function() {
+	if (this.selectedNodeTreeNode == null) { return; }
+	var treePos = this.selectedNodeTreeNode["i"];
+	var deletedNodeLabel = this.selectedNodeTreeNode["n"];
+	var queryNode = this.queryNodeByPosition[treePos];
+	if (queryNode == null) { return; }
+	if (!queryNode.isDeleteable()) { return; }
+	return; // short circuit code for now
+/*	this.removePrevSelectedNode();
+	this.selectedNodeTreeNode["h"] = false;
+	var deletedPos = queryNode.queryTreePos;
+	if (queryNode == this.root) {
+		// if root has no children it can't be deleted
+		if (queryNode.children[0].type == "filter") {
+			
+	}
+	this.matches.pairs.splice(deletedPos, 1);
+	this.drawQuery();
+	this.calcPositionAndDrawSVG();
+	this.updateInfoDiv("Deleted node " + deletedNodeLabel + "."); */
+}
+
+Node.prototype.isDeleteable = function() {
+	if (this.parent.parent == null) { //is root expr
+		if (this.children.length > 1) { return false; }
+		if (this.children.length == 1 && this.children[0].type == "filter") {
+			if (this.children[0].children.length > 1) { return false; }
+			if (this.children[0].children[0].isNot) { return false; }
+			return true;
+		} else if (this.children.length == 1 && this.children[0].type == "label") {
+			return true;
+		}
+	} else {
+		if (this.children.length > 0) { return false; }
+		return true;
+	}
+	return false;
+}
+
 function Node(type) {
 	this.type = type;
 	this.children = [];
+	this.parent = null;
 	this.getPreString = function() {return ""};
 	this.getPostString = function() {return ""};
 	this.toString = function() {
@@ -828,12 +873,14 @@ function Node(type) {
 
 Node.prototype.addChild = function(node) {
 	this.children.push(node);
+	node.parent = this;
 }
 
 var LabelNode = function(opr, label, queryTreePos, treePos) {
 	this.opr = opr;
 	this.label = label;
 	this.children = [];
+	this.parent = null;
 	this.queryTreePos = queryTreePos;
 	this.treePos = treePos; //this can be null because parts of the query may not be in the matches list eg. NOT expressions and ORed expressions
 
@@ -858,6 +905,7 @@ var ExprNode = function(isRoot, isNot) {
 	this.hasBraces = !isRoot;
 	this.isNot = isNot;
 	this.children = [];
+	this.parent = null;
 
 	this.getPreString = function() {
 		return this.isNot ? "NOT" : "";
@@ -868,6 +916,7 @@ ExprNode.prototype = new Node("expr");
 var AndOrNode = function(logOpr) {
 	this.logOpr = logOpr;
 	this.children = [];
+	this.parent = null;
 	this.getPreString = function() {
 		return  " " + this.logOpr +  " ";
 	};
@@ -876,6 +925,7 @@ AndOrNode.prototype = new Node("andor");
 
 var FilterNode = function() {
 	this.children = [];
+	this.parent = null;
 	this.getPreString = function() {
 		return "[";
 	};
