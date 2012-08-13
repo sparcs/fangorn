@@ -80,6 +80,7 @@ function QueryTree(data, varname, sentnum, queryDomId, treeDomId, matchedPairs, 
 	QueryTree.prototype.OPR_SEL_EDIT_MESG = " operator selected. Click line to switch operator.";
 	QueryTree.prototype.OPR_SEL_UNEDIT_MESG = " is the only possible operator between the nodes.";
 	QueryTree.prototype.CHR_NOTALLOWED_MESG = "Node labels cannot contain these characters: <whitespace> [ ] { } ( ) < > & ^ = \\ / !";
+	QueryTree.prototype.NODE_EDITED_MESG = " node changed to "; 
 
 	this.NODE_SELECTED_STATE = new QueryTree.prototype.NodeSelected();
 	this.UNSELECTED_STATE = new QueryTree.prototype.Unselected();
@@ -92,8 +93,8 @@ function QueryTree(data, varname, sentnum, queryDomId, treeDomId, matchedPairs, 
 	this.treeNodeByPosition = {};
 	this.indexTreeByPosition(this.tree);
 	this.currentState = this.UNSELECTED_STATE;
-	this.selectedNodeDom = null;
 	this.selectedNodeTreeNode = null;
+	this.selectedNodeDom = null;
 	this.selectedLineTermId = null;
 }
 
@@ -576,9 +577,6 @@ QueryTree.prototype.recToSVG = function(svgElement, objid, t) {
 	textElem.appendChild(document.createTextNode(t["n"]));
 	textElem.setAttribute("x", t["x"] + "px");
 	textElem.setAttribute("y", t["y"] + "px");
-	width = (t["s"]) ? QueryTree.prototype.WIDTH_OF_NARROW_CHAR : QueryTree.prototype.WIDTH_OF_CHAR;
-	var x1 = t["x"] + (t["n"].length * width) / 2;
-	var y1 = t["y"] + QueryTree.prototype.YPADDING;
 	textElem.setAttribute("id", this.getNodeDomId(t["i"]));
 	var mouseoverFunc = this.varname + ".mouseoverNode('" + t["i"] + "');";
 	var mouseoutFunc = this.varname + ".mouseoutNode('" + t["i"] + "');";
@@ -589,6 +587,9 @@ QueryTree.prototype.recToSVG = function(svgElement, objid, t) {
 		textElem.setAttribute("style", "stroke:" + QueryTree.prototype.HIGHLIGHT_TEXT_COLOUR + ";fill:" + QueryTree.prototype.HIGHLIGHT_TEXT_COLOUR + ";");
 	}
 	svgElement.appendChild(textElem);
+	var width = (t["s"]) ? QueryTree.prototype.WIDTH_OF_NARROW_CHAR : QueryTree.prototype.WIDTH_OF_CHAR;
+	var x1 = t["x"] + (t["n"].length * width) / 2;
+	var y1 = t["y"] + QueryTree.prototype.YPADDING;
 	if (t["e"] && t["c"].length > 0) { //draw blackish lines to all child nodes
 		var lineStyle = "stroke:" + QueryTree.prototype.LINE_COLOUR + ";stroke-width:1";
 		for ( var i = 0; i < t["c"].length; i++) {
@@ -773,8 +774,26 @@ QueryTree.prototype.clickLine = function(termId, matchNum, nextOpr) {
 	this.currentState.clickLine(termId, matchNum, nextOpr, this);
 }
 
-QueryTree.prototype.editLabel = function(te) {
-	
+QueryTree.prototype.updateNodeLabel = function() {
+	var newValue = document.getElementById('editnodelabel').value;
+	if (this.selectedNodeTreeNode != null && this.selectedNodeDom != null && this.selectedNodeTreeNode["n"] != newValue && newValue.length > 0) {
+		var oldValue = this.selectedNodeTreeNode["n"];
+		var termPos = this.selectedNodeTreeNode["i"];
+		var queryNode = this.queryNodeByPosition[termPos];
+		var regex = new RegExp("\\s|\\t|\\[|\\]|\\{|\\}|\\(|\\)|\\<|\\>|\\&|\\^|=|\\\\|\\/", "g");
+		if (newValue.search(regex) != -1) {
+			this.updateInfoDiv(QueryTree.prototype.CHR_NOTALLOWED_MESG);
+			return;
+		} 
+		this.selectedNodeTreeNode["n"] = newValue;
+		queryNode.label = newValue;
+		this.drawQuery();
+		this.calcPositionAndDrawSVG();
+		this.removePrevSelectedNode();
+		var newDomNode = document.getElementById(this.getNodeDomId(termPos));
+		this.selectNode(newDomNode, this.treeNodeByPosition[termPos]);
+		this.updateInfoDiv(oldValue + QueryTree.prototype.NODE_EDITED_MESG + newValue + ".");
+	}
 }
 
 function Node(type) {
