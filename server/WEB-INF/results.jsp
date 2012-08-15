@@ -233,7 +233,7 @@ function setModalPosition(modalWin, height, width) {
 }
 
 
-function closeQueryWindow() {
+function closeQueryWindow(success) {
 	document.getElementById('overlay').className = 'hide';
 	document.getElementById('querywindow').className = 'hide';
 	document.getElementById('modifynode').className = 'hide';
@@ -244,21 +244,15 @@ function closeQueryWindow() {
 	
 	divNode = document.getElementById('querywindowtext');
 	removeAllChildren(divNode);
-}
-
-function searchQuery() {
-	var q = queryTree.getQuery();
-	document.searchBarTop.query.value = q;
-	document.searchBarBtm.query.value = q;
-	closeQueryWindow();
-	document.forms["searchBarTop"].submit();
+	
+	if (success) { document.getElementById('query_fld_1').scrollIntoView(); }
 }
 
 function copyToSearchBar() {
 	var q = queryTree.getQuery();
 	document.searchBarTop.query.value = q;
 	document.searchBarBtm.query.value = q;
-	closeQueryWindow();
+	closeQueryWindow(true);
 }
 
 function removeAllChildren(myNode) {
@@ -539,11 +533,10 @@ function defaultDisplay(num) {
 </table>
 <div id="overlay" class="hide"></div>
 <div id="querywindow" class="hide">
-	<img src="close.png" class="close" onclick="closeQueryWindow()"></img>
+	<input type="button" class="close" title="Close" onclick="closeQueryWindow(false)"/>
 	<table id="querytexttable"><tr>
 	<td><div id="querywindowtext"> </div></td>
-	<td><button name="QuerySearch" type="button" class="navbarbtn" onclick='searchQuery()' align='right'>Search</button></td>
-	<td><button name="QuerySearch" type="button" class="navbarbtn" onclick='copyToSearchBar()' align='right'>Copy to <br/> search bar</button></td>
+	<td><button name="Done" title='Copy query to search bar' type="button" class="navbarbtn" onclick='copyToSearchBar()' align='right'>Done</button></td>
 	</tr></table>
 	<hr/>
 	<div style="overflow-x: auto; overflow-y: auto; text-align: center; margin: auto; width: 100%; height: 394px;">

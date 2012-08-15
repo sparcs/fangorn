@@ -86,26 +86,27 @@ function QueryTree(data, varname, sentnum, queryDomId, treeDomId, matchedPairs, 
 	this.UNSELECTED_STATE = new QueryTree.prototype.Unselected();
 	this.LINE_SELECTED_STATE = new QueryTree.prototype.LineSelected(this);
 	this.setParentOnTreeNode(this.tree, null);
+	//termId is a unique number given to terms in the query; deleted term's Ids are not reused; identified by tree["t"]
 	this.queryNodeByTermId = {};
-	//here position indicates right_left_depth_parent
-	this.queryNodeByPosition = {};
-	this.root = this.buildQueryTree(queryString);
-	this.treeNodeByPosition = {};
-	this.indexTreeByPosition(this.tree);
+	//here pos indicates right_left_depth_parent; identified by tree["i"]
+	this.queryNodeByTermPos = {};
+	this.treeNodeByTermPos = {};
+	this.indexTreeByTermPos(this.tree);
 	this.currentState = this.UNSELECTED_STATE;
 	this.selectedNodeTreeNode = null;
 	this.selectedNodeDom = null;
 	this.selectedLineTermId = null;
+	this.root = this.buildQueryTree(queryString);
 }
 
 String.prototype.trim = function() {
 	return this.toString().replace(/^ +/, '').replace(/ +$/, '');
 }
 
-QueryTree.prototype.indexTreeByPosition = function(node) {
-	this.treeNodeByPosition[node["i"]] = node;
+QueryTree.prototype.indexTreeByTermPos = function(node) {
+	this.treeNodeByTermPos[node["i"]] = node;
 	for ( var i = 0; i < node["c"].length; i++) {
-		this.indexTreeByPosition(node["c"][i]);
+		this.indexTreeByTermPos(node["c"][i]);
 	}
 }
 
@@ -123,15 +124,15 @@ QueryTree.prototype.LineSelected = function(qt) {
 			qt.removeLineSelection();
 		}
 	},
-	this.clickLine = function(termId, matchNum, nextOpr, qt){
+	this.clickLine = function(termId, matchPos, nextOpr, qt){
 		if (qt.selectedLineTermId != termId) {
-			qt.selectLine(termId, qt.matches.pairs[matchNum]["o"], nextOpr);
+			qt.selectLine(termId, qt.matches.pairs[matchPos]["o"], nextOpr);
 		} else {
 			var l0 = document.getElementById("t_" + termId + "_0");
 			var l1 = document.getElementById("t_" + termId + "_1");
 			var l2 = document.getElementById("t_" + termId + "_2");
-			if (nextOpr != null) {
-				qt.matches.updatePairOpr(matchNum, nextOpr);
+			if (nextOpr != null) { // change operator, redraw highlight path and selection
+				qt.matches.updatePairOpr(matchPos, nextOpr);
 				qt.queryNodeByTermId[termId].opr = QueryTree.prototype.AXIS_OPRS[nextOpr]["sym"];
 				var queryNodeSpan = document.getElementById("q_" + termId);
 				var oprDom = document.createElement('span');
@@ -143,8 +144,8 @@ QueryTree.prototype.LineSelected = function(qt) {
 				parent.removeChild(l0);
 				parent.removeChild(l1);
 				if (l2) { parent.removeChild(l2); }
-				qt.drawHighlightPath(parent, matchNum);
-				qt.selectLine(termId, qt.matches.pairs[matchNum]["o"], nextOpr);	
+				qt.drawHighlightPath(parent, matchPos);
+				qt.selectLine(termId, qt.matches.pairs[matchPos]["o"], nextOpr);	
 			}
 		}
 	};
@@ -169,9 +170,9 @@ QueryTree.prototype.Unselected = function() {
 			qt.currentState = qt.NODE_SELECTED_STATE;
 		}
 	},
-	this.clickLine = function(termId, matchNum, nextOpr, qt){
+	this.clickLine = function(termId, matchPos, nextOpr, qt){
 		qt.currentState = qt.LINE_SELECTED_STATE;
-		qt.selectLine(termId, qt.matches.pairs[matchNum]["o"], nextOpr);
+		qt.selectLine(termId, qt.matches.pairs[matchPos]["o"], nextOpr);
 	};
 }
 
@@ -196,19 +197,19 @@ QueryTree.prototype.NodeSelected = function() {
 			qt.removePrevSelectedNode();
 			te["h"] = true;
 			n.setAttribute("style", "stroke:" + QueryTree.prototype.HIGHLIGHT_TEXT_COLOUR + ";fill:" + QueryTree.prototype.HIGHLIGHT_TEXT_COLOUR + ";"); //change colour of new node text to green
-			var newTermId = qt.matches.nextPairNum++;
+			var newTermId = qt.matches.nextTermId++;
 			var opr = qt.getOpr(startNode["i"], te["i"]);
-			qt.matches.pairs.push({"s": startNode["i"], "e": te["i"], "o": opr, "t": newTermId});
+			var newMatchPos = qt.matches.addPair({"s": startNode["i"], "e": te["i"], "o": opr, "t": newTermId});
 			qt.updateQueryTree(startNode, opr, te["n"], newTermId, te["i"]);
 			qt.selectNode(n, te);//draw box around new node and set edit and info box
-			qt.drawHighlightPath(svgElement, newTermId); //draw the line from old node to new node
+			qt.drawHighlightPath(svgElement, newMatchPos); //draw the line from old node to new node
 			qt.drawQuery(); // redraw the entire query because it is complicated to modify in-place
 		}
 	},
-	this.clickLine = function(termId, matchNum, nextOpr, qt){
+	this.clickLine = function(termId, matchPos, nextOpr, qt){
 		qt.removePrevSelectedNode();
 		qt.currentState = qt.LINE_SELECTED_STATE;
-		qt.selectLine(termId, qt.matches.pairs[matchNum]["o"], nextOpr);
+		qt.selectLine(termId, qt.matches.pairs[matchPos]["o"], nextOpr);
 	};
 }
 
@@ -322,13 +323,13 @@ QueryTree.prototype.toSVG = function(objid) {
 }
 
 QueryTree.prototype.drawHighlightPaths = function(svgElement) {
-	for ( var i in this.matches.pairs) {
+	for (var i in this.matches.pairs) { // warning: don't just iterate, some positions will have undefined values because we may have deleted them
 		this.drawHighlightPath(svgElement, i);
 	}
 }
 
-QueryTree.prototype.drawHighlightPath = function(svgElement, i) {
-	var p = this.matches.pairs[i];
+QueryTree.prototype.drawHighlightPath = function(svgElement, matchPos) {
+	var p = this.matches.pairs[matchPos];
 	if (p["s"] == "") { return; }
 	/**
 	 * The numerical comparisons are based on TreeAxis's constants
@@ -340,70 +341,37 @@ QueryTree.prototype.drawHighlightPath = function(svgElement, i) {
 	var lineStyle = "stroke:" + colour + ";stroke-width:2;" + ((dashedLine) ? "stroke-dasharray:9,5;" : "");
 	var transStyle = "stroke:black;stroke-width:0;fill:white;fill-opacity:0.001";//used to create a polygon to help click on the line and also highlight the line
 	//All the preceding axis codes are odd numbers 
-	var b = this.treeNodeByPosition[(opr % 2 == 1) ? p["e"] : p["s"]];
-	var a = this.treeNodeByPosition[(opr % 2 == 1) ? p["s"] : p["e"]];
+	var b = this.treeNodeByTermPos[(opr % 2 == 1) ? p["e"] : p["s"]];
+	var a = this.treeNodeByTermPos[(opr % 2 == 1) ? p["s"] : p["e"]];
 	var width = (b["s"]) ? QueryTree.prototype.WIDTH_OF_NARROW_CHAR : QueryTree.prototype.WIDTH_OF_CHAR;
 	var nextOpr = this.getNextOpr(p["s"], p["e"], opr); //other possible operators
 	var termId = p["t"];
-	if (opr < 4) { // vertical lines
-		var x1 = b["x"] + (b["n"].length * width) / 2;
-		var y1 = b["y"] + 2 * QueryTree.prototype.YPADDING
+	var x1, y1, x2, y2;
+	if (opr < 4) { // vertical line calculations
+		x1 = b["x"] + (b["n"].length * width) / 2;
+		y1 = b["y"] + 2 * QueryTree.prototype.YPADDING
 		width = (a["s"]) ? QueryTree.prototype.WIDTH_OF_NARROW_CHAR : QueryTree.prototype.WIDTH_OF_CHAR;
-		var x2 = a["x"] + (a["n"].length * width) / 2;
-		var y2 = a["y"] - QueryTree.prototype.TEXT_HEIGHT - QueryTree.prototype.YPADDING;
-		var corners = this.getCorners(x1, y1, x2, y2, true);
-		svgElement.appendChild(this.getClickableSVGPolygon(corners, true, true, transStyle, termId, i, 0, nextOpr));
-		svgElement.appendChild(this.getClickableSVGLine(x1, y1, x2, y2, lineStyle, termId, i, 1, nextOpr));
-	} else { // horizontal lines
-		var x1 = b["x"] + (b["n"].length * width) + 5;
-		var y1 = b["y"] - QueryTree.prototype.TEXT_HEIGHT / 2 + 1;
-		var x2 = a["x"] - 5;
-		var y2 = a["y"] - QueryTree.prototype.TEXT_HEIGHT / 2 + 1;
-		if (singleLine) {
-			var corners = this.getCorners(x1, y1, x2, y2, true);
-			svgElement.appendChild(this.getClickableSVGPolygon(corners, false, true, transStyle, termId, i, 0, nextOpr));
-			svgElement.appendChild(this.getClickableSVGLine(x1, y1, x2, y2, lineStyle, termId, i, 1, nextOpr));
-		} else {
-			var corners = this.getCorners(x1, y1, x2, y2, false);
-			svgElement.appendChild(this.getClickableSVGPolygon(corners, false, false, transStyle, termId, i, 0, nextOpr));
-			svgElement.appendChild(this.getClickableSVGLine(x1, y1 - 2, x2, y2 - 2, lineStyle, termId, i, 1, nextOpr));
-			svgElement.appendChild(this.getClickableSVGLine(x1, y1 + 2, x2, y2 + 2, lineStyle, termId, i, 2, nextOpr));
-		}
+		x2 = a["x"] + (a["n"].length * width) / 2;
+		y2 = a["y"] - QueryTree.prototype.TEXT_HEIGHT - QueryTree.prototype.YPADDING;
+	} else { // horizontal line calculations
+		x1 = b["x"] + (b["n"].length * width) + 5;
+		y1 = b["y"] - QueryTree.prototype.TEXT_HEIGHT / 2 + 1;
+		x2 = a["x"] - 5;
+		y2 = a["y"] - QueryTree.prototype.TEXT_HEIGHT / 2 + 1;
+	}
+	var corners = this.getCorners(x1, y1, x2, y2, singleLine);
+	svgElement.appendChild(this.getClickableSVGPolygon(corners, transStyle, termId, matchPos, 0, nextOpr));
+	if (singleLine) {
+		svgElement.appendChild(this.getClickableSVGLine(x1, y1, x2, y2, lineStyle, termId, matchPos, 1, nextOpr));
+	} else { // double line is only possible in horizontal lines. therefore we adjust the y-coord values
+		svgElement.appendChild(this.getClickableSVGLine(x1, y1 - 2, x2, y2 - 2, lineStyle, termId, matchPos, 1, nextOpr));
+		svgElement.appendChild(this.getClickableSVGLine(x1, y1 + 2, x2, y2 + 2, lineStyle, termId, matchPos, 2, nextOpr));
 	}
 }
 
-QueryTree.prototype.getClickableSVGPolygon = function(corners, vertical, single, style, termId, matchPos, lineNum, nextOpr) {
-	var gap = single ? 5 : 8;	
-/*	var midx = (x1 + x2) / 2;
-	var midy = (y1 + y2) / 2;
-	var width = gap * 2;
-	var height = Math.sqrt(((x2 - x1) * (x2 - x1)) + ((y2 - y1) * (y2 - y1))); 
-	var rotate = "rotate(" + this.getRotateAngle(x1, y1, x2, y2) + ", " + midx + ", " + midy + ")";
-	var topleftx = midx - gap;
-	var toplefty = midy + height / 2;
-	var box = document.createElementNS('http://www.w3.org/2000/svg', 'svg:rect');
-	box.setAttribute("x", topleftx);
-	box.setAttribute("y", toplefty);
-	box.setAttribute("width", width);
-	box.setAttribute("height", height);
-	box.setAttribute("rx", 2);
-	box.setAttribute("ry", 2);
-	box.setAttribute("transform", rotate);
-	box.setAttribute("style", style);
-	box.setAttribute("id", "t_" + termId + "_" + lineNum);
-	box.setAttribute("onmouseover", this.varname + ".mouseoverLine('" + termId + "', " + nextOpr + ");");
-	box.setAttribute("onmouseout", this.varname + ".mouseoutLine('" + termId + "', " + nextOpr + ");");
-	box.setAttribute("onclick", this.varname + ".clickLine('" + termId + "', " + matchPos + ", " + nextOpr + ");");
-	return box;
-*/      
+QueryTree.prototype.getClickableSVGPolygon = function(corners, style, termId, matchPos, lineNum, nextOpr) {
 	var pg = document.createElementNS('http://www.w3.org/2000/svg', 'svg:polygon');
 	var points_str = corners.x1 + "," + corners.y1 + " " + corners.x2 + "," + corners.y2 + " " + corners.x3 + "," + corners.y3 + " " + corners.x4 + "," + corners.y4;
-/*	if (vertical) {
-		points_str = (x1 - gap) + "," + y1 + " " + (x2 - gap) + "," + y2 + " " + (x2 + gap) + "," + y2 + " " + (x1 + gap) + "," + y1;
-	} else {
-		points_str = x1 + "," + (y1 - gap) + " " + x2 + "," + (y2 - gap) + " " + x2 + "," + (y2 + gap) + " " + x1 + "," + (y1 + gap);
-	}
-*/
 	pg.setAttribute("points", points_str);
 	pg.setAttribute("id", "t_" + termId + "_" + lineNum);
 	pg.setAttribute("style", style);
@@ -412,20 +380,6 @@ QueryTree.prototype.getClickableSVGPolygon = function(corners, vertical, single,
 	pg.setAttribute("onclick", this.varname + ".clickLine('" + termId + "', " + matchPos + ", " + nextOpr + ");");
 	return pg;
 }
-
-/*
-QueryTree.prototype.getRotateAngle = function(x1, y1, x2, y2) {
-	if (x1 - x2 == 0) { // line is vertical
-		return 90;
-	} else if (y1 - y2 == 0) { // line is horizontal
-		return 0;
-	} // line is at some angle
-	var slope = (y2 - y1) / (x2 - x1);
-	var thetha = (180/Math.PI) * Math.atan(slope);
-	return 180 - thetha; //svg rotate calculates angles from the bottom
-	
-}
-*/
 
 QueryTree.prototype.getCorners = function(x1, y1, x2, y2, single) {
 	var gap = single ? 4 : 6;
@@ -568,7 +522,7 @@ QueryTree.prototype.getClickableSVGLine = function(x1, y1, x2, y2, style, termId
 }
 
 QueryTree.prototype.getNodeDomId = function(position) {
-	return this.sentnum + "_" + this.treeNodeByPosition[position]["i"];
+	return this.sentnum + "_" + this.treeNodeByTermPos[position]["i"];
 }
 
 QueryTree.prototype.recToSVG = function(svgElement, objid, t) {
@@ -649,7 +603,7 @@ QueryTree.prototype.maxXY = function(nod, xyv) {
 
 QueryTree.prototype.mouseoverNode = function(pos) {
 	var n = document.getElementById(this.getNodeDomId(pos));
-	var te = this.treeNodeByPosition[pos];
+	var te = this.treeNodeByTermPos[pos];
 	var qn = document.getElementById("q_" + pos);
 	if (qn) { qn.setAttribute("class", "highlight"); }
 	this.currentState.mouseoverNode(n, te);
@@ -657,7 +611,7 @@ QueryTree.prototype.mouseoverNode = function(pos) {
 
 QueryTree.prototype.mouseoutNode = function(pos) {
 	var n = document.getElementById(this.getNodeDomId(pos));
-	var te = this.treeNodeByPosition[pos];
+	var te = this.treeNodeByTermPos[pos];
 	var qn = document.getElementById("q_" + pos);
 	if (qn) { qn.removeAttribute("class"); }
 	this.currentState.mouseoutNode(n, te);
@@ -665,11 +619,11 @@ QueryTree.prototype.mouseoutNode = function(pos) {
 
 QueryTree.prototype.clickNode = function(pos) {
 	var n = document.getElementById(this.getNodeDomId(pos));
-	var te = this.treeNodeByPosition[pos];
+	var te = this.treeNodeByTermPos[pos];
 	this.currentState.clickNode(n, te, this);
 }
 
-//this method requires the newly inserted node to be present in the query tree.
+//this method requires a newly inserted node to be present in the query tree.
 QueryTree.prototype.selectNode = function(n, te) {
 	var width = ((te["s"]) ? QueryTree.prototype.WIDTH_OF_NARROW_CHAR : QueryTree.prototype.WIDTH_OF_CHAR) * te["n"].length;
 	var x = n.getAttribute("x");
@@ -685,7 +639,7 @@ QueryTree.prototype.selectNode = function(n, te) {
 	var editNodeText = document.getElementById('editnodelabel');
 	editNodeText.value = te["n"];
 	this.updateInfoDiv(QueryTree.prototype.NODE_SEL_MESG);
-	if (te["i"] in this.queryNodeByPosition && !this.queryNodeByPosition[te["i"]].isDeleteable()) {
+	if (te["i"] in this.queryNodeByTermPos && !this.queryNodeByTermPos[te["i"]].isDeleteable()) {
 		document.getElementById('deletebutton').setAttribute("disabled", "disabled");
 	} else {
 		document.getElementById('deletebutton').removeAttribute("disabled");
@@ -704,10 +658,14 @@ QueryTree.prototype.removePrevSelectedNode = function() {
 
 QueryTree.prototype.expandNode = function(pos) {
 	var n = document.getElementById(this.getNodeDomId(pos));
-	var te = this.treeNodeByPosition[pos];
+	var te = this.treeNodeByTermPos[pos];
 	if (!te["disc"] && te["c"].length > 0) {
 		te["e"] = te["e"] ^ true;
 		this.calcPositionAndDrawSVG();
+	}
+	if (this.selectedNodeDom != null) {
+		var domNode = document.getElementById(this.getNodeDomId(pos));
+		this.selectNode(domNode, this.selectedNodeTreeNode);
 	}
 }
 
@@ -776,8 +734,8 @@ QueryTree.prototype.mouseoutLine = function(termId, nextOpr) {
 	if (qn) { qn.removeAttribute("class"); }
 }
 
-QueryTree.prototype.clickLine = function(termId, matchNum, nextOpr) {
-	this.currentState.clickLine(termId, matchNum, nextOpr, this);
+QueryTree.prototype.clickLine = function(termId, matchPos, nextOpr) {
+	this.currentState.clickLine(termId, matchPos, nextOpr, this);
 }
 
 QueryTree.prototype.updateNodeLabel = function() {
@@ -785,7 +743,7 @@ QueryTree.prototype.updateNodeLabel = function() {
 	if (this.selectedNodeTreeNode != null && this.selectedNodeDom != null && this.selectedNodeTreeNode["n"] != newValue && newValue.length > 0) {
 		var oldValue = this.selectedNodeTreeNode["n"];
 		var termPos = this.selectedNodeTreeNode["i"];
-		var queryNode = this.queryNodeByPosition[termPos];
+		var queryNode = this.queryNodeByTermPos[termPos];
 		var regex = new RegExp("\\s|\\t|\\[|\\]|\\{|\\}|\\(|\\)|\\<|\\>|\\&|\\^|=|\\\\|\\/", "g");
 		if (newValue.search(regex) != -1) {
 			this.updateInfoDiv(QueryTree.prototype.CHR_NOTALLOWED_MESG);
@@ -797,7 +755,7 @@ QueryTree.prototype.updateNodeLabel = function() {
 		this.calcPositionAndDrawSVG();
 		this.removePrevSelectedNode();
 		var newDomNode = document.getElementById(this.getNodeDomId(termPos));
-		this.selectNode(newDomNode, this.treeNodeByPosition[termPos]);
+		this.selectNode(newDomNode, this.treeNodeByTermPos[termPos]);
 		this.updateInfoDiv(oldValue + QueryTree.prototype.NODE_EDITED_MESG + newValue + ".");
 	}
 }
@@ -806,7 +764,7 @@ QueryTree.prototype.deleteNode = function() {
 	if (this.selectedNodeTreeNode == null) { return; }
 	var treePos = this.selectedNodeTreeNode["i"];
 	var deletedNodeLabel = this.selectedNodeTreeNode["n"];
-	var queryNode = this.queryNodeByPosition[treePos];
+	var queryNode = this.queryNodeByTermPos[treePos];
 	if (queryNode == null) { return; }
 	if (!queryNode.isDeleteable()) { return; }
 	this.selectedNodeTreeNode["h"] = false;
@@ -847,7 +805,12 @@ QueryTree.prototype.deleteNode = function() {
 					}
 				}
 				// (if first one -> remove the next AND/OR opr; others -> remove previous opr AND/OR) in addition to expr itself
-				nodeWithFilter.children[0].children.splice((pos == 0 ? 0 : pos - 1), 2); 
+				nodeWithFilter.children[0].children.splice((pos == 0 ? 0 : pos - 1), 2);
+				// if removing one filter expression leaves out only one not NOT expression and there are no other children of nodeWithFilter then remove filter
+				if (nodeWithFilter.children.length == 1 && nodeWithFilter.children[0].children.length == 1 && !nodeWithFilter.children[0].children[0].isNot) {
+					nodeWithFilter.addChild(nodeWithFilter.children[0].children[0].children[0]); // add the label node in nodeWithFitler/filter/expr to nodeWithFilter 
+					nodeWithFilter.children.splice(0, 1); //remove the filter expression
+				}
 			}
 
 		} 
@@ -1051,6 +1014,7 @@ QueryTree.prototype.buildQueryTree = function(queryString) {
 	var prev = root; // this is the prev node where control rests in the tree
 	var prevToken = null; // this is the prev token in the string query
 	var tokens = this.getTokens(queryString);
+	var endPosByPairNum = this.matches.getEndPosByPairNum();
 	for (var i = 0; i < tokens.length; i++) {
 		var token = tokens[i];
 		if (prevToken == null) {
@@ -1060,12 +1024,12 @@ QueryTree.prototype.buildQueryTree = function(queryString) {
 			if (token['type'] == 'text') { 
 				var opr = queryString.substring(prevToken['start'], prevToken['end']);
 				var text = queryString.substring(token['start'], token['end']).trim();
-				var matchPosition = null;
-				if (termId in this.matches.byPairNum) { matchPosition = this.matches.byPairNum[termId]; }
-				var node = new LabelNode(opr, text, termId, matchPosition);
-				if (matchPosition != null) { 
+				var endPos = null;
+				if (termId in endPosByPairNum) { endPos = endPosByPairNum[termId]; }
+				var node = new LabelNode(opr, text, termId, endPos);
+				if (endPos != null) { 
 					this.queryNodeByTermId[termId] = node; 
-					this.queryNodeByPosition[matchPosition] = node;
+					this.queryNodeByTermPos[endPos] = node;
 				}
 				termId++; //we have successfully processed one term in the query so increment it to point to the next one
 				prev.addChild(node);
@@ -1142,7 +1106,7 @@ QueryTree.prototype.buildQueryTree = function(queryString) {
 QueryTree.prototype.updateQueryTree = function(startTreeNode, oprId, label, queryTreePos, treePos) {
 	var opr = QueryTree.prototype.AXIS_OPRS[oprId]["sym"];
 	var labelNode = new LabelNode(opr, label, queryTreePos, treePos);
-	var startQueryNode = this.queryNodeByPosition[startTreeNode["i"]];
+	var startQueryNode = this.queryNodeByTermPos[startTreeNode["i"]];
 	if (startQueryNode.children.length == 0 || (startQueryNode.children.length == 1 && startQueryNode.children[0].type == "filter")) {
 		startQueryNode.addChild(labelNode);
 	} else if (startQueryNode.children.length == 2) { // the first child is the filter
@@ -1160,52 +1124,52 @@ QueryTree.prototype.updateQueryTree = function(startTreeNode, oprId, label, quer
 		startQueryNode.addChild(filter);
 		startQueryNode.addChild(currentChild);
 	}
-	this.queryNodeByPosition[treePos] = labelNode;
+	this.queryNodeByTermPos[treePos] = labelNode;
 	this.queryNodeByTermId[queryTreePos] = labelNode;
 }
 
 QueryTree.prototype.Matches = function(pairs) {
 	this.pairs = pairs,
-	this.nextPairNum = 0,
+	this.nextTermId = 0,
 	this.init = function() {
 		var treeNodesToQueryTerms = {};
 		this.pairs.sort(function(a, b) { return a["t"] - b["t"]; }); 
-		this.byEnd = {};
-		this.byPairNum = {};
 		this.treeNodesMatchingMultipleQueryTerms = {};
 		for (var i = 0 ; i < this.pairs.length; i++) {
 			var pair = this.pairs[i];
 			var end = pair["e"];
-			var pairNum = pair["t"];
-			this.byPairNum[pairNum] = end;
-			this.byEnd[end] = (end in this.byEnd) ? this.byEnd[end] : [];
-			this.byEnd[end].push(i);
+			var termId = pair["t"];
 			if (end in treeNodesToQueryTerms) {
-				treeNodesToQueryTerms[end].push(pairNum);
-				this.treeNodesMatchingMultipleQueryTerms[end].push(pairNum);
+				treeNodesToQueryTerms[end].push(termId);
+				this.treeNodesMatchingMultipleQueryTerms[end].push(termId);
 			} else {
-				treeNodesToQueryTerms[end] = [pairNum];
+				treeNodesToQueryTerms[end] = [termId];
 			}
 		}
-		this.nextPairNum = this.pairs.length;
+		this.nextTermId = this.pairs.length;
 	},
-	this.updatePairOpr = function(pairNum, newOpr) {
-		this.pairs[pairNum]["o"] = newOpr ;
-	},
-	this.updateStartOpr = function(pairNum, start, opr) {
-		this.pairs[pairNum]["s"] = start;
-		this.pairs[pairNum]["o"] = opr;
-	},
-	this.removePair = function(pairNum) {
-		var end = this.pairs[pairNum]["e"]
-		delete this.pairs[pairNum];
-		delete this.byPairNum[pairNum];
-		for (var i = 0; i < this.byEnd[end].length; i++) {
-			if (this.byEnd[end][i] == pairNum) {
-				this.byEnd[end] = this.byEnd[end].splice(i, 1);
-				break;
-			}
+	this.getEndPosByPairNum = function() {
+		var byPairNum = {};
+		for (var i = 0; i < this.pairs.length; i++) {
+			var pair = this.pairs[i];
+			byPairNum[pair["t"]] = pair["e"];
 		}
+		return byPairNum;
+	},
+	this.addPair = function(pair) {
+		this.pairs.push(pair);
+		return this.pairs.length - 1; //returns matchPos
+	},
+	this.updatePairOpr = function(matchPos, newOpr) {
+		this.pairs[matchPos]["o"] = newOpr ;
+	},
+	this.updateStartOpr = function(matchPos, start, opr) {
+		this.pairs[matchPos]["s"] = start;
+		this.pairs[matchPos]["o"] = opr;
+	},
+	this.removePair = function(matchPos) {
+		var end = this.pairs[matchPos]["e"]
+		delete this.pairs[matchPos];
 	},
 	this.hasTreeNodesMatchingMultipleQueryTerms = function() {
 		for (key in this.treeNodesMatchingMultipleQueryTerms) {
