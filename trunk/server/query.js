@@ -131,7 +131,7 @@ QueryTree.prototype.LineSelected = function(qt) {
 			var l1 = document.getElementById("t_" + termId + "_1");
 			var l2 = document.getElementById("t_" + termId + "_2");
 			if (nextOpr != null) {
-				qt.matches.updatePair(matchNum, nextOpr);
+				qt.matches.updatePairOpr(matchNum, nextOpr);
 				qt.queryNodeByTermId[termId].opr = QueryTree.prototype.AXIS_OPRS[nextOpr]["sym"];
 				var queryNodeSpan = document.getElementById("q_" + termId);
 				var oprDom = document.createElement('span');
@@ -195,12 +195,12 @@ QueryTree.prototype.NodeSelected = function() {
 			var svgElement = qt.selectedNodeDom.parentNode;
 			qt.removePrevSelectedNode();
 			te["h"] = true;
-			qt.selectNode(n, te);//draw box around new node and set edit and info box
 			n.setAttribute("style", "stroke:" + QueryTree.prototype.HIGHLIGHT_TEXT_COLOUR + ";fill:" + QueryTree.prototype.HIGHLIGHT_TEXT_COLOUR + ";"); //change colour of new node text to green
-			var newTermId = qt.matches.pairs.length;
+			var newTermId = qt.matches.nextPairNum++;
 			var opr = qt.getOpr(startNode["i"], te["i"]);
 			qt.matches.pairs.push({"s": startNode["i"], "e": te["i"], "o": opr, "t": newTermId});
 			qt.updateQueryTree(startNode, opr, te["n"], newTermId, te["i"]);
+			qt.selectNode(n, te);//draw box around new node and set edit and info box
 			qt.drawHighlightPath(svgElement, newTermId); //draw the line from old node to new node
 			qt.drawQuery(); // redraw the entire query because it is complicated to modify in-place
 		}
@@ -322,7 +322,7 @@ QueryTree.prototype.toSVG = function(objid) {
 }
 
 QueryTree.prototype.drawHighlightPaths = function(svgElement) {
-	for ( var i = 0; i < this.matches.pairs.length; i++) {
+	for ( var i in this.matches.pairs) {
 		this.drawHighlightPath(svgElement, i);
 	}
 }
@@ -669,6 +669,7 @@ QueryTree.prototype.clickNode = function(pos) {
 	this.currentState.clickNode(n, te, this);
 }
 
+//this method requires the newly inserted node to be present in the query tree.
 QueryTree.prototype.selectNode = function(n, te) {
 	var width = ((te["s"]) ? QueryTree.prototype.WIDTH_OF_NARROW_CHAR : QueryTree.prototype.WIDTH_OF_CHAR) * te["n"].length;
 	var x = n.getAttribute("x");
@@ -684,7 +685,7 @@ QueryTree.prototype.selectNode = function(n, te) {
 	var editNodeText = document.getElementById('editnodelabel');
 	editNodeText.value = te["n"];
 	this.updateInfoDiv(QueryTree.prototype.NODE_SEL_MESG);
-	if (!this.queryNodeByPosition[te["i"]].isDeleteable()) {
+	if (te["i"] in this.queryNodeByPosition && !this.queryNodeByPosition[te["i"]].isDeleteable()) {
 		document.getElementById('deletebutton').setAttribute("disabled", "disabled");
 	} else {
 		document.getElementById('deletebutton').removeAttribute("disabled");
@@ -808,36 +809,70 @@ QueryTree.prototype.deleteNode = function() {
 	var queryNode = this.queryNodeByPosition[treePos];
 	if (queryNode == null) { return; }
 	if (!queryNode.isDeleteable()) { return; }
-	return; // short circuit code for now
-/*	this.removePrevSelectedNode();
 	this.selectedNodeTreeNode["h"] = false;
+	this.removePrevSelectedNode();
 	var deletedPos = queryNode.queryTreePos;
-	if (queryNode == this.root) {
-		// if root has no children it can't be deleted
-		if (queryNode.children[0].type == "filter") {
-			
+	var updatedRoot = false;
+	if (queryNode.parent == this.root) {
+		// if root has no children or more than one child it can't be deleted
+		if (queryNode.children[0].type == "filter" && !queryNode.children[0].children[0].isNot) { // filter should have only one child expr check if is a NOT expression
+			this.root = queryNode.children[0].children[0];
+			this.root.parent = null; 
+		} else { // queryNode has a child node
+			this.root.children[0] = this.root.children[0].children[0];
+			this.root.children[0].parent = this.root;
+		}
+		this.root.children[0].opr = QueryTree.prototype.AXIS_OPRS[0].sym //change new root's opr to descendant
+		updatedRoot = true;
+	} else {
+		if (queryNode.parent.type == "label") { //simple leaf
+			//if filter + child -> this node is the last node, only child -> last node; pop will always work
+			var qp = queryNode.parent;
+			qp.children.pop(); // removes the node, now check if the query can be simplified
+			if (qp.children.length > 0 && qp.children[0].children.length == 1 && !qp.children[0].children[0].isNot) { //has filter and only one not NOT expr in it
+				qp.children[0] = qp.children[0].children[0].children[0]; //remove filter and make the label node of the expr as the child
+				qp.children[0].parent = qp;
+			}
+		} else { // parent is an expr
+			if (queryNode.parent.parent.children.length == 1) {//filter has this one node, remove filter
+				queryNode.parent.parent.parent.children.splice(0, 1); // queryNode.parent(expr).parent(filter).parent(labelnode with the filter)
+			} else if (queryNode.parent.parent.children.length > 1) { //expression is one amongst many remove the associated and/or operator 
+				var exprToFind = queryNode.parent;
+				var nodeWithFilter = queryNode.parent.parent.parent;
+				var pos = -1;
+				for (var i = 0; i < nodeWithFilter.children[0].children.length; i++) { // nodeWithFilter.children[0] is the filter
+					if (nodeWithFilter.children[0].children[i] == exprToFind) { 
+						pos = i; 
+						break;
+					}
+				}
+				// (if first one -> remove the next AND/OR opr; others -> remove previous opr AND/OR) in addition to expr itself
+				nodeWithFilter.children[0].children.splice((pos == 0 ? 0 : pos - 1), 2); 
+			}
+
+		} 
 	}
-	this.matches.pairs.splice(deletedPos, 1);
+	this.matches.removePair(deletedPos);
+	if (updatedRoot) { this.matches.updateStartOpr(this.root.children[0].queryTreePos, "", 0); }
 	this.drawQuery();
 	this.calcPositionAndDrawSVG();
-	this.updateInfoDiv("Deleted node " + deletedNodeLabel + "."); */
+	this.updateInfoDiv("Deleted node " + deletedNodeLabel + ".");
 }
 
-Node.prototype.isDeleteable = function() {
+Node.prototype.isDeleteable = function() { // this is called only on LabelNodes
 	if (this.parent.parent == null) { //is root expr
 		if (this.children.length > 1) { return false; }
 		if (this.children.length == 1 && this.children[0].type == "filter") {
-			if (this.children[0].children.length > 1) { return false; }
-			if (this.children[0].children[0].isNot) { return false; }
+			if (this.children[0].children.length > 1) { return false; } // more than one expression in the filter
+			if (this.children[0].children[0].isNot) { return false; } // there is only one expression (from prev check); if that exp is a not exp return false
 			return true;
 		} else if (this.children.length == 1 && this.children[0].type == "label") {
 			return true;
 		}
-	} else {
-		if (this.children.length > 0) { return false; }
-		return true;
+		return false;
 	}
-	return false;
+	if (this.children.length > 0) { return false; }
+	return true;
 }
 
 function Node(type) {
@@ -902,7 +937,6 @@ var LabelNode = function(opr, label, queryTreePos, treePos) {
 LabelNode.prototype = new Node("label");
 
 var ExprNode = function(isRoot, isNot) {
-	this.hasBraces = !isRoot;
 	this.isNot = isNot;
 	this.children = [];
 	this.parent = null;
@@ -1060,7 +1094,7 @@ QueryTree.prototype.buildQueryTree = function(queryString) {
 				nodeStack[nodeStack.length - 1].addChild(expr);
 				prev = expr; 
 			} else if (token['type'] == 'close_exp') {
-				prev = nodeStack.pop(); //Repeated twice intentionally 
+				prev = nodeStack.pop(); //Repeated twice intentionally to pop label node and filter node
 				prev = nodeStack.pop();
 			}
 		} else if (prevToken['type'] == 'log_opr') {
@@ -1114,11 +1148,15 @@ QueryTree.prototype.updateQueryTree = function(startTreeNode, oprId, label, quer
 	} else if (startQueryNode.children.length == 2) { // the first child is the filter
 		var filter = startQueryNode.children[0];
 		filter.addChild(new AndOrNode("AND"));
-		filter.addChild(labelNode);
+		var expr = new ExprNode(false, false);
+		expr.addChild(labelNode);
+		filter.addChild(expr);
 	} else if (startQueryNode.children.length == 1 && startQueryNode.children[0].type == "label") {
 		var currentChild = startQueryNode.children.pop();
 		var filter = new FilterNode();
-		filter.addChild(labelNode);
+		var expr = new ExprNode(false, false);
+		expr.addChild(labelNode);
+		filter.addChild(expr);
 		startQueryNode.addChild(filter);
 		startQueryNode.addChild(currentChild);
 	}
@@ -1128,6 +1166,7 @@ QueryTree.prototype.updateQueryTree = function(startTreeNode, oprId, label, quer
 
 QueryTree.prototype.Matches = function(pairs) {
 	this.pairs = pairs,
+	this.nextPairNum = 0,
 	this.init = function() {
 		var treeNodesToQueryTerms = {};
 		this.pairs.sort(function(a, b) { return a["t"] - b["t"]; }); 
@@ -1148,9 +1187,25 @@ QueryTree.prototype.Matches = function(pairs) {
 				treeNodesToQueryTerms[end] = [pairNum];
 			}
 		}
+		this.nextPairNum = this.pairs.length;
 	},
-	this.updatePair = function(pairNum, newOpr) {
+	this.updatePairOpr = function(pairNum, newOpr) {
 		this.pairs[pairNum]["o"] = newOpr ;
+	},
+	this.updateStartOpr = function(pairNum, start, opr) {
+		this.pairs[pairNum]["s"] = start;
+		this.pairs[pairNum]["o"] = opr;
+	},
+	this.removePair = function(pairNum) {
+		var end = this.pairs[pairNum]["e"]
+		delete this.pairs[pairNum];
+		delete this.byPairNum[pairNum];
+		for (var i = 0; i < this.byEnd[end].length; i++) {
+			if (this.byEnd[end][i] == pairNum) {
+				this.byEnd[end] = this.byEnd[end].splice(i, 1);
+				break;
+			}
+		}
 	},
 	this.hasTreeNodesMatchingMultipleQueryTerms = function() {
 		for (key in this.treeNodesMatchingMultipleQueryTerms) {
