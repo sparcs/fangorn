@@ -163,8 +163,11 @@ hr{
 }
 
 .close {
-	float:right;
-	width:14px;
+	background: url("close.png") no-repeat scroll 50% 50% transparent;
+	background-size: cover;
+	float: right;
+	width: 18px;
+	height: 18px;	
 }
 
 .overlayshow {
