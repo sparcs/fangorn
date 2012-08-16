@@ -555,7 +555,7 @@ function defaultDisplay(num) {
 				</form>
 				</div>
 				<div id="modifyopr" class="hide">
-				<input type="checkbox" name="negate" value="yes" onclick="toggleOpr()" align='right'></input>Negated
+				<input id="isnotbox" type="checkbox" name="negate" value="yes" onclick="queryTree.toggleNOT()" align='right'></input>Negated
 				</div>
 		</td>
 	</tr>
