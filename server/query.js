@@ -126,7 +126,7 @@ QueryTree.prototype.LineSelected = function(qt) {
 	},
 	this.clickLine = function(termId, matchPos, nextOpr, qt){
 		if (qt.selectedLineTermId != termId) {
-			qt.selectLine(termId, qt.matches.pairs[matchPos]["o"], nextOpr);
+			qt.selectLine(termId, matchPos, nextOpr);
 		} else {
 			var l0 = document.getElementById("t_" + termId + "_0");
 			var l1 = document.getElementById("t_" + termId + "_1");
@@ -145,7 +145,7 @@ QueryTree.prototype.LineSelected = function(qt) {
 				parent.removeChild(l1);
 				if (l2) { parent.removeChild(l2); }
 				qt.drawHighlightPath(parent, matchPos);
-				qt.selectLine(termId, qt.matches.pairs[matchPos]["o"], nextOpr);	
+				qt.selectLine(termId, matchPos, nextOpr);	
 			}
 		}
 	};
@@ -172,7 +172,7 @@ QueryTree.prototype.Unselected = function() {
 	},
 	this.clickLine = function(termId, matchPos, nextOpr, qt){
 		qt.currentState = qt.LINE_SELECTED_STATE;
-		qt.selectLine(termId, qt.matches.pairs[matchPos]["o"], nextOpr);
+		qt.selectLine(termId, matchPos, nextOpr);
 	};
 }
 
@@ -209,7 +209,7 @@ QueryTree.prototype.NodeSelected = function() {
 	this.clickLine = function(termId, matchPos, nextOpr, qt){
 		qt.removePrevSelectedNode();
 		qt.currentState = qt.LINE_SELECTED_STATE;
-		qt.selectLine(termId, qt.matches.pairs[matchPos]["o"], nextOpr);
+		qt.selectLine(termId, matchPos, nextOpr);
 	};
 }
 
@@ -315,11 +315,22 @@ QueryTree.prototype.toSVG = function(objid) {
 	var svg = document.createElementNS('http://www.w3.org/2000/svg',
 			'svg:svg');
 	this.recToSVG(svg, objid, this.tree);
-	this.drawHighlightPaths(svg)
+	this.drawHighlightPaths(svg);
+	this.drawNots(svg);
 	var m = this.maxXY(this.tree, {x:0, y:0});
 	svg.setAttribute("width", m.x + 2 * QueryTree.prototype.SVG_PADDING);
 	svg.setAttribute("height", m.y + QueryTree.prototype.SVG_PADDING);
 	return svg;
+}
+
+QueryTree.prototype.drawNots = function(svgElement) {
+	for (var i in this.matches.pairs) {
+		var p = this.matches.pairs[i];
+		if (p["m"]) {
+			var termId = p["t"];
+			this.addNotSymbol(svgElement, termId);
+		}
+	}
 }
 
 QueryTree.prototype.drawHighlightPaths = function(svgElement) {
@@ -662,10 +673,13 @@ QueryTree.prototype.expandNode = function(pos) {
 	if (!te["disc"] && te["c"].length > 0) {
 		te["e"] = te["e"] ^ true;
 		this.calcPositionAndDrawSVG();
-	}
+	}//hack!
 	if (this.selectedNodeDom != null) {
 		var domNode = document.getElementById(this.getNodeDomId(pos));
 		this.selectNode(domNode, this.selectedNodeTreeNode);
+	} else if (this.selectedLineTermId != null) {
+		var l0 = document.getElementById("t_" + this.selectedLineTermId + "_0");
+		l0.style.strokeWidth = 1;
 	}
 }
 
@@ -683,14 +697,17 @@ QueryTree.prototype.mouseoutCollapsed = function(pos) {
 	n.removeAttribute('cursor');
 }
 
-QueryTree.prototype.selectLine = function(termId, currOpr, nextOpr) {
+QueryTree.prototype.selectLine = function(termId, matchPos, nextOpr) {
+	var currOpr = this.matches.pairs[matchPos]["o"];
 	if (this.selectedLineTermId != null && this.selectedLineTermId != termId) { this.removeLineSelection(); }
 	this.selectedLineTermId = termId;
+	this.selectedLineMatchPos = matchPos;
 	var l0 = document.getElementById("t_" + termId + "_0");
 	l0.style.strokeWidth = 1;
 	var modifyOprDiv = document.getElementById('modifyopr');
 	modifyOprDiv.removeAttribute('class');
 	var msg = QueryTree.prototype.AXIS_OPRS[currOpr]['name'] + (nextOpr == null ? QueryTree.prototype.OPR_SEL_UNEDIT_MESG : QueryTree.prototype.OPR_SEL_EDIT_MESG);
+	document.getElementById('isnotbox').checked = (this.queryNodeByTermId[termId].parent.type == 'expr' && this.queryNodeByTermId[termId].parent.isNot ? true : false);
 	this.updateInfoDiv(msg);
 }
 
@@ -701,6 +718,7 @@ QueryTree.prototype.removeLineSelection = function() {
 		var modifyOprDiv = document.getElementById('modifyopr');
 		modifyOprDiv.setAttribute('class', 'hide');
 		this.selectedLineTermId = null;
+		this.selectedLineMatchPos = null;
 	}
 }
 
@@ -793,7 +811,7 @@ QueryTree.prototype.deleteNode = function() {
 			}
 		} else { // parent is an expr
 			if (queryNode.parent.parent.children.length == 1) {//filter has this one node, remove filter
-				queryNode.parent.parent.parent.children.splice(0, 1); // queryNode.parent(expr).parent(filter).parent(labelnode with the filter)
+				queryNode.parent.parent.parent.removeChild(0, 1); // queryNode.parent(expr).parent(filter).parent(labelnode with the filter)
 			} else if (queryNode.parent.parent.children.length > 1) { //expression is one amongst many remove the associated and/or operator 
 				var exprToFind = queryNode.parent;
 				var nodeWithFilter = queryNode.parent.parent.parent;
@@ -805,11 +823,11 @@ QueryTree.prototype.deleteNode = function() {
 					}
 				}
 				// (if first one -> remove the next AND/OR opr; others -> remove previous opr AND/OR) in addition to expr itself
-				nodeWithFilter.children[0].children.splice((pos == 0 ? 0 : pos - 1), 2);
+				nodeWithFilter.children[0].removeChild((pos == 0 ? 0 : pos - 1), 2);
 				// if removing one filter expression leaves out only one not NOT expression and there are no other children of nodeWithFilter then remove filter
 				if (nodeWithFilter.children.length == 1 && nodeWithFilter.children[0].children.length == 1 && !nodeWithFilter.children[0].children[0].isNot) {
 					nodeWithFilter.addChild(nodeWithFilter.children[0].children[0].children[0]); // add the label node in nodeWithFitler/filter/expr to nodeWithFilter 
-					nodeWithFilter.children.splice(0, 1); //remove the filter expression
+					nodeWithFilter.removeChild(0, 1); //remove the filter expression
 				}
 			}
 
@@ -820,6 +838,103 @@ QueryTree.prototype.deleteNode = function() {
 	this.drawQuery();
 	this.calcPositionAndDrawSVG();
 	this.updateInfoDiv("Deleted node " + deletedNodeLabel + ".");
+}
+
+QueryTree.prototype.toggleNOT = function() {
+	if (this.selectedLineTermId == null || this.selectedLineMatchPos == null) {return;}
+	var termId = this.selectedLineTermId;
+	var matchPos = this.selectedLineMatchPos;
+	if (this.matches.pairs[matchPos]["m"]) {
+		//is NOT so remove it
+		this.matches.pairs[matchPos]["m"] = false;
+		// remove the NOT symbol
+		var c = document.getElementById('t_' + termId + '_nc');
+		if (c) { c.parentNode.removeChild(c); }
+		var l = document.getElementById('t_' + termId + '_nl');
+		if (l) { l.parentNode.removeChild(l); }
+	} else {
+		this.matches.pairs[matchPos]["m"] = true;
+		this.addNotSymbol(document.getElementById('t_' + termId + '_1').parentNode, termId);
+	}
+	this.updateQueryNodeWithNot(matchPos, termId);
+	this.drawQuery();
+}
+
+QueryTree.prototype.updateQueryNodeWithNot = function(matchPos, termId) {
+	var qn = this.queryNodeByTermId[termId];
+	var newValue = this.matches.pairs[matchPos]["m"];
+	if (qn.parent.type == 'expr') {
+		qn.parent.isNot = newValue;
+		if (newValue == false) {//just been reset
+			//check if the query can be rewritten
+			if (qn.parent.parent.children.length == 1 && qn.parent.parent.parent.children.length == 1) {
+				var exprNode = qn.parent.parent.parent;
+				exprNode.removeChild(0, 1);
+				exprNode.addChild(qn);
+			}
+		}
+	} else { //parent is label
+		if (newValue == true) { //just been set; this check is unnecessary since flow cant come here when being reset 
+			var p = qn.parent;
+			if (p.children.length > 1) {//this parent already has a filter
+				p.children[0].addChild(new AndOrNode("AND"));
+				var expr = new ExprNode(true);
+				expr.addChild(qn);
+				p.children[0].addChild(expr);
+				p.removeChild(1, 1);
+			} else { //doesnt have a filter; create one
+				p.removeChild(0, 1);
+				var filter = new FilterNode();
+				var expr = new ExprNode(true);
+				expr.addChild(qn);
+				filter.addChild(expr);
+				p.addChild(filter);
+			}
+		}
+	}
+}
+
+QueryTree.prototype.addNotSymbol = function(svgElement, termId) {
+	var l1 = document.getElementById('t_' + termId + '_1');
+	var l2 = document.getElementById('t_' + termId + '_2');
+	var x1 = l1.getAttribute('x1');
+	x1 = parseFloat(x1.substring(0, x1.length - 2));
+	var y1 = l1.getAttribute('y1');
+	y1 = parseFloat(y1.substring(0, y1.length - 2));
+	var x2 = l1.getAttribute('x2');
+	x2 = parseFloat(x2.substring(0, x2.length - 2));
+	var y2 = l1.getAttribute('y2');
+	y2 = parseFloat(y2.substring(0, y2.length - 2));
+	if (l2) { // l2's x values should be the same
+		var y21 = l2.getAttribute('y1');
+		y21 = parseFloat(y21.substring(0, y21.length - 2));
+		var y22 = l2.getAttribute('y2');
+		y22 = parseFloat(y22.substring(0, y22.length - 2));
+		y1 = (y1 + y21) / 2;
+		y2 = (y2 + y22) / 2;
+	}
+	var x = (x1 + x2) / 2;
+	var y = (y1 + y2) / 2;
+	var circleRad = 5;
+	var circle = document.createElementNS('http://www.w3.org/2000/svg', 'svg:circle');
+	circle.setAttribute("id", 't_' + termId + '_nc');
+	circle.setAttribute("cx", x);
+	circle.setAttribute("cy", y);
+	circle.setAttribute("r", circleRad);
+	circle.setAttribute("stroke", "black");
+	circle.setAttribute("stroke-width", "3");
+	circle.setAttribute("fill", "none");
+	svgElement.appendChild(circle);
+	var line = document.createElementNS('http://www.w3.org/2000/svg', 'svg:line');
+	line.setAttribute("x1", x - circleRad);
+	line.setAttribute("y1", y); 
+	line.setAttribute("x2", x + circleRad);
+	line.setAttribute("y2", y);
+	line.setAttribute("stroke", "black");
+	line.setAttribute("stroke-width", "3");
+	line.setAttribute("transform", 'rotate(45, ' + x + ', ' + y + ')');
+	line.setAttribute("id", 't_' + termId + '_nl');
+	svgElement.appendChild(line);
 }
 
 Node.prototype.isDeleteable = function() { // this is called only on LabelNodes
@@ -874,13 +989,25 @@ Node.prototype.addChild = function(node) {
 	node.parent = this;
 }
 
+Node.prototype.removeChild = function(idx, num) {
+	var oldChildren = this.children;
+	this.children = []
+	for (var i = 0; i < oldChildren.length; i++) {
+		if (i == idx) { 
+			i = i + num - 1;
+			continue; 
+		}
+		this.children.push(oldChildren[i]);
+	}
+}
+
 var LabelNode = function(opr, label, queryTreePos, treePos) {
 	this.opr = opr;
 	this.label = label;
 	this.children = [];
 	this.parent = null;
 	this.queryTreePos = queryTreePos;
-	this.treePos = treePos; //this can be null because parts of the query may not be in the matches list eg. NOT expressions and ORed expressions
+	this.treePos = treePos; //this can be null because parts of the query may not be in the matches list eg. original NOT expressions and ORed expressions
 
 	this.getPreString = function() {
 		return this.opr + this.label;
@@ -899,7 +1026,7 @@ var LabelNode = function(opr, label, queryTreePos, treePos) {
 }
 LabelNode.prototype = new Node("label");
 
-var ExprNode = function(isRoot, isNot) {
+var ExprNode = function(isNot) {
 	this.isNot = isNot;
 	this.children = [];
 	this.parent = null;
@@ -1008,7 +1135,7 @@ QueryTree.prototype.getTokens = function(queryString) {
 QueryTree.prototype.buildQueryTree = function(queryString) {
 	queryString = queryString.replace(/ +/, ' ');
 	queryString = queryString.trim();
-	var root = new ExprNode(true, false);
+	var root = new ExprNode(false);
 	var termId = 0;
 	var nodeStack = [];
 	var prev = root; // this is the prev node where control rests in the tree
@@ -1044,7 +1171,7 @@ QueryTree.prototype.buildQueryTree = function(queryString) {
 					//top of nodeStack has the node who will have another child expression
 					//not performing any validation here since we know that nodeStack should have at least one entry for a correct query
 					nodeStack[nodeStack.length - 1].addChild(new AndOrNode(text));
-					var expr = new ExprNode(false, false);
+					var expr = new ExprNode(false);
 					nodeStack[nodeStack.length - 1].addChild(expr);
 					prev = expr;
 				}
@@ -1054,7 +1181,7 @@ QueryTree.prototype.buildQueryTree = function(queryString) {
 				var filter = new FilterNode();
 				nodeStack[nodeStack.length - 1].addChild(filter);
 				nodeStack.push(filter);
-				var expr = new ExprNode(false, false);
+				var expr = new ExprNode(false);
 				nodeStack[nodeStack.length - 1].addChild(expr);
 				prev = expr; 
 			} else if (token['type'] == 'close_exp') {
@@ -1089,7 +1216,7 @@ QueryTree.prototype.buildQueryTree = function(queryString) {
 					//top of nodeStack has the node who will have another child expression
 					//not performing any validation here since we know that nodeStack should have at least one entry for a correct query
 					nodeStack[nodeStack.length - 1].addChild(new AndOrNode(text));
-					var expr = new ExprNode(false, false);
+					var expr = new ExprNode(false);
 					nodeStack[nodeStack.length - 1].addChild(expr);
 					prev = expr;
 				} 
@@ -1112,13 +1239,13 @@ QueryTree.prototype.updateQueryTree = function(startTreeNode, oprId, label, quer
 	} else if (startQueryNode.children.length == 2) { // the first child is the filter
 		var filter = startQueryNode.children[0];
 		filter.addChild(new AndOrNode("AND"));
-		var expr = new ExprNode(false, false);
+		var expr = new ExprNode(false);
 		expr.addChild(labelNode);
 		filter.addChild(expr);
 	} else if (startQueryNode.children.length == 1 && startQueryNode.children[0].type == "label") {
 		var currentChild = startQueryNode.children.pop();
 		var filter = new FilterNode();
-		var expr = new ExprNode(false, false);
+		var expr = new ExprNode(false);
 		expr.addChild(labelNode);
 		filter.addChild(expr);
 		startQueryNode.addChild(filter);
