@@ -673,9 +673,10 @@ QueryTree.prototype.expandNode = function(pos) {
 	if (!te["disc"] && te["c"].length > 0) {
 		te["e"] = te["e"] ^ true;
 		this.calcPositionAndDrawSVG();
-	}//hack!
+	}//hack! the following code makes the node or line selection, if present, after redrawing the SVG. This should ideally done in the redraw function
 	if (this.selectedNodeDom != null) {
-		var domNode = document.getElementById(this.getNodeDomId(pos));
+		var selectedNodeTermPos = this.selectedNodeTreeNode["i"];
+		var domNode = document.getElementById(this.getNodeDomId(selectedNodeTermPos));
 		this.selectNode(domNode, this.selectedNodeTreeNode);
 	} else if (this.selectedLineTermId != null) {
 		var l0 = document.getElementById("t_" + this.selectedLineTermId + "_0");
@@ -787,7 +788,7 @@ QueryTree.prototype.deleteNode = function() {
 	if (!queryNode.isDeleteable()) { return; }
 	this.selectedNodeTreeNode["h"] = false;
 	this.removePrevSelectedNode();
-	var deletedPos = queryNode.queryTreePos;
+	var deletedPos = queryNode.termId;
 	var updatedRoot = false;
 	if (queryNode.parent == this.root) {
 		// if root has no children or more than one child it can't be deleted
@@ -822,8 +823,8 @@ QueryTree.prototype.deleteNode = function() {
 						break;
 					}
 				}
-				// (if first one -> remove the next AND/OR opr; others -> remove previous opr AND/OR) in addition to expr itself
-				nodeWithFilter.children[0].removeChild((pos == 0 ? 0 : pos - 1), 2);
+				// (if first one -> remove the next AND/OR opr; others -> remove previous opr AND/OR) in addition to expr itself; if last delete only one
+				nodeWithFilter.children[0].removeChild((pos == 0 ? 0 : pos - 1), (pos == nodeWithFilter.children[0].children.length ? 1 : 2));
 				// if removing one filter expression leaves out only one not NOT expression and there are no other children of nodeWithFilter then remove filter
 				if (nodeWithFilter.children.length == 1 && nodeWithFilter.children[0].children.length == 1 && !nodeWithFilter.children[0].children[0].isNot) {
 					nodeWithFilter.addChild(nodeWithFilter.children[0].children[0].children[0]); // add the label node in nodeWithFitler/filter/expr to nodeWithFilter 
@@ -834,7 +835,7 @@ QueryTree.prototype.deleteNode = function() {
 		} 
 	}
 	this.matches.removePair(deletedPos);
-	if (updatedRoot) { this.matches.updateStartOpr(this.root.children[0].queryTreePos, "", 0); }
+	if (updatedRoot) { this.matches.updateStartOpr(this.root.children[0].termId, "", 0); }
 	this.drawQuery();
 	this.calcPositionAndDrawSVG();
 	this.updateInfoDiv("Deleted node " + deletedNodeLabel + ".");
@@ -1001,22 +1002,22 @@ Node.prototype.removeChild = function(idx, num) {
 	}
 }
 
-var LabelNode = function(opr, label, queryTreePos, treePos) {
+var LabelNode = function(opr, label, termId, treePos) {
 	this.opr = opr;
 	this.label = label;
 	this.children = [];
 	this.parent = null;
-	this.queryTreePos = queryTreePos;
+	this.termId = termId; // this is initially assigned values starting from 0 in the order of their appearance in the stringified query; for updates and deletes a new id is assigned each time
 	this.treePos = treePos; //this can be null because parts of the query may not be in the matches list eg. original NOT expressions and ORed expressions
 
 	this.getPreString = function() {
-		return this.opr + this.label;
+		return ((parent != null && parent.type == "expr" && parent.isNot) ? " NOT " : "") + this.opr + this.label;
 	};
 
 	this.addPreToDom = function(div) {
 		var oprDom = document.createElement('span');
 		oprDom.appendChild(document.createTextNode(this.opr));
-		oprDom.setAttribute("id", "q_" + this.queryTreePos);
+		oprDom.setAttribute("id", "q_" + this.termId);
 		div.appendChild(oprDom);
 		var labelDom = document.createElement('span');
 		labelDom.appendChild(document.createTextNode(this.label));
@@ -1101,7 +1102,9 @@ QueryTree.prototype.getTokens = function(queryString) {
 			minToken = closeSym;
 		}
 		if (minToken['start'] > prevEnd) {
-			tokens.push({'start':prevEnd, 'end':minToken['start'], 'type':'text'});
+			if (queryString.substring(prevEnd, minToken['start']).trim().length != 0) { 
+				tokens.push({'start':prevEnd, 'end':minToken['start'], 'type':'text'});
+			}
 			prevEnd = minToken['start'];
 		} else {
 			tokens.push(minToken);
@@ -1118,7 +1121,7 @@ QueryTree.prototype.getTokens = function(queryString) {
 			}
 		}
 	}
-	if (prevEnd < queryString.length) {
+	if (prevEnd < queryString.length) { // there can't be empty space here because we have trimmed the query string already so we dont have to do the (queryString.substring(prevEnd, minToken['start']).trim().length != 0) check
 		tokens.push({'start':prevEnd, 'end':queryString.length, 'type':'text'});
 	}
 	//correct mistaken logOpr tokens
@@ -1230,9 +1233,9 @@ QueryTree.prototype.buildQueryTree = function(queryString) {
 	return root;
 }
 
-QueryTree.prototype.updateQueryTree = function(startTreeNode, oprId, label, queryTreePos, treePos) {
+QueryTree.prototype.updateQueryTree = function(startTreeNode, oprId, label, newTermId, treePos) {
 	var opr = QueryTree.prototype.AXIS_OPRS[oprId]["sym"];
-	var labelNode = new LabelNode(opr, label, queryTreePos, treePos);
+	var labelNode = new LabelNode(opr, label, newTermId, treePos);
 	var startQueryNode = this.queryNodeByTermPos[startTreeNode["i"]];
 	if (startQueryNode.children.length == 0 || (startQueryNode.children.length == 1 && startQueryNode.children[0].type == "filter")) {
 		startQueryNode.addChild(labelNode);
@@ -1252,7 +1255,7 @@ QueryTree.prototype.updateQueryTree = function(startTreeNode, oprId, label, quer
 		startQueryNode.addChild(currentChild);
 	}
 	this.queryNodeByTermPos[treePos] = labelNode;
-	this.queryNodeByTermId[queryTreePos] = labelNode;
+	this.queryNodeByTermId[newTermId] = labelNode;
 }
 
 QueryTree.prototype.Matches = function(pairs) {
@@ -1290,13 +1293,19 @@ QueryTree.prototype.Matches = function(pairs) {
 	this.updatePairOpr = function(matchPos, newOpr) {
 		this.pairs[matchPos]["o"] = newOpr ;
 	},
-	this.updateStartOpr = function(matchPos, start, opr) {
-		this.pairs[matchPos]["s"] = start;
-		this.pairs[matchPos]["o"] = opr;
+	this.updateStartOpr = function(termId, start, opr) {
+		for (var i in this.pairs) {
+			if (this.pairs[i]["t"] == termId) { 
+				this.pairs[i]["s"] = start;
+				this.pairs[i]["o"] = opr;
+				break;
+			}
+		}
 	},
-	this.removePair = function(matchPos) {
-		var end = this.pairs[matchPos]["e"]
-		delete this.pairs[matchPos];
+	this.removePair = function(termId) {
+		for (var i in this.pairs) {
+			if (this.pairs[i]["t"] == termId) { delete this.pairs[i]; }
+		}
 	},
 	this.hasTreeNodesMatchingMultipleQueryTerms = function() {
 		for (key in this.treeNodesMatchingMultipleQueryTerms) {
