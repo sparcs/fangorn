@@ -47,27 +47,71 @@ At present all tree node labels, irrespective of whether they are phrase labels,
 
 == A 2 minute guide to simple path queries ==
 
-This section is a short tutorial on path queries without branches (we have taken the liberty to assume they are simple!). A path is a sequence of operator and node label pairs. If the first node label in the path should match the root of the tree the first operator should be a Child operator (/). Otherwise, the first operator should be a Descendant operator (//). The other operators in the path can be one of the operators specified in the operator table in the Syntax section.
+This section is a quick introduction to path queries that do not have branches (we have taken the liberty of calling them simple path queries here). A path is a sequence of operator and node label pairs. If the first node label in the path should match the root of the tree the first operator should be a Child operator (/). Otherwise, the first operator should be a Descendant operator (//). The other operators in the path can be one of the operators specified in the operator table in the Syntax section.
 
-A query to find trees where the root node is a verb-phrase VP is written as: /VP. Notice the child operator at the start of the query.
+A query to find trees where the root node is a verb-phrase VP is written as: 
+{{{
+/VP
+}}} 
+Notice the child operator at the start of the query.
 
-A query to find trees where a noun phrase subject NP-SBJ appears anywhere in the tree would be: //NP-SBJ. Words are at A similar query is used to find sentences containing a word. 
+A query to find trees where a noun phrase subject NP-SBJ appears anywhere in the tree would be: 
+{{{
+//NP-SBJ
+}}} 
+Words are the leaf nodes in a tree, therefore a similar query is used to find sentences containing a word. 
 
-The above two examples that search for a single node label are trivial and are seldom used in practice. A more common scenario is a path that combines several operator and node-label pairs. Consider searching for a tree where a verb-phrase immediately dominates (parent of) a noun-phrase and the noun phrase has two prepositional phrases as its immediately following siblings. The query would be written as: //VP/NP=>PP=>PP
+The above two examples that search for a single node label are trivial and are seldom used in practice. A more common scenario is a path that combines several operator and node-label pairs. Consider searching for a tree where a verb-phrase immediately dominates (parent of) a noun-phrase and the noun phrase has two prepositional phrases as its immediately following siblings. The query would be written as: 
+{{{
+//VP/NP=>PP=>PP
+}}}
 
 Observe that each node label in the query has exactly one structural relationship with its neighbouring node labels. These paths cannot have logical operators. To include logical operators, a filter expression needs to be inserted even if there is only one outgoing node relationship. We will explain this along with branching path expressions.
 
-== A 5 minute guide to queries with filter expressions ==
+== A 4 minute guide to queries with filter expressions ==
 
 Filter expressions are required when a path branches out into two or more paths at a node, or when a query specifies that certain paths should not occur (Negation operation).
 
-When a path branches at a node, the node has more than two neighbours. Consider a simple branched query where we find a gerund VGB that is immediately preceded by the word `is', and is immediately following by the sibling sentence fragment S, and is immediately followed by a personal pronoun PRP. Here VBG shares a structural relationship with three terms in the query. The query can be written as: //VBG[<-is AND =>S AND ->PRP]
+When a path branches at a node, the node has more than two neighbours. Consider a simple branched query where we find a gerund VGB that is immediately preceded by the word `is', and is immediately following by the sibling sentence fragment S, and is immediately followed by a personal pronoun PRP. Here VBG shares a structural relationship with three terms in the query. The query can be written as: 
+{{{
+//VBG[<-is AND =>S AND ->PRP]
+}}}
 
-The square brackets that appear after the VBG term are called filter expressions. Within the filter expression we can combine two or more expressions using logical AND or OR operators. In the above query each of the expressions in the filter expression consisted of a single term, but these could be a complete expression with multiple terms and even other nested filter expressions. For example, the above query could be refined to find only those sentence fragments that contain a TO part-of-speech label immediately following the the personal pronoun. The query would then be written as: //VBG[<-is AND =>S AND ->PRP->TO]
+The square brackets that appear after the VBG term are called filter expressions. Two or more expressions can be combined using logical AND or OR operators within the filter expression. In the above query, each expression in the filter consists of a single term, but in general they could be complete expression with multiple terms and even other nested filter expressions. For example, the above query could be refined to find only those sentence fragments that contain a TO part-of-speech label immediately following the the personal pronoun. The query would then be written as: 
+{{{
+//VBG[<-is AND =>S AND ->PRP->TO]
+}}}
 
 Now since all the logical operators separating the nodes were AND operators, the query could be re-written in other forms. For example, any one of the expressions in the filter could have been removed outside the filter expression as a continuation of the main path. A few ways in which the query could have been rewritten are shown below:
+{{{
 //VBG[<-is AND =>S]->PRP
 //VBG[<-is AND ->PRP]=>S
 //VBG[=>S AND ->PRP]<-is
+}}}
 
-In the previous example the order of the expressions within the filter did not matter because all the operators were AND operators. However, when the filter contains OR and AND operators, the AND has higher precedence than OR operators. If the above query was //VBG[<-is OR =>S AND ->PRP], then it would have matched trees containing either the //VBG<-is or the //VBG[=>S AND ->PRP] pattern.
+In the previous example the order of the expressions within the filter did not matter because all the operators were AND operators. However, when the filter contains OR and AND operators, the AND has higher precedence than OR operators. If the above query was 
+{{{
+//VBG[<-is OR =>S AND ->PRP]
+}}} 
+then it would have matched trees containing either of the following patterns: 
+{{{
+//VBG<-is
+}}}
+or 
+{{{
+//VBG[=>S AND ->PRP]
+}}}
+
+The logical NOT operator has higher precedence over both AND and OR operator in the ordered execution of queries. The NOT operator optionally appears before an expression within a filter. If the first query discussed in this section should not have a sentence fragment as the immediately following sibling of the gerund then the query can be rewritten as:
+{{{
+//VBG[<-is AND NOT =>S AND ->PRP]
+}}} 
+The same follows even where there is only one NOT term in the filter expression. The query to search for all occurrences of gerunds not preceded by the word `is' is written as:
+{{{
+//VBG[NOT<-is]
+}}} 
+
+As mentioned earlier, filter expressions can also be nested. A query to search for the gerund with the first set of conditions and an additional requirement that the sentence fragment should not dominate a prepositional phrase PP is written as:
+{{{
+//VBG[<-is AND =>S[NOT //PP] AND ->PRP]
+}}} 
