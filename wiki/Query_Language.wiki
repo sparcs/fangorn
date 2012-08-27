@@ -1,24 +1,36 @@
 = Fangorn Query Language =
 
-Fangorn specifies tree patterns using a path query language. A path query expression is a navigation from one node to another, and from that node to yet another, and so on, thus forming a path from the first node specified to the last node in the sequence. An operator specifies the structural relationship between each pair of node labels. The first operator in the path should always be either a child or a descendant operator, signifying that the path starts at the root or anywhere in the tree, respectively. Paths may also branch out to two or more nodes and the branches are combined using logical operators. The syntax for describing branches in a query is shown below along with the list of structural and logical  operators supported by Fangorn.
+Fangorn specifies tree patterns using a path query language. A path query expression is a navigation from one node to another, and from that node to yet another, and so on, thus forming a path from the first node specified to the last node in the sequence. An operator specifies the structural relationship between each pair of node labels. The first operator in the path should always be either a child or a descendant operator, signifying that the path starts at the root or anywhere in the tree, respectively. Paths may also branch out to two or more nodes and the branches are combined using logical operators. 
+
+We suggest you read through this query language manual in order. The description of the syntax is first described in BNF language. Even if you prefer an explanation in plain English to BNF, we suggest you read the #Syntax section as it shows the symbols used for structural navigation in a tree and also provides examples for each operator. Later sections provide guides on constructing tree queries. The examples in manual assume some familiarity with the Penn Treebank Annotation format. Check out this [http://bulba.sdsu.edu/jeanette/thesis/PennTags.html webpage] if you are unsure of the meanings of some labels.
 
 == Syntax ==
 
-The structural operators supported by Fangorn are represented using the following symbols:
+For those of you who like reading BNF the query language can be summarised as follows:
+
+<expr> ::= <term> [<term>]*
+<term> ::= <axis-operator><node-label> [<filter-expr>]
+<filter-expr> ::= "[" <filter-element> [(AND|OR) <filter-element>]* "]"
+<filter-element> ::= [NOT] <expr>
+<node-label> ::= annotation_label | word | punctuation
+
+Open and close square brackets ([ and ]) signify optional elements. The brackets within double quotes for the defintion of <filter-expr> signifies an actual open and close bracket in the query syntax. Other symbols have their regular meaning in BNF language. 
+
+The structural operators (or axis operators) supported by Fangorn are represented using the following symbols:
 
 || *Operator* || *Symbol* || *Example(s)* ||
-|| Descendant || // || [http://fangorn.googlecode.com/svn/wiki/descendant.png] ||
-|| Child || / || [http://fangorn.googlecode.com/svn/wiki/child.png] ||
-|| Ancestor || \\ || [http://fangorn.googlecode.com/svn/wiki/ancestor.png] ||
-|| Parent || \ || [http://fangorn.googlecode.com/svn/wiki/parent.png] ||
-|| Following Sibling || ==> || [http://fangorn.googlecode.com/svn/wiki/followingsibling.png] ||
-|| Immediately Following Sibling || => || [http://fangorn.googlecode.com/svn/wiki/immediatefollowingsibling.png] ||
-|| Preceding Sibling || <== || [http://fangorn.googlecode.com/svn/wiki/precedingsibling.png] ||
-|| Immediately Preceding Sibling || <= || [http://fangorn.googlecode.com/svn/wiki/immediateprecedingsibling.png] ||
-|| Following  || --> || [http://fangorn.googlecode.com/svn/wiki/following.png] ||
-|| Immediately Following || -> || [http://fangorn.googlecode.com/svn/wiki/immediatefollowing.png] ||
-|| Preceding || <-- || [http://fangorn.googlecode.com/svn/wiki/preceding.png] ||
-|| Immediately Preceding || <- || [http://fangorn.googlecode.com/svn/wiki/immediatepreceding.png] ||
+|| Descendant || // || [http://fangorn.googlecode.com/svn/wiki/images/descendant.png] ||
+|| Child || / || [http://fangorn.googlecode.com/svn/wiki/images/child.png] ||
+|| Ancestor || \\ || [http://fangorn.googlecode.com/svn/wiki/images/ancestor.png] ||
+|| Parent || \ || [http://fangorn.googlecode.com/svn/wiki/images/parent.png] ||
+|| Following Sibling || ==> || [http://fangorn.googlecode.com/svn/wiki/images/followingsibling.png] ||
+|| Immediately Following Sibling || => || [http://fangorn.googlecode.com/svn/wiki/images/immediatefollowingsibling.png] ||
+|| Preceding Sibling || <== || [http://fangorn.googlecode.com/svn/wiki/images/precedingsibling.png] ||
+|| Immediately Preceding Sibling || <= || [http://fangorn.googlecode.com/svn/wiki/images/immediateprecedingsibling.png] ||
+|| Following  || --> || [http://fangorn.googlecode.com/svn/wiki/images/following.png] ||
+|| Immediately Following || -> || [http://fangorn.googlecode.com/svn/wiki/images/immediatefollowing.png] ||
+|| Preceding || <-- || [http://fangorn.googlecode.com/svn/wiki/images/preceding.png] ||
+|| Immediately Preceding || <- || [http://fangorn.googlecode.com/svn/wiki/images/immediatepreceding.png] ||
 
 The following logical operator symbols are supported at nodes with branches:
 
@@ -27,14 +39,20 @@ The following logical operator symbols are supported at nodes with branches:
 || Disjunction || OR, or, | ||
 || Negation || NOT, not, ! || 
 
-At present all tree nodes, irrespective of whether they are phrase labels, part-of-speech labels, or words, are treated indifferently. Methods of identifying the type of a node will be made available in a future release. In all discussions here a query term could represent any type of node label. Additionally, query terms are matched verbatim with tree node labels. That is, a node label of NP-SBJ-1 will not match a query term NP-SBJ or NP. NP-SBJ-1 is a noun phrase subject with an additional suffix -1 that marks a feature relating it to another node in the same tree. Therefore a search for NP-SBJ should ideally match node labels NP-SBJ-N, where N is a number. Searching for a noun phrase should match all noun phrases, even those that are subjects in a sentence structure. Therefore a search for NP should match NP-SBJ node labels. However, incorporating such features require an understanding of the Corpus' annotation methodology. In a future version of Fangorn we plan to incorporate the annotation methodology as an input. 
+At present all tree nodes, irrespective of whether they are phrase labels, part-of-speech labels, or words, are treated indifferently. Methods of identifying the type of a node will be made available in a future release. In all discussions here a query term could represent any type of node label. Additionally, query terms are matched verbatim with tree node labels. That is, a node label of NP-SBJ-1 will not match a query term NP-SBJ or NP. NP-SBJ-1 is a noun phrase subject with an additional suffix -1, that marks a feature relating it to another node in the same tree. Therefore a search for NP-SBJ should ideally match node labels NP-SBJ-N, where N is any number. Searching for a noun phrase should match all noun phrases, even those that play the role of a subject in a sentence. Therefore a search for NP should match NP-SBJ node labels. However, incorporating such features require an understanding of the Corpus' annotation methodology. In a future version of Fangorn we plan to allow the addition of the annotation methodology as an input.
 
-==== Simple path expression ====
+== A 2 minute guide to simple path queries ==
 
-The construction of a query is explained with the help of examples. First consider a simple path expression without branches. The path is then a sequence of operator and node label pairs. In BNF form a simple path is: [*operator*  *node-label*]+ If the first node label in the path should match the root of the tree the first operators should be a Child operator (/). Otherwise the first operator should be a Descendant operator (//).
+This section helps you write path queries without branches (we have taken the liberty to assume they are simple). The path is then a sequence of operator and node label pairs. If the first node label in the path should match the root of the tree the first operator should be a Child operator (/). Otherwise, the first operator should be a Descendant operator (//). 
 
-A query to find all trees where the root node is a verb-phrase VP is written as: /VP. Notice the child operator at the start of the query.
+A query to find trees where the root node is a verb-phrase VP is written as: /VP. Notice the child operator at the start of the query.
 
-A query to find all trees where the label NP-SBJ appears anywhere in the tree would be: //NP-SBJ. A similar query is used to find sentences containing a word. 
+A query to find trees where a noun phrase subject NP-SBJ appears anywhere in the tree would be: //NP-SBJ. Words are at A similar query is used to find sentences containing a word. 
 
 The above two examples that search for a single node label are trivial and are seldom used in practice. A more common scenario is a path that combines several operator and node-label pairs. Consider searching for a tree where a verb-phrase immediately dominates (parent of) a noun-phrase and the noun phrase has two prepositional phrases as its immediately following siblings. The query would be written as: //VP/NP=>PP=>PP
+
+Observe that each node label in the query has exactly one structural relationship with its neighbouring node labels. These paths cannot have logical operators. To include logical operators, a filter expression needs to be inserted even if there is only one outgoing node relationship. We will explain this along with branching path expressions.
+
+== A 5 minute guide to branching path queries ==
+
+
