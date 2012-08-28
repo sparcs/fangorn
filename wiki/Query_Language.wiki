@@ -16,7 +16,7 @@ For those of you who like reading BNF the query language can be summarised as fo
 <node-label> ::= annotation_label | word | punctuation
 }}}
 
-Open and close square brackets ({{{[}}} and {{{]}}}) signify optional elements except when shown withing double quotes, as in the defintion of {{{<filter-expr>}}}. There it signifies an actual open and close bracket in the query syntax. Other symbols have their regular BNF language meaning. The AND, OR and NOT logical operators can be replaced by other alternatives shown in the table later in this section.
+Open and close square brackets ({{{[}}} and {{{]}}}) signify optional elements except when shown within double quotes, as in the definition of {{{<filter-expr>}}}. There it signifies an actual open and close bracket in the query syntax. Other symbols have their regular BNF language meaning. The AND, OR and NOT logical operators can be replaced by other alternatives shown in the table later in this section.
 
 The structural operators (or axis operators) supported by Fangorn are represented using the following symbols:
 
@@ -68,11 +68,11 @@ The above two examples that search for a single node label are trivial and are s
 
 Observe that each node label in the query has exactly one structural relationship with its neighbouring node labels. These paths cannot have logical operators. To include logical operators, a filter expression needs to be inserted even if there is only one outgoing node relationship. We will explain this along with branching path expressions.
 
-== A 4 minute guide to queries with filter expressions ==
+== A 5 minute guide to queries with filter expressions ==
 
 Filter expressions are required when a path branches out into two or more paths at a node, or when a query specifies that certain paths should not occur (Negation operation).
 
-When a path branches at a node, the node has more than two neighbours. Consider a simple branched query where we find a gerund VGB that is immediately preceded by the word `is', and is immediately following by the sibling sentence fragment S, and is immediately followed by a personal pronoun PRP. Here VBG shares a structural relationship with three terms in the query. The query can be written as: 
+When a path branches at a node, the node has more than two neighbours. Consider a simple branched query where we find a gerund VBG that is immediately preceded by the word `is', and is immediately following by the sibling sentence fragment S, and is immediately followed by a personal pronoun PRP. Here VBG shares a structural relationship with three terms in the query. The query can be written as: 
 {{{
 //VBG[<-is AND =>S AND ->PRP]
 }}}
@@ -108,7 +108,7 @@ The logical NOT operator has higher precedence over both AND and OR operator in 
 }}} 
 The same follows even where there is only one NOT term in the filter expression. The query to search for all occurrences of gerunds not preceded by the word `is' is written as:
 {{{
-//VBG[NOT<-is]
+//VBG[NOT <-is]
 }}} 
 
 As mentioned earlier, filter expressions can also be nested. A query to search for the gerund with the first set of conditions and an additional requirement that the sentence fragment should not dominate a prepositional phrase PP is written as:
