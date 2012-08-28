@@ -1230,6 +1230,7 @@ QueryTree.prototype.buildQueryTree = function(queryString) {
 		}
 		prevToken = token;
 	}
+	this.matches.nextTermId = termId;
 	return root;
 }
 
@@ -1276,7 +1277,6 @@ QueryTree.prototype.Matches = function(pairs) {
 				treeNodesToQueryTerms[end] = [termId];
 			}
 		}
-		this.nextTermId = this.pairs.length;
 	},
 	this.getEndPosByPairNum = function() {
 		var byPairNum = {};
