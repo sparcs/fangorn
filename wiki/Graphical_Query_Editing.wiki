@@ -17,7 +17,7 @@ Then, choose another node in the tree that is not highlighted to create a struct
 
 The operator connecting the two nodes is selected based on the structural relationship of the newly added node to the previously selected node. In some cases, more than one structural operator may apply to relate the two nodes. In that case, change the operator by following the instructions given below for editing an operator.
 
-At present new branches at a node are always added using a conjunction operator. To change this, the query would have to be manually edited after pressing "Done" on the build query screen. Please note the operator precedence of AND and OR operators within the Filter expression. For more details read [Query\_Language#A_5_minute_guide_to_queries_with_filter_expressions]. Also note that the query may be rewritten during editing into equivalent forms.
+At present new branches at a node are always added using a conjunction operator. To change this, the query would have to be manually edited after pressing "Done" on the build query screen. Please note the operator precedence of AND and OR operators within the Filter expression. For more details read the 5 minute guide to queries with filter expressions in the Query_Language wiki. Also note that while adding and deleting nodes from the query, the query expression may be rewritten into different but equivalent forms in the top query bar.
 
 ===Edit a query term label===
 Select any highlighted node. The bottom of the screen shows the node label of the selected node in an input box. Change the text in the input box and press enter or click on the "Edit label" button to change the text in the label.
