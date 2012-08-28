@@ -30,4 +30,4 @@ Highlighted operators (the lines in blue and red) can be edited by first selecti
 To negate a highlighted operator select the operator first. The bottom bar has a checkbox that shows if an operator is negated. This checkbox can be checked or unchecked to toggle the negation on the operator in the query tree.
 
 ===Finishing Editing===
-Once the editing is complete, press the Done button to copy the new query to the main screen or click on the close button at top right had corner to cancel and close the screen.
+Once the editing is complete, press the Done button to copy the new query to the main screen or click on the close button at top right hand corner to cancel and close the screen.
