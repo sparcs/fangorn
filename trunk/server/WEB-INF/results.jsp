@@ -283,9 +283,7 @@ function defaultDisplay(num) {
 </script>
 </head>
 <body onload="render();">
-<div id="top">
-<h3 id="pagetitle"><a href="index" title="Click to reach Home page">Fangorn</a></h3>
-</div>
+<%@include file="title.jspf" %> 
 <a name="top"></a>
 <hr />
 <br />
