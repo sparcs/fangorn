@@ -12,15 +12,7 @@ a {
 	height: 30pt;
 	margin-bottom: 0;
 	margin-top: 0;
-	position: relative;
-	font-size: 13pt;
-}
-
-h3 {
-	margin-top: 0;
-	position: absolute;
-	top: 25%;
-	width: 100%;
+	position: relative;	
 }
 
 body {
@@ -37,8 +29,22 @@ input {
 	font-size:10pt;
 }
 
-#pagetitle{
+.titlecenter {
+	font-size: 21pt;
+	font-weight: bold;
+	margin-top: 0;
+	position: absolute;
+	top: 12%;
 	text-align: center;
+}
+
+.titleside {
+	width:300px;
+	font-size: 9pt;
+	position: absolute;
+	bottom: 6px;
+	color: darkgreen;
+	font-weight: bold;
 }
 	
 #resultstat{

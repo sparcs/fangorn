@@ -44,10 +44,7 @@ function openExample(queryStr) {
 if (navigator.userAgent.indexOf("Firefox") == -1)
 	alert("To see this page as it is meant to appear please use a Mozilla Firefox browser.");
 </script>
-<div id="top">
-<h3 id="pagetitle"><a href="index"
-	title="Click to reach Home page">Fangorn</a></h3>
-</div>
+<%@include file="title.jspf" %>
 <hr />
 <br />
 <center>
@@ -189,7 +186,10 @@ if (navigator.userAgent.indexOf("Firefox") == -1)
 					<td>Immediate Preceding Sibling</td>
 				</tr>
 			</table>
-			<p>The query language is a simplified version of LPath. For technical information about the complete LPath language, please see: <br /> Catherine Lai and Steven Bird (2005). LPath+: A First-Order Complete Language for Linguistic Tree Query, <i>In proceedings of the 19th Pacific Asia Conference on Language, Information and Computation</i> [ <u><a href="http://www.aclweb.org/anthology/Y05-1001.pdf">pdf</a></u> ] </p> <br/>
+			<br/>
+			<b>For more help</b> <br/>
+			<p> Visit the <u><a href="https://code.google.com/p/fangorn/wiki/Query_Language">query language wiki page</a></u> for tutorials on building queries.</p>
+			<p> This system allows queries to be edited graphically by annotating search results. Instructions for editing a query are provided in the <u><a href="https://code.google.com/p/fangorn/wiki/Graphical_Query_Editing">graphical query editing wiki page</a></u>. </p>
 			</td>
 			<td valign="top">
 			<center><b>Corpora</b></center>
@@ -205,13 +205,13 @@ if (navigator.userAgent.indexOf("Firefox") == -1)
 			<p>The Penn Treebank Example corpus has been taken from <u><a href="http://www.nltk.org/">nltk&apos;s</a></u> demo Penn Treebank corpus.
 <br/>
 Mitchell P. Marcus, Mary Ann Marcinkiewicz, and Beatrice Santorini. 1993. Building a large annotated
- corpus of English: the Penn Treebank.<i> Comput. Linguist.</i> 19, 2 (June 1993), 313-330. <br/>
+ corpus of English: the Penn Treebank.<i> Computational Linguistics</i> 19, 2 (June 1993), 313-330. <br/>
 </p>
 <br/>
 <p>                                                                               
 For more information on Fangorn, please see: <br/>                        
 Sumukh Ghodke and Steven Bird. 2010. Fast Query for Large Treebanks. In <i>Proceedings of the 2010 A
-nnual Conference of the North American Chapter of the Association for Comput. Linguist. (NAACL-HLT '
+nnual Conference of the North American Chapter of the Association for Computational Linguistics (NAACL-HLT '
 10). </i> Los Angeles, CA, USA, 267-275. [ <u><a href="http://aclweb.org/anthology/N/N10/N10-1034.pd
 f">pdf</a></u> ]
 </p>

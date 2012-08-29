@@ -1,0 +1,18 @@
+<div id="top">
+<table>
+<tr>
+<td width="135px">
+<div width="100%">
+<div class="titlecenter">
+<a href="index" title="Click to reach Home page">Fangorn</a>
+</div>
+</div>
+</td>
+<td width="300px">
+<div class="titleside">
+A system for querying very large treebanks
+</div>
+</td>
+</tr>
+</table>	
+</div>
