@@ -168,8 +168,8 @@ public class QueryServletFull extends HttpServlet {
 			throws ServletException, IOException, ParseException {
 		TreebankQuery tq = null;
 		QueryBuilder builder = new QueryBuilder(query);
-		tq = builder.parse(TermJoinType.SIMPLE_WITH_FC, false);
 		logger.fine(req.getRemoteAddr());
+		tq = builder.parse(TermJoinType.SIMPLE_WITH_FC, false);
 		if (page == null) {
 			logger.info("Q=\"" + tq.toString() + "\";C=\"" + corpus
 					+ "\";S=\"yes\"");
