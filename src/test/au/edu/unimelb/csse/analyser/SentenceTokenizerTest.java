@@ -29,35 +29,54 @@ import java.io.StringReader;
 import junit.framework.TestCase;
 
 public class SentenceTokenizerTest extends TestCase {
-	public void testWithStringReader() {
-		StringReader reader = new StringReader("((S1 (S (NP (NNP First)) (VP (VBD aired) (NP (NNP September) (CD 13) (, ,) (CD 2006))) (. .))))\n"+
-"((S1 (FRAG (NP (NN Episode) (CD 11)) (: :) (FRAG (WHNP (WP What)) (NP (DT the) (NNP ELLE)) (. ?)) (. .))))\n" +
-"((S1 (S (NP (DT The) (JJ remaining) (NNS designer(S1 (S (NP (DT The) (JJ remaining) (NNS designers)) (VP (AUX are) (VP (VBN asked) (S (VP (TO to) (VP (VB create) (NP (NP (DT an) (NN outfit)) (SBAR (WHNP (WDT that)) (S (VP (VBZ expresses) (S (VP (POS ') (NP (NP (PRP$ their) (JJ specific) (NN point)) (PP (IN of) (NP (NN view)))) (PP (IN as) (NP (NP (NP (DT a) (NN designer) (POS ')) (PP (IN in) (NP (RB just) (CD two) (NNS days)))) (CC and) (NP (QP ($ $) (CD 250) (CD USD)))))))))))))))) (. .))))\n"+
-"((S1 (S (NP (PRP They)) (VP (MD must) (VP (AUX have) (NP (QP (IN at) (JJS least) (CD one)) (VBG flashing) (NNP amber) (NN light)) (PP (IN on) (NP (PRP them))))) (. .))))");
-		
-		SentenceTokenizer tokenizer = new SentenceTokenizer(new BufferedReader(reader));
-		try {
-			SentenceAndMetaData snm = tokenizer.next();
-			assertNotNull(snm);
-			assertEquals("(S1(S(NP(NNP First))(VP(VBD aired)(NP(NNP September)(CD 13)(, ,)(CD 2006)))(. .)))", snm.sentence());
-		} catch (IOException e) {
-			fail();
-		}
-		
-		try {
-			SentenceAndMetaData snm = tokenizer.next();
-			assertNotNull(snm);
-			assertEquals("(S1(FRAG(NP(NN Episode)(CD 11))(: :)(FRAG(WHNP(WP What))(NP(DT the)(NNP ELLE))(. ?))(. .)))", snm.sentence());
-		} catch (IOException e) {
-			fail();
-		}
-		//the third sentence is ignored
-		try {
-			SentenceAndMetaData snm = tokenizer.next();
-			assertNotNull(snm);
-			assertEquals("(S1(S(NP(PRP They))(VP(MD must)(VP(AUX have)(NP(QP(IN at)(JJS least)(CD one))(VBG flashing)(NNP amber)(NN light))(PP(IN on)(NP(PRP them)))))(. .)))", snm.sentence());
-		} catch (IOException e) {
-			fail();
-		}
+	public void testIgnoreIncorrectSentences() throws IOException {
+		StringReader reader = new StringReader(
+				"((S1 (S (NP (NNP First)) (VP (VBD aired) (NP (NNP September) (CD 13) (, ,) (CD 2006))) (. .))))\n"
+						+ "((S1 (FRAG (NP (NN Episode) (CD 11)) (: :) (FRAG (WHNP (WP What)) (NP (DT the) (NNP ELLE)) (. ?)) (. .))))\n"
+						+ "((S1 (S (NP (DT The) (JJ remaining) (NNS designer(S1 (S (NP (DT The) (JJ remaining) (NNS designers)) (VP (AUX are) (VP (VBN asked) (S (VP (TO to) (VP (VB create) (NP (NP (DT an) (NN outfit)) (SBAR (WHNP (WDT that)) (S (VP (VBZ expresses) (S (VP (POS ') (NP (NP (PRP$ their) (JJ specific) (NN point)) (PP (IN of) (NP (NN view)))) (PP (IN as) (NP (NP (NP (DT a) (NN designer) (POS ')) (PP (IN in) (NP (RB just) (CD two) (NNS days)))) (CC and) (NP (QP ($ $) (CD 250) (CD USD)))))))))))))))) (. .))))\n"
+						+ "((S1 (S (NP (PRP They)) (VP (MD must) (VP (AUX have) (NP (QP (IN at) (JJS least) (CD one)) (VBG flashing) (NNP amber) (NN light)) (PP (IN on) (NP (PRP them))))) (. .))))");
+
+		SentenceTokenizer tokenizer = new SentenceTokenizer(new BufferedReader(
+				reader));
+		SentenceAndMetaData snm = tokenizer.next();
+		assertNotNull(snm);
+		assertEquals(
+				"(S1(S(NP(NNP First))(VP(VBD aired)(NP(NNP September)(CD 13)(, ,)(CD 2006)))(. .)))",
+				snm.sentence());
+		assertEquals(1, snm.lineOffset());
+		assertEquals(1, snm.numberOfLines());
+
+		snm = tokenizer.next();
+		assertNotNull(snm);
+		assertEquals(
+				"(S1(FRAG(NP(NN Episode)(CD 11))(: :)(FRAG(WHNP(WP What))(NP(DT the)(NNP ELLE))(. ?))(. .)))",
+				snm.sentence());
+		assertEquals(2, snm.lineOffset());
+		assertEquals(1, snm.numberOfLines());
+
+		// the third sentence is ignored
+
+		snm = tokenizer.next();
+		assertNotNull(snm);
+		assertEquals(
+				"(S1(S(NP(PRP They))(VP(MD must)(VP(AUX have)(NP(QP(IN at)(JJS least)(CD one))(VBG flashing)(NNP amber)(NN light))(PP(IN on)(NP(PRP them)))))(. .)))",
+				snm.sentence());
+		assertEquals(4, snm.lineOffset());
+		assertEquals(1, snm.numberOfLines());
+
+		snm = tokenizer.next(); // no more sentences
+		assertNull(snm);
+	}
+	
+	public void testIncorrectBracketNumSentences() throws IOException {
+		StringReader reader = new StringReader(
+				"(S1 (S (NP (NNP First)) (VP (VBD aired) (NP (NNP September) (CD 13) (, ,) (CD 2006))) (. .)))\n"
+						+ "(S1 (FRAG (NP (NN Episode) (CD 11)) (: :) (FRAG (WHNP (WP What)) (NP (DT the) (NNP ELLE)) (. ?)) (. .)))\n"
+						+ "(S1 (S (NP (PRP They)) (VP (MD must) (VP (AUX have) (NP (QP (IN at) (JJS least) (CD one)) (VBG flashing) (NNP amber) (NN light)) (PP (IN on) (NP (PRP them))))) (. .)))");
+
+		SentenceTokenizer tokenizer = new SentenceTokenizer(new BufferedReader(
+				reader));
+		SentenceAndMetaData snm = tokenizer.next();
+		assertNull(snm);
 	}
 }
