@@ -22,6 +22,8 @@
  ******************************************************************************/
 package au.edu.unimelb.csse.join;
 
+import java.util.Arrays;
+
 import junit.framework.TestCase;
 
 public class ByteTricksTest extends TestCase{
@@ -45,5 +47,22 @@ public class ByteTricksTest extends TestCase{
 		l = (t | 256) & 255;
 		assertEquals(128, l);
 
+	}
+	
+	public void testRightShiftByteTricks() throws Exception {
+		int plainIntValue = 0xC8;
+		int andedIntValue = 0xC8 & 255;
+		int payload = 200 & 255;
+		assertEquals(200, plainIntValue);
+		assertEquals(200, andedIntValue);
+		assertEquals(200, payload);
+		payload = payload << 24;
+		int plainNewPayload = payload >> 24;
+		int andedNewPayload = (payload >> 24) & 255;
+		byte plainByte = (byte) (((payload & (255 << 24)) >> 24) & 255);
+		byte[] bytes = new byte[]{plainByte};
+		assertEquals(-56, plainNewPayload);
+		assertEquals(200, andedNewPayload);
+		assertEquals("[-56]", Arrays.toString(bytes));
 	}
 }
