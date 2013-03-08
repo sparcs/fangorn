@@ -5,15 +5,13 @@ import java.util.List;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 
-import au.edu.unimelb.csse.CountingOp;
-import au.edu.unimelb.csse.Operator;
 import au.edu.unimelb.csse.join.TwigStackJoin.MergeNode;
 
 public class TwigStackJoinTest extends HolisticJoinTestCase {
 	
 	public void testGetNextPositionSetsMaxPosReachedOnEOL() throws Exception {
 		TwigStackJoin ts = new TwigStackJoin(new String[] { "A", "B", "C",
-				"D", "E" }, new int[] { -1, 0, 1, 0, 3 }, getDescOp(5));
+				"D", "E" }, new int[] { -1, 0, 1, 0, 3 }, getDescOp(5), lrdp);
 		IndexWriter w = setupIndex();
 		w.addDocument(getDoc("(A(A(E J)(B D))(A(B(C E)(E D)))(A(D(B(A(C J)))(E(D E)))))")); // doc 0
 		IndexReader r = commitIndexAndOpenReader(w);
@@ -37,7 +35,7 @@ public class TwigStackJoinTest extends HolisticJoinTestCase {
 	
 	public void testGetMinPosReturnsNodesInCorrectSequence() throws Exception {
 		TwigStackJoin ts = new TwigStackJoin(new String[] { "A", "B", "C",
-				"D", "E" }, new int[] { -1, 0, 1, 0, 3 }, getDescOp(5));
+				"D", "E" }, new int[] { -1, 0, 1, 0, 3 }, getDescOp(5), lrdp);
 		IndexWriter w = setupIndex();
 		w.addDocument(getDoc("(A(A(E J)(B D))(A(B(C E)(E D)))(A(D(B(A(C J)))(E(D E)))))")); // doc 0
 		IndexReader r = commitIndexAndOpenReader(w);
@@ -193,7 +191,7 @@ public class TwigStackJoinTest extends HolisticJoinTestCase {
 	 */
 	public void testPartialResultsGeneration() throws Exception {
 		TwigStackJoin ts = new TwigStackJoin(new String[] { "A", "B", "C",
-				"D", "E" }, new int[] { -1, 0, 1, 0, 3 }, getDescOp(5));
+				"D", "E" }, new int[] { -1, 0, 1, 0, 3 }, getDescOp(5), lrdp);
 		IndexWriter w = setupIndex();
 		w.addDocument(getDoc("(A(A(E J)(B D))(A(B(C E)(E D)))(A(D(B(A(C J)))(E(D E)))))")); // doc 0
 		IndexReader r = commitIndexAndOpenReader(w);
@@ -221,7 +219,6 @@ public class TwigStackJoinTest extends HolisticJoinTestCase {
 		assertIntArray(new int[]{4, 6, 1, 15, 0, 0, 0, 0, 0, 0, 0, 0, 4, 6, 2, 14, 5, 6, 3, 13 }, eList.get(3));
 		assertIntArray(new int[]{4, 6, 1, 15, 0, 0, 0, 0, 0, 0, 0, 0, 4, 6, 2, 14, 5, 6, 5, 11 }, eList.get(4));
 		assertIntArray(new int[]{4, 6, 1, 15, 0, 0, 0, 0, 0, 0, 0, 0, 5, 6, 4, 12, 5, 6, 5, 11 }, eList.get(5));
-		
 	}
 	
 	/**
@@ -251,7 +248,7 @@ public class TwigStackJoinTest extends HolisticJoinTestCase {
 	 */
 	public void testMergeNodeCreation() throws Exception {
 		TwigStackJoin ts = new TwigStackJoin(new String[] { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M" }, 
-				new int[] { -1, 0, 1, 2, 3, 3, 1, 6, 7, 8, 9, 8, 11}, getDescOp(13));
+				new int[] { -1, 0, 1, 2, 3, 3, 1, 6, 7, 8, 9, 8, 11}, getDescOp(13), lrdp);
 		IndexWriter w = setupIndex();
 		// just ensure that the atomic context has all the terms in the query;
 		w.addDocument(getDoc("(A(B(C D)(E F))(G(H(I J)(K L)(M N))))"));
@@ -318,7 +315,7 @@ public class TwigStackJoinTest extends HolisticJoinTestCase {
 	
 	public void testMergingOfPaths() throws Exception {
 		TwigStackJoin ts = new TwigStackJoin(new String[] { "A", "B", "C",
-				"D", "E" }, new int[] { -1, 0, 1, 0, 3 }, getDescOp(5));
+				"D", "E" }, new int[] { -1, 0, 1, 0, 3 }, getDescOp(5), lrdp);
 		IndexWriter w = setupIndex();
 		w.addDocument(getDoc("(A(A(E J)(B D))(A(B(C E)(E D)))(A(D(B(A(C J)))(E(D E)))))")); // doc 0
 		IndexReader r = commitIndexAndOpenReader(w);
@@ -342,14 +339,6 @@ public class TwigStackJoinTest extends HolisticJoinTestCase {
 	//TODO: write a test for merging for query with three branches
 	public void xtestMergingThreeBranchQuery() throws Exception {
 		
-	}
-	
-	private Operator[] getDescOp(int size) {
-		Operator[] r = new Operator[size];
-		for (int i = 0 ; i < size; i++) {
-			r[i] = CountingOp.DESCENDANT;
-		}
-		return r;
 	}
 	
 	private void assertMaxPosReached(boolean[] expected, TwigStackJoin ts) {

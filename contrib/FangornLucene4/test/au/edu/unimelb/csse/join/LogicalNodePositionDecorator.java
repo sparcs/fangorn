@@ -32,9 +32,9 @@ public class LogicalNodePositionDecorator implements LogicalNodePositionAware{
 	}
 
 	@Override
-	public void getNextPosition(NodePositions buffer, DocsAndPositionsEnum node)
+	public int getNextPosition(NodePositions buffer, DocsAndPositionsEnum node)
 			throws IOException {
-		inner.getNextPosition(buffer, node);
+		return inner.getNextPosition(buffer, node);
 	}
 
 	@Override

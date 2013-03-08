@@ -5,7 +5,6 @@ import java.io.IOException;
 import org.apache.lucene.index.DocsAndPositionsEnum;
 
 import au.edu.unimelb.csse.BinaryOperator;
-import au.edu.unimelb.csse.BinaryOperatorAware;
 import au.edu.unimelb.csse.LogicalNodePositionAware;
 
 /**
@@ -26,17 +25,11 @@ import au.edu.unimelb.csse.LogicalNodePositionAware;
  * @author sumukh
  * 
  */
-public class StackTreeJoin extends AbstractPairwiseJoin implements
+public class StackTreeJoin extends AbstractPairJoin implements
 		FullPairJoin {
 
-	private LogicalNodePositionAware nodePositionAware;
-	private BinaryOperatorAware operatorAware;
-	private int positionLength;
-
 	public StackTreeJoin(LogicalNodePositionAware nodePositionAware) {
-		this.nodePositionAware = nodePositionAware;
-		this.positionLength = nodePositionAware.getPositionLength();
-		this.operatorAware = nodePositionAware.getBinaryOperatorHandler();
+		super(nodePositionAware);
 	}
 
 	@Override
@@ -49,10 +42,10 @@ public class StackTreeJoin extends AbstractPairwiseJoin implements
 		nodePositionAware.getAllPositions(buffer, node);
 
 		while (buffer.offset < buffer.size && prev.offset < prev.size) {
-			if (operatorAware.startsBefore(buffer, prev)) {
+			if (operatorAware.startsBefore(buffer.positions, buffer.offset, prev.positions, prev.offset)) {
 				// prev starts before buffer
 				while (stack.size > 0) {
-					if (operatorAware.descendant(stack, prev)) { 
+					if (operatorAware.descendant(stack.positions, stack.offset, prev.positions, prev.offset)) { 
 						// desc implies not following
 						stack.push(prev, positionLength);
 						break;
@@ -65,7 +58,7 @@ public class StackTreeJoin extends AbstractPairwiseJoin implements
 				prev.offset += positionLength;
 			} else { // buffer starts before prev
 				while (stack.size > 0
-						&& !operatorAware.descendant(stack, buffer)) {
+						&& !operatorAware.descendant(stack.positions, stack.offset, buffer.positions, buffer.offset)) {
 					stack.pop(positionLength);
 				}
 				if (stack.size > 0 && op.match(stack, buffer, operatorAware)) {
@@ -86,7 +79,7 @@ public class StackTreeJoin extends AbstractPairwiseJoin implements
 		}
 		while (stack.size > 0 && buffer.offset < buffer.size) {
 			while (stack.size > 0
-					&& !operatorAware.descendant(stack, buffer)) {
+					&& !operatorAware.descendant(stack.positions, stack.offset, buffer.positions, buffer.offset)) {
 				stack.pop(positionLength);
 			}
 			if (stack.size > 0

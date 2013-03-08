@@ -5,13 +5,18 @@ import java.util.Arrays;
 import java.util.List;
 
 import au.edu.unimelb.csse.BinaryOperator;
+import au.edu.unimelb.csse.BinaryOperatorAware;
 import au.edu.unimelb.csse.Constants;
-import au.edu.unimelb.csse.Op;
-import au.edu.unimelb.csse.Operator;
+import au.edu.unimelb.csse.LRDP;
 import au.edu.unimelb.csse.paypack.PhysicalPayloadFormatAware;
 
 abstract class AbstractHolisticJoin extends AbstractJoin implements
 		OperatorCompatibilityAware {
+	protected LRDP nodePositionAware;
+	protected int positionLength;
+	protected int stackLength;
+	protected BinaryOperatorAware operatorAware;
+
 	// positions, freq, preorderPos and nextPosCalledCount are indexed by
 	// the order of arrangement of positionFreqs not by positionFreqs.position
 	int[] positions; // the current position of each node in current doc
@@ -31,19 +36,25 @@ abstract class AbstractHolisticJoin extends AbstractJoin implements
 	protected PhysicalPayloadFormatAware payloadFormat = Constants.DEFAULT_PAYLOAD_FORMAT;
 
 	public AbstractHolisticJoin(String[] labels, int[] parentPos,
-			Operator[] operators) {
+			BinaryOperator[] operators,
+			LRDP nodePositionAware) {
 		super(labels, parentPos, operators);
-		setupVars();
+		setupVars(nodePositionAware);
 	}
 
-	public AbstractHolisticJoin(String[] labels, Operator[] operators) {
+	public AbstractHolisticJoin(String[] labels, BinaryOperator[] operators,
+			LRDP nodePositionAware) {
 		super(labels, operators);
-		setupVars();
+		setupVars(nodePositionAware);
 	}
 
-	private void setupVars() {
+	private void setupVars(LRDP nodePositionAware) {
+		this.nodePositionAware = nodePositionAware;
+		this.positionLength = nodePositionAware.getPositionLength();
+		this.stackLength = positionLength + 1;
+		this.operatorAware = nodePositionAware.getBinaryOperatorHandler();
 		freqs = new int[postingsFreqs.length];
-		positions = new int[postingsFreqs.length * 4];
+		positions = new int[postingsFreqs.length * positionLength];
 		preorderPos = new int[postingsFreqs.length];
 		nextPosCalledCount = new int[postingsFreqs.length];
 		positionStacks = new int[postingsFreqs.length][];
@@ -66,7 +77,8 @@ abstract class AbstractHolisticJoin extends AbstractJoin implements
 			// get here
 			preorderPos[i] = postingsFreqs[i].postings.nextPosition();
 			positions = payloadFormat.decode(
-					postingsFreqs[i].postings.getPayload(), positions, i * 4);
+					postingsFreqs[i].postings.getPayload(), positions, i
+							* positionLength);
 			nextPosCalledCount[i] = 1; // all nextPostion() are called once
 		}
 		// reset stack sizes
@@ -89,8 +101,9 @@ abstract class AbstractHolisticJoin extends AbstractJoin implements
 		int[] curStack = positionStacks[index];
 		int curStackSize = positionStacksSizes[index];
 		try {
-			System.arraycopy(positions, pos * 4, curStack, curStackSize * 5, 4);
-			curStack[curStackSize * 5 + 4] = (postingsFreqs[pos].parent == null ? -1
+			System.arraycopy(positions, pos * positionLength, curStack,
+					curStackSize * stackLength, positionLength);
+			curStack[curStackSize * stackLength + positionLength] = (postingsFreqs[pos].parent == null ? -1
 					: positionStacksSizes[postingsFreqs[pos].parent.position] - 1);
 		} catch (ArrayIndexOutOfBoundsException e) {
 			int[] newStack = new int[positionStacks[index].length
@@ -98,8 +111,9 @@ abstract class AbstractHolisticJoin extends AbstractJoin implements
 			System.arraycopy(curStack, 0, newStack, 0, curStack.length);
 			positionStacks[index] = (curStack = newStack);
 			// redo
-			System.arraycopy(positions, pos * 4, curStack, curStackSize * 5, 4);
-			curStack[curStackSize * 5 + 4] = (postingsFreqs[pos].parent == null ? -1
+			System.arraycopy(positions, pos * positionLength, curStack,
+					curStackSize * stackLength, positionLength);
+			curStack[curStackSize * stackLength + positionLength] = (postingsFreqs[pos].parent == null ? -1
 					: positionStacksSizes[postingsFreqs[pos].parent.position] - 1);
 
 		}
@@ -121,7 +135,7 @@ abstract class AbstractHolisticJoin extends AbstractJoin implements
 				preorderPos[pos] = postingsFreqs[pos].postings.nextPosition();
 				positions = payloadFormat.decode(
 						postingsFreqs[pos].postings.getPayload(), positions,
-						pos * 4);
+						pos * positionLength);
 			}
 			nextPosCalledCount[pos] += 1;
 		}
@@ -129,38 +143,40 @@ abstract class AbstractHolisticJoin extends AbstractJoin implements
 
 	@Override
 	public boolean check(BinaryOperator op) {
-		return Op.CHILD.equals(op) || Op.DESCENDANT.equals(op);
+		return BinaryOperator.CHILD.equals(op)
+				|| BinaryOperator.DESCENDANT.equals(op);
 	}
 
 	void getPathSolutions(List<int[]> results, PostingsAndFreq leafPf) {
-		getPathSolutionsIter(results, leafPf, 0, new int[postingsFreqs.length * 4]);
+		getPathSolutionsIter(results, leafPf, 0,
+				new int[postingsFreqs.length * positionLength]);
 	}
 
 	private void getPathSolutionsIter(List<int[]> results, PostingsAndFreq pf,
 			int i, int[] result) {
-		System.arraycopy(positionStacks[pf.position], i * 5, result,
-				pf.position * 4, 4);
+		System.arraycopy(positionStacks[pf.position], i * stackLength, result,
+				pf.position * positionLength, positionLength);
 		if (parentPos[pf.position] == -1) { // root
-			if (Op.CHILD.equals(operators[pf.position])) {
+			if (BinaryOperator.CHILD.equals(operators[pf.position])) {
 				// root of query should be root of tree
-				int depth = positionStacks[pf.position][i * 5 + 2];
+				int depth = nodePositionAware.depth(positionStacks[pf.position], i * stackLength);
 				if (depth != 0)
 					return;
 			}
 			results.add(Arrays.copyOf(result, result.length));
 		} else {
-			if (Op.CHILD.equals(operators[pf.position])) {
-				int parentPointer = positionStacks[pf.position][i * 5 + 4];
-				for (int j = 0; j <= parentPointer; j++) {
-					if (Op.CHILD.match(positionStacks[pf.parent.position],
-							j * 5, positionStacks[pf.position], i * 5)) {
+			if (BinaryOperator.CHILD.equals(operators[pf.position])) {
+				int parentStackPointer = positionStacks[pf.position][i * stackLength + positionLength];
+				for (int j = 0; j <= parentStackPointer; j++) {
+					if (operatorAware.child(positionStacks[pf.parent.position],
+							j * stackLength, positionStacks[pf.position], i * stackLength)) {
 						getPathSolutionsIter(results, pf.parent, j, result);
 						break; // a child can have max 1 parent in a tree
 					}
 				}
 			} else {
-				int parentPointer = positionStacks[pf.position][i * 5 + 4];
-				for (int j = 0; j <= parentPointer; j++) {
+				int parentStackPointer = positionStacks[pf.position][i * stackLength + positionLength];
+				for (int j = 0; j <= parentStackPointer; j++) {
 					getPathSolutionsIter(results, pf.parent, j, result);
 				}
 			}

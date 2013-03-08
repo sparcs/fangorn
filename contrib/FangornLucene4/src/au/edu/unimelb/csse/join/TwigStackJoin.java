@@ -9,9 +9,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 
-import au.edu.unimelb.csse.Op;
-import au.edu.unimelb.csse.Operator;
-import au.edu.unimelb.csse.PayOff;
+import au.edu.unimelb.csse.BinaryOperator;
+import au.edu.unimelb.csse.LRDP;
 
 public class TwigStackJoin extends AbstractHolisticJoin {
 
@@ -21,8 +20,9 @@ public class TwigStackJoin extends AbstractHolisticJoin {
 	Map<Integer, List<int[]>> partialResultsLists;
 	MergeNode rootMergeNode;
 
-	public TwigStackJoin(String[] labels, int[] parentPos, Operator[] operators) {
-		super(labels, parentPos, operators);
+	public TwigStackJoin(String[] labels, int[] parentPos,
+			BinaryOperator[] operators, LRDP nodePositionAware) {
+		super(labels, parentPos, operators, nodePositionAware);
 		pfIdxByPfPos = new int[labels.length];
 		maxPosReached = new boolean[labels.length];
 		partialResultsLists = new HashMap<Integer, List<int[]>>();
@@ -37,13 +37,11 @@ public class TwigStackJoin extends AbstractHolisticJoin {
 			}
 			if (!postingsFreqs[pfIdx].isLeaf
 					&& postingsFreqs[pfIdx].parent != null) {
-				cleanStack(postingsFreqs[pfIdx].parent, positions[pfIdx * 4
-						+ PayOff.LEFT]);
+				cleanStack(postingsFreqs[pfIdx].parent, pfIdx);
 			}
 			if (postingsFreqs[pfIdx].parent == null
 					|| positionStacksSizes[postingsFreqs[pfIdx].parent.position] > 0) {
-				cleanStack(postingsFreqs[pfIdx], positions[pfIdx * 4
-						+ PayOff.LEFT]);
+				cleanStack(postingsFreqs[pfIdx], pfIdx);
 				updateStack(pfIdx);
 				if (postingsFreqs[pfIdx].isLeaf) {
 					List<int[]> partialResults = partialResultsLists
@@ -57,11 +55,13 @@ public class TwigStackJoin extends AbstractHolisticJoin {
 		return rootMergeNode.mergedResults();
 	}
 
-	private void cleanStack(PostingsAndFreq node, int left) {
+	private void cleanStack(PostingsAndFreq node, int pfIdx) {
 		int[] stack = positionStacks[node.position];
 		int stackSize = positionStacksSizes[node.position];
 		while (stackSize > 0
-				&& stack[(stackSize - 1) * 5 + PayOff.RIGHT] <= left) {
+				&& operatorAware.following(stack, (stackSize - 1)
+						* stackLength, positions, pfIdx
+						* positionLength)) {
 			stackSize--;
 		}
 		positionStacksSizes[node.position] = stackSize;
@@ -89,9 +89,11 @@ public class TwigStackJoin extends AbstractHolisticJoin {
 			}
 			if (minIdx == -1 && maxIdx == -1) {
 				minIdx = maxIdx = pfIdx;
-			} else if (startsBefore(positions, minIdx * 4, positions, pfIdx * 4)) {
+			} else if (operatorAware.startsBefore(positions, minIdx
+					* positionLength, positions, pfIdx * positionLength)) {
 				minIdx = pfIdx;
-			} else if (startsAfter(positions, maxIdx * 4, positions, pfIdx * 4)) {
+			} else if (operatorAware.startsAfter(positions, maxIdx
+					* positionLength, positions, pfIdx * positionLength)) {
 				maxIdx = pfIdx;
 			}
 		}
@@ -99,11 +101,12 @@ public class TwigStackJoin extends AbstractHolisticJoin {
 		if (maxPosReached[pfIdx])
 			return minIdx;
 		while (nextPosCalledCount[pfIdx] <= freqs[pfIdx]
-				&& Op.FOLLOWING.match(positions, pfIdx * 4, positions,
-						maxIdx * 4)) {
+				&& operatorAware.following(positions, pfIdx * positionLength,
+						positions, maxIdx * positionLength)) {
 			getNextPosition(pfIdx);
 		}
-		if (startsBefore(positions, minIdx * 4, positions, pfIdx * 4))
+		if (operatorAware.startsBefore(positions, minIdx * positionLength,
+				positions, pfIdx * positionLength))
 			return pfIdx;
 		return minIdx;
 	}
@@ -114,36 +117,6 @@ public class TwigStackJoin extends AbstractHolisticJoin {
 			maxPosReached[pos] = true;
 		}
 		super.getNextPosition(pos);
-	}
-
-	/**
-	 * Does pos2 start after pos1?
-	 * 
-	 * @param pos1
-	 * @param off1
-	 * @param pos2
-	 * @param off2
-	 * @return
-	 */
-	boolean startsAfter(int[] pos1, int off1, int[] pos2, int off2) {
-		return pos1[off1 + PayOff.LEFT] < pos2[off2 + PayOff.LEFT]
-				|| (pos1[off1 + PayOff.LEFT] == pos2[off2 + PayOff.LEFT] && pos1[off1
-						+ PayOff.DEPTH] < pos2[off2 + PayOff.DEPTH]);
-	}
-
-	/**
-	 * Does pos2 start before pos1?
-	 * 
-	 * @param pos1
-	 * @param off1
-	 * @param pos2
-	 * @param off2
-	 * @return
-	 */
-	boolean startsBefore(int[] pos1, int off1, int[] pos2, int off2) {
-		return pos1[off1 + PayOff.LEFT] > pos2[off2 + PayOff.LEFT]
-				|| (pos1[off1 + PayOff.LEFT] == pos2[off2 + PayOff.LEFT] && pos1[off1
-						+ PayOff.DEPTH] > pos2[off2 + PayOff.DEPTH]);
 	}
 
 	@Override
@@ -216,13 +189,11 @@ public class TwigStackJoin extends AbstractHolisticJoin {
 	}
 
 	class MergeNode {
-		private static final int POS_ENC_LENGTH = 4; 
-
 		int position; // position of the node in the query
 		int[] ancSelfPos;
 		List<int[]> descPos = new ArrayList<int[]>();
 		List<MergeNode> children = new ArrayList<TwigStackJoin.MergeNode>();
-		
+
 		private PartialPathComparator ancPathComp;
 
 		public MergeNode(int position, List<Integer> parentStack) {
@@ -234,7 +205,8 @@ public class TwigStackJoin extends AbstractHolisticJoin {
 				ancSelfPos[i] = parentStack.get(i);
 			}
 			ancSelfPos[size] = this.position;
-			this.ancPathComp = new PartialPathComparator(POS_ENC_LENGTH, ancSelfPos);
+			this.ancPathComp = new PartialPathComparator(positionLength,
+					ancSelfPos);
 		}
 
 		public void addChildNodeAndDescendants(MergeNode child,
@@ -273,8 +245,10 @@ public class TwigStackJoin extends AbstractHolisticJoin {
 							int[] newResult = new int[pr.length];
 							System.arraycopy(pr, 0, newResult, 0, pr.length);
 							for (int m = 0; m < descIdxArr.length; m++) {
-								for (int n = 0; n < POS_ENC_LENGTH; n++) {
-									newResult[descIdxArr[m] * POS_ENC_LENGTH + n] = nr[descIdxArr[m] * POS_ENC_LENGTH + n];
+								for (int n = 0; n < positionLength; n++) {
+									newResult[descIdxArr[m] * positionLength
+											+ n] = nr[descIdxArr[m]
+											* positionLength + n];
 								}
 							}
 							results.add(newResult);
