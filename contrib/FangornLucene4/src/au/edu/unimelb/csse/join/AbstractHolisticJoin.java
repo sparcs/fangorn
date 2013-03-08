@@ -4,13 +4,14 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
+import au.edu.unimelb.csse.BinaryOperator;
 import au.edu.unimelb.csse.Constants;
 import au.edu.unimelb.csse.Op;
 import au.edu.unimelb.csse.Operator;
-import au.edu.unimelb.csse.paypack.PayloadFormatAware;
+import au.edu.unimelb.csse.paypack.PhysicalPayloadFormatAware;
 
 abstract class AbstractHolisticJoin extends AbstractJoin implements
-		OperatorAware {
+		OperatorCompatibilityAware {
 	// positions, freq, preorderPos and nextPosCalledCount are indexed by
 	// the order of arrangement of positionFreqs not by positionFreqs.position
 	int[] positions; // the current position of each node in current doc
@@ -27,7 +28,7 @@ abstract class AbstractHolisticJoin extends AbstractJoin implements
 	// position
 	private static int DEFAULT_STACK_SIZE = 50 * 5;
 
-	protected PayloadFormatAware payloadFormat = Constants.PAYLOAD_FORMAT;
+	protected PhysicalPayloadFormatAware payloadFormat = Constants.DEFAULT_PAYLOAD_FORMAT;
 
 	public AbstractHolisticJoin(String[] labels, int[] parentPos,
 			Operator[] operators) {
@@ -127,7 +128,7 @@ abstract class AbstractHolisticJoin extends AbstractJoin implements
 	}
 
 	@Override
-	public boolean validOper(Operator op) {
+	public boolean check(BinaryOperator op) {
 		return Op.CHILD.equals(op) || Op.DESCENDANT.equals(op);
 	}
 

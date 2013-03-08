@@ -1,12 +1,12 @@
 package au.edu.unimelb.csse.join;
 
 import java.io.IOException;
-import java.util.Arrays;
 
 import org.apache.lucene.index.DocsAndPositionsEnum;
 
-import au.edu.unimelb.csse.Op;
-import au.edu.unimelb.csse.Operator;
+import au.edu.unimelb.csse.BinaryOperator;
+import au.edu.unimelb.csse.BinaryOperatorAware;
+import au.edu.unimelb.csse.LogicalNodePositionAware;
 
 /**
  * This is an adaptation of the MPMGJN join by Zhang et.al. (2001)
@@ -29,52 +29,63 @@ import au.edu.unimelb.csse.Operator;
  * before all non skip positions
  * 
  * Additionally, this join also only returns the second elements as the result
- * of the join. The second element is used to propagate a simple path join
+ * of the join. The second element is used to propagate a simple path join. As a
+ * result, this join can only tell if the query matches a tree, but cannot
+ * provide details about the nodes where it matches in the tree.
  * 
  * @author sumukh
  * 
  */
-public class MPMGModSingleJoin extends AbstractPairwiseJoin {
-
-	public int[] join(int[] prev, Operator op, DocsAndPositionsEnum node)
-			throws IOException {
-		int[] result = new int[256];
-		int[] curBuffer = new int[4];
-		int resultSize = 0;
-
-		int freq = node.freq();
-		int posIdx = 0;
-		int poff = 0;
-		int pmark = 0;
-		while (posIdx < freq) {
-			if (pmark == prev.length)
-				break;
-			node.nextPosition();
-			posIdx++;
-			curBuffer = payloadFormat.decode(node.getPayload(), curBuffer, 0);
-			poff = pmark;
-			while (Op.FOLLOWING.match(prev, poff, curBuffer, 0)) {
-				// skip before
-				poff += 4;
-				pmark = poff;
-			}
-			while (poff < prev.length) {
-				if (op.match(prev, poff, curBuffer, 0)) { // next is child/desc
-					result = addNextToResult(result, resultSize, curBuffer, 0);
-					resultSize++;
-					break; // abort as soon as curBuffer is a solution
-				} else if (Op.PRECEDING.match(prev, poff, curBuffer, 0)) {
-					// prev is after
-					break;
-				}
-				poff += 4;
-			}
-		}
-		return Arrays.copyOf(result, resultSize * 4);
+public class MPMGModSingleJoin extends AbstractPairwiseJoin implements
+		HalfPairJoin {
+	private final LogicalNodePositionAware nodePostionAware;
+	private final int positionLength;
+	private final BinaryOperatorAware operatorAware;
+	
+	public MPMGModSingleJoin(LogicalNodePositionAware nodePositionAware) {
+		this.nodePostionAware = nodePositionAware;
+		positionLength = nodePostionAware.getPositionLength();
+		operatorAware = nodePositionAware.getBinaryOperatorHandler();
 	}
 
 	@Override
-	public boolean validOper(Operator op) {
-		return op.equals(Op.CHILD) || op.equals(Op.DESCENDANT);
+	public void match(NodePositions prev, BinaryOperator op,
+			DocsAndPositionsEnum node, NodePositions... buffers)
+			throws IOException {
+		int freq = node.freq();
+		NodePositions result = buffers[0]; // buffer used as result
+		int numNextRead = 0;
+		int pmark = 0;
+		while (numNextRead < freq) {
+			if (pmark == prev.size)
+				break;
+			nodePostionAware.getNextPosition(result, node);
+			numNextRead++;
+			prev.offset = pmark;
+			while (operatorAware.following(prev, result)) {
+				// skip before
+				prev.offset += positionLength;
+				pmark = prev.offset;
+			}
+			boolean found = false;
+			while (prev.offset < prev.size) {
+				if (op.match(prev, result, operatorAware)) { // next is child/desc
+					found = true;
+					break; // solution found; abort
+				} else if (operatorAware.preceding(prev, result)) {
+					// prev is after
+					break;
+				}
+				prev.offset += positionLength;
+			}
+			if (!found) {
+				result.removeLast(positionLength);
+			}
+		}
+	}
+
+	@Override
+	public int numBuffers(BinaryOperator op) {
+		return 1;
 	}
 }

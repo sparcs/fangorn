@@ -59,6 +59,14 @@ public abstract class IndexTestCase extends TestCase {
 		IndexWriter w = new IndexWriter(d, c);
 		return w;
 	}
+	
+	protected IndexReader setupIndexWithDocs(String... docs) throws IOException {
+		IndexWriter w = setupIndex();
+		for (String doc : docs) {
+			w.addDocument(getDoc(doc));
+		}
+		return commitIndexAndOpenReader(w);
+	}
 
 	protected DocsAndPositionsEnum getPosEnum(IndexReader r, int docid, Term t)
 			throws IOException {

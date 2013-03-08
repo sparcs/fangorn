@@ -4,15 +4,16 @@ import java.io.IOException;
 
 import org.apache.lucene.index.DocsAndPositionsEnum;
 
+import au.edu.unimelb.csse.BinaryOperator;
 import au.edu.unimelb.csse.Constants;
 import au.edu.unimelb.csse.Operator;
-import au.edu.unimelb.csse.paypack.PayloadFormatAware;
+import au.edu.unimelb.csse.paypack.PhysicalPayloadFormatAware;
 
-abstract class AbstractPairwiseJoin implements OperatorAware {
+abstract class AbstractPairwiseJoin implements OperatorCompatibilityAware {
 
 	static final int DEFAULT_BUF_SIZE = 256;
 	
-	protected PayloadFormatAware payloadFormat = Constants.PAYLOAD_FORMAT;
+	protected PhysicalPayloadFormatAware payloadFormat = Constants.DEFAULT_PAYLOAD_FORMAT;
 	
 	public int[] getAllPositions(DocsAndPositionsEnum node) throws IOException {
 		int freq = node.freq();
@@ -37,5 +38,9 @@ abstract class AbstractPairwiseJoin implements OperatorAware {
 		return result;
 	}
 	
-	public abstract int[] join(int[] prev, Operator op, DocsAndPositionsEnum node) throws IOException;
+	@Override
+	public boolean check(BinaryOperator op) {
+		return op.equals(BinaryOperator.CHILD)
+				|| op.equals(BinaryOperator.DESCENDANT);
+	}
 }

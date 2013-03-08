@@ -1,12 +1,12 @@
 package au.edu.unimelb.csse.join;
 
 import java.io.IOException;
-import java.util.Arrays;
 
 import org.apache.lucene.index.DocsAndPositionsEnum;
 
-import au.edu.unimelb.csse.Op;
-import au.edu.unimelb.csse.Operator;
+import au.edu.unimelb.csse.BinaryOperator;
+import au.edu.unimelb.csse.BinaryOperatorAware;
+import au.edu.unimelb.csse.LogicalNodePositionAware;
 
 /**
  * This is an adaptation of the MPMGJN join by Zhang et.al. (2001)
@@ -27,48 +27,50 @@ import au.edu.unimelb.csse.Operator;
  * @author sumukh
  * 
  */
-public class MPMGJoin extends FullSolutionPairwiseJoin {
-	
-	public int[] join(int[] prev, Operator op, DocsAndPositionsEnum node)
-			throws IOException {
-		int[] result = new int[256];
-		int resultSize = 0;
-		int[] nextPays = getAllPositions(node);
-		int nmark = 0;
-		int poff = 0;
-		int noff = 0;
+public class MPMGJoin extends AbstractPairwiseJoin implements FullPairJoin {
+	private final LogicalNodePositionAware nodePositionAware;
+	private final int positionLength;
+	private final BinaryOperatorAware operatorAware;
 
-		while (poff < prev.length) {
-			if (noff == nextPays.length) {
-				poff += 4;
-				noff = nmark;
-			} else if (op.match(prev, poff, nextPays, noff)) {
-				// if next descendant/child
-				result = addToResult(result, resultSize, prev, poff, nextPays,
-						noff);
-				resultSize++;
-				noff += 4;
-			} else if (Op.PRECEDING.match(prev, poff, nextPays, noff)
-					|| Op.ANCESTOR.match(prev, poff, nextPays, noff)) {
-				// comparison not counted
-				noff += 4;
-				nmark = noff;
-			} else if (Op.DESCENDANT.equals(op)
-					|| !Op.DESCENDANT.match(prev, poff, nextPays, noff)) {
-				// desc: skip to next prev
-				// child: skip if not descendant
-				// comparison not counted
-				poff += 4;
-				noff = nmark;
-			} else { // is descendant but op is child so just iterate
-				noff += 4;
-			}
-		}
-		return Arrays.copyOf(result, resultSize * 8);
+	public MPMGJoin(LogicalNodePositionAware nodePositionAware) {
+		this.nodePositionAware = nodePositionAware;
+		this.positionLength = nodePositionAware.getPositionLength();
+		this.operatorAware = nodePositionAware.getBinaryOperatorHandler();
 	}
 
 	@Override
-	public boolean validOper(Operator op) {
-		return op.equals(Op.CHILD) || op.equals(Op.DESCENDANT);
+	public void match(NodePositions prev, BinaryOperator op,
+			DocsAndPositionsEnum node, NodePairPositions result,
+			NodePositions... buffers) throws IOException {
+		NodePositions buffer = buffers[0];
+		nodePositionAware.getAllPositions(buffer, node);
+		int nmark = 0;
+
+		while (prev.hasMore(positionLength)) {
+			if (buffer.offset == buffer.size) {
+				prev.offset += positionLength;
+				buffer.offset = nmark;
+			} else if (op.match(prev, buffer, operatorAware)) {
+				// if next descendant/child
+				result.add(prev, buffer, positionLength);
+				buffer.offset += positionLength;
+			} else if (operatorAware.startsBefore(prev, buffer)) {
+				buffer.offset += positionLength;
+				nmark = buffer.offset;
+			} else if (BinaryOperator.DESCENDANT.equals(op)
+					|| !operatorAware.descendant(prev, buffer)) {
+				// desc: skip to next prev
+				// child: skip if not descendant
+				prev.offset += positionLength;
+				buffer.offset = nmark;
+			} else { // is descendant but op is child so just iterate
+				buffer.offset += positionLength;
+			}
+		}
+	}
+
+	@Override
+	public int numBuffers(BinaryOperator op) {
+		return 1;
 	}
 }

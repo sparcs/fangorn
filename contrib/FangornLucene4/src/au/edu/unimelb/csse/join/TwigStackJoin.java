@@ -230,10 +230,10 @@ public class TwigStackJoin extends AbstractHolisticJoin {
 			int size = parentStack.size();
 			ancSelfPos = new int[size + 1];
 			// store in decreasing ancestor depth order
-			for (int i = 0; i < parentStack.size(); i++) {
+			for (int i = 0; i < size; i++) {
 				ancSelfPos[i] = parentStack.get(i);
 			}
-			ancSelfPos[parentStack.size()] = this.position;
+			ancSelfPos[size] = this.position;
 			this.ancPathComp = new PartialPathComparator(POS_ENC_LENGTH, ancSelfPos);
 		}
 

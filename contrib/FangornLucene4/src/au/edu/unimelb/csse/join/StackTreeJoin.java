@@ -1,12 +1,12 @@
 package au.edu.unimelb.csse.join;
 
 import java.io.IOException;
-import java.util.Arrays;
 
 import org.apache.lucene.index.DocsAndPositionsEnum;
 
-import au.edu.unimelb.csse.Op;
-import au.edu.unimelb.csse.Operator;
+import au.edu.unimelb.csse.BinaryOperator;
+import au.edu.unimelb.csse.BinaryOperatorAware;
+import au.edu.unimelb.csse.LogicalNodePositionAware;
 
 /**
  * This path join algorithm is an adaptation of the StackTree join described by
@@ -26,99 +26,89 @@ import au.edu.unimelb.csse.Operator;
  * @author sumukh
  * 
  */
-public class StackTreeJoin extends FullSolutionPairwiseJoin {
+public class StackTreeJoin extends AbstractPairwiseJoin implements
+		FullPairJoin {
 
-	@Override
-	public boolean validOper(Operator op) {
-		return Op.CHILD.equals(op) || Op.DESCENDANT.equals(op);
+	private LogicalNodePositionAware nodePositionAware;
+	private BinaryOperatorAware operatorAware;
+	private int positionLength;
+
+	public StackTreeJoin(LogicalNodePositionAware nodePositionAware) {
+		this.nodePositionAware = nodePositionAware;
+		this.positionLength = nodePositionAware.getPositionLength();
+		this.operatorAware = nodePositionAware.getBinaryOperatorHandler();
 	}
 
 	@Override
-	public int[] join(int[] prev, Operator op, DocsAndPositionsEnum node)
-			throws IOException {
-		int[] result = new int[256];
-		int resultSize = 0;
-		int[] nextPays = getAllPositions(node);
+	public void match(NodePositions prev, BinaryOperator op,
+			DocsAndPositionsEnum node, NodePairPositions result,
+			NodePositions... buffers) throws IOException {
+		NodePositions buffer = buffers[0];
+		NodePositions stack = buffers[1];
 
-		int noff = 0;
-		int poff = 0;
-		int[] stack = new int[128];
-		int stackSize = 0;
+		nodePositionAware.getAllPositions(buffer, node);
 
-		while (noff < nextPays.length && poff < prev.length) {
-			if (Op.PRECEDING.match(nextPays, noff, prev, poff)
-					|| Op.ANCESTOR.match(nextPays, noff, prev, poff)) {
-				// prev before nextPays
-				while (stackSize > 0) {
-					if (Op.DESCENDANT.match(stack, stackSize * 4 - 4, prev,
-							poff)) { // desc implies not following
-						stack = pushToStack(prev, poff, stack, stackSize);
-						stackSize++;
+		while (buffer.offset < buffer.size && prev.offset < prev.size) {
+			if (operatorAware.startsBefore(buffer, prev)) {
+				// prev starts before buffer
+				while (stack.size > 0) {
+					if (operatorAware.descendant(stack, prev)) { 
+						// desc implies not following
+						stack.push(prev, positionLength);
 						break;
 					}
-					stackSize--;
+					stack.pop(positionLength);
 				}
-				if (stackSize == 0) {
-					stack = pushToStack(prev, poff, stack, stackSize);
-					stackSize++;
+				if (stack.size == 0) {
+					stack.push(prev, positionLength);
 				}
-				poff += 4;
-			} else { // nextPays before prev
-				while (stackSize > 0
-						&& !Op.DESCENDANT.match(stack, stackSize * 4 - 4,
-								nextPays, noff)) {
-					stackSize--;
+				prev.offset += positionLength;
+			} else { // buffer starts before prev
+				while (stack.size > 0
+						&& !operatorAware.descendant(stack, buffer)) {
+					stack.pop(positionLength);
 				}
-				if (stackSize > 0
-						&& op.match(stack, stackSize * 4 - 4, nextPays, noff)) {
-					if (op.equals(Op.CHILD)) {
-						result = addToResult(result, resultSize, stack,
-								stackSize * 4 - 4, nextPays, noff);
-						resultSize++;
+				if (stack.size > 0 && op.match(stack, buffer, operatorAware)) {
+					if (op.equals(BinaryOperator.CHILD)) {
+						result.add(prev, buffer, positionLength);
 					} else {
-						for (int i = 0; i < stackSize; i++) {
-							result = addToResult(result, resultSize, stack,
-									i * 4, nextPays, noff);
-							resultSize++;
+						int numStackNodes = stack.size / positionLength;
+						for (int i = 0; i < numStackNodes; i++) {
+							stack.offset = i * positionLength; 
+							result.add(stack,buffer, positionLength);
 						}
+						stack.offset = stack.size - positionLength;
 					}
 				}
-				// if stackSize == 0 then; do nothing
-				noff += 4;
+				// if stack.size == 0 then; do nothing
+				buffer.offset += positionLength;
 			}
 		}
-		while (stackSize > 0 && noff < nextPays.length) {
-			while (stackSize > 0
-					&& !Op.DESCENDANT.match(stack, stackSize * 4 - 4, nextPays,
-							noff)) {
-				stackSize--;
+		while (stack.size > 0 && buffer.offset < buffer.size) {
+			while (stack.size > 0
+					&& !operatorAware.descendant(stack, buffer)) {
+				stack.pop(positionLength);
 			}
-			if (stackSize > 0
-					&& op.match(stack, stackSize * 4 - 4, nextPays, noff)) {
-				if (op.equals(Op.CHILD)) {
-					result = addToResult(result, resultSize, stack,
-							stackSize * 4 - 4, nextPays, noff);
-					resultSize++;
+			if (stack.size > 0
+					&& op.match(stack, buffer, operatorAware)) {
+				if (op.equals(BinaryOperator.CHILD)) {
+					result.add(stack, buffer, positionLength);
 				} else {
-					for (int i = 0; i < stackSize; i++) {
-						result = addToResult(result, resultSize, stack, i * 4,
-								nextPays, noff);
-						resultSize++;
+					int numStackNodes = stack.size / positionLength;
+					for (int i = 0; i < numStackNodes; i++) {
+						stack.offset = i * positionLength; 
+						result.add(stack,buffer, positionLength);
 					}
+					stack.offset = stack.size - positionLength;
 				}
 			}
-			noff += 4;
+			buffer.offset += positionLength;
 		}
-		return Arrays.copyOf(result, resultSize * 8);
 	}
 
-	private int[] pushToStack(int[] prev, int poff, int[] stack, int stackSize) {
-		if (!(stackSize * 4 < stack.length)) {
-			int[] newstack = new int[stack.length + 128];
-			System.arraycopy(stack, 0, newstack, 0, stack.length);
-			stack = newstack;
-		}
-		System.arraycopy(prev, poff, stack, stackSize * 4, 4);
-		return stack;
+	@Override
+	public int numBuffers(BinaryOperator op) {
+		return 2;
 	}
+
 }
