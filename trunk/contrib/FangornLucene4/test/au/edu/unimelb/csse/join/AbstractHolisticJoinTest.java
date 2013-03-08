@@ -5,15 +5,14 @@ import java.util.ArrayList;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 
-import au.edu.unimelb.csse.IndexTestCase;
-import au.edu.unimelb.csse.Op;
-import au.edu.unimelb.csse.Operator;
+import au.edu.unimelb.csse.BinaryOperator;
 import au.edu.unimelb.csse.join.AbstractJoin.PostingsAndFreq;
 
-public class AbstractHolisticJoinTest extends IndexTestCase {
+public class AbstractHolisticJoinTest extends HolisticJoinTestCase {
+	
 	public void testGetPathSolutionsRecursesFromLeafToRootOfQuery() throws Exception {
 		PathStackJoin ps = new PathStackJoin(new String[] { "AA", "BB", "CC" },
-				new Operator[] { Op.DESCENDANT, Op.DESCENDANT, Op.DESCENDANT });
+				getDescOp(3), lrdp);
 		IndexWriter w = setupIndex();
 		// this example shows the function of parent stack pointers 
 		//   stored at each position  
@@ -74,7 +73,7 @@ public class AbstractHolisticJoinTest extends IndexTestCase {
 
 	public void testGetPathSolutionsTestsRootChildOp() throws Exception {
 		PathStackJoin ps = new PathStackJoin(new String[] { "AA", "BB", "CC" },
-				new Operator[] { Op.CHILD, Op.DESCENDANT, Op.CHILD });
+				new BinaryOperator[] { BinaryOperator.CHILD, BinaryOperator.DESCENDANT, BinaryOperator.CHILD }, lrdp);
 		IndexWriter w = setupIndex();
 		// this example shows the function of parent stack pointers 
 		//   stored at each position  
@@ -100,7 +99,7 @@ public class AbstractHolisticJoinTest extends IndexTestCase {
 	public void testStackNotUpdatedIfParentStackIsEmpty()
 			throws Exception {
 		PathStackJoin ps = new PathStackJoin(new String[] { "BB", "CC", "DD" },
-				new Operator[] { Op.DESCENDANT, Op.DESCENDANT, Op.DESCENDANT });
+				getDescOp(3), lrdp);
 		IndexWriter w = setupIndex();
 		w.addDocument(getDoc("(AA(CC(BB CC))(DD EE))")); // doc 2
 		IndexReader r = commitIndexAndOpenReader(w);
@@ -119,7 +118,7 @@ public class AbstractHolisticJoinTest extends IndexTestCase {
 
 	public void testStackAlwaysUpdatedForQueryRoot() throws Exception {
 		PathStackJoin ps = new PathStackJoin(new String[] { "BB", "CC", "DD" },
-				new Operator[] { Op.DESCENDANT, Op.DESCENDANT, Op.DESCENDANT });
+				getDescOp(3), lrdp);
 		IndexWriter w = setupIndex();
 		w.addDocument(getDoc("(AA(BB(BB CC))(DD EE))")); // doc 2
 		IndexReader r = commitIndexAndOpenReader(w);
@@ -141,7 +140,7 @@ public class AbstractHolisticJoinTest extends IndexTestCase {
 
 	public void testStackUpdatedWhenParentStackNotEmpty() throws Exception {
 		PathStackJoin ps = new PathStackJoin(new String[] { "BB", "CC", "DD" },
-				new Operator[] { Op.DESCENDANT, Op.DESCENDANT, Op.DESCENDANT });
+				getDescOp(3), lrdp);
 		IndexWriter w = setupIndex();
 		w.addDocument(getDoc("(AA(BB(BB(CC(DD EE)))))"));
 		IndexReader r = commitIndexAndOpenReader(w);

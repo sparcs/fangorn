@@ -5,14 +5,13 @@ import java.util.List;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 
-import au.edu.unimelb.csse.Op;
-import au.edu.unimelb.csse.Operator;
+import au.edu.unimelb.csse.BinaryOperator;
 
 public class PathStackJoinTest extends HolisticJoinTestCase {
+
 	public void testLeafPositions() throws Exception {
 		PathStackJoin ps = new PathStackJoin(new String[] { "AA", "BB", "CC",
-				"DD", "EE" }, new Operator[] { Op.DESCENDANT, Op.DESCENDANT,
-				Op.DESCENDANT, Op.DESCENDANT, Op.DESCENDANT });
+				"DD", "EE" }, getDescOp(5), lrdp);
 		IndexWriter w = setupIndex();
 		w.addDocument(getDoc("(AA(AA CC)(AA CC)(AA CC))")); // doc 0
 		w.addDocument(getDoc("(AA(BB CC)(DD EE)(AA BB))")); // doc 1
@@ -39,8 +38,7 @@ public class PathStackJoinTest extends HolisticJoinTestCase {
 
 	public void testSetupPerDocInitsVariables() throws Exception {
 		PathStackJoin ps = new PathStackJoin(new String[] { "AA", "BB", "CC",
-				"DD", "EE" }, new Operator[] { Op.DESCENDANT, Op.DESCENDANT,
-				Op.DESCENDANT, Op.DESCENDANT, Op.DESCENDANT });
+				"DD", "EE" }, getDescOp(5), lrdp);
 		IndexWriter w = setupIndex();
 		w.addDocument(getDoc("(AA(AA CC)(AA CC)(AA CC))")); // doc 0
 		w.addDocument(getDoc("(AA(BB CC)(DD EE)(AA BB))")); // doc 1
@@ -93,8 +91,7 @@ public class PathStackJoinTest extends HolisticJoinTestCase {
 
 	public void testGetMinSource() throws Exception {
 		PathStackJoin ps = new PathStackJoin(new String[] { "AA", "BB", "CC",
-				"DD", "EE" }, new Operator[] { Op.DESCENDANT, Op.DESCENDANT,
-				Op.DESCENDANT, Op.DESCENDANT, Op.DESCENDANT });
+				"DD", "EE" }, getDescOp(5), lrdp);
 		IndexWriter w = setupIndex();
 		w.addDocument(getDoc("(AA(AA CC)(AA CC)(AA CC))")); // doc 0
 		w.addDocument(getDoc("(KK(DD EE)(AA(BB CC)(DD EE)))")); // doc 1
@@ -123,8 +120,7 @@ public class PathStackJoinTest extends HolisticJoinTestCase {
 
 	public void testGetMinSourceWhenSameTermsPresentInPath() throws Exception {
 		PathStackJoin ps = new PathStackJoin(new String[] { "AA", "CC", "AA",
-				"AA" }, new Operator[] { Op.DESCENDANT, Op.DESCENDANT,
-				Op.DESCENDANT, Op.DESCENDANT });
+				"AA" }, getDescOp(4), lrdp);
 		IndexWriter w = setupIndex();
 		w.addDocument(getDoc("(AA(AA CC)(AA CC)(AA CC))")); // doc 0
 		IndexReader r = commitIndexAndOpenReader(w);
@@ -143,7 +139,7 @@ public class PathStackJoinTest extends HolisticJoinTestCase {
 
 	public void testStacksAreClearedOfPrecedingEntries() throws Exception {
 		PathStackJoin ps = new PathStackJoin(new String[] { "AA", "BB", "CC" },
-				new Operator[] { Op.DESCENDANT, Op.DESCENDANT, Op.DESCENDANT });
+				getDescOp(3), lrdp);
 
 		// setting up stacks
 		System.arraycopy(new int[] { 1, 7, 1, 18, -1 }, 0,
@@ -161,7 +157,7 @@ public class PathStackJoinTest extends HolisticJoinTestCase {
 
 	public void testSimpleMatch() throws Exception {
 		PathStackJoin ps = new PathStackJoin(new String[] { "BB", "CC", "DD" },
-				new Operator[] { Op.DESCENDANT, Op.DESCENDANT, Op.DESCENDANT });
+				getDescOp(3), lrdp);
 		IndexWriter w = setupIndex();
 		w.addDocument(getDoc("(AA(BB(BB(CC(DD EE)))))"));
 		IndexReader r = commitIndexAndOpenReader(w);
@@ -178,7 +174,7 @@ public class PathStackJoinTest extends HolisticJoinTestCase {
 
 	public void testNoMatch() throws Exception {
 		PathStackJoin ps = new PathStackJoin(new String[] { "BB", "CC", "DD" },
-				new Operator[] { Op.DESCENDANT, Op.DESCENDANT, Op.DESCENDANT });
+				getDescOp(3), lrdp);
 		IndexWriter w = setupIndex();
 		w.addDocument(getDoc("(AA(DD(DD(CC(BB EE)))))"));
 		IndexReader r = commitIndexAndOpenReader(w);
@@ -190,7 +186,7 @@ public class PathStackJoinTest extends HolisticJoinTestCase {
 
 	public void testRepeatMatch() throws Exception {
 		PathStackJoin ps = new PathStackJoin(new String[] { "BB", "BB" },
-				new Operator[] { Op.DESCENDANT, Op.DESCENDANT });
+				getDescOp(2), lrdp);
 		IndexWriter w = setupIndex();
 		w.addDocument(getDoc("(AA(BB(BB(CC(DD EE)))))"));
 		IndexReader r = commitIndexAndOpenReader(w);
@@ -203,7 +199,7 @@ public class PathStackJoinTest extends HolisticJoinTestCase {
 
 	public void testIdenticalLabelNestedWithDescOp() throws Exception {
 		PathStackJoin ps = new PathStackJoin(new String[] { "BB", "BB" },
-				new Operator[] { Op.DESCENDANT, Op.DESCENDANT });
+				getDescOp(2), lrdp);
 		IndexWriter w = setupIndex();
 		w.addDocument(getDoc("(AA(BB(BB(BB(BB(CC(DD EE)))))))"));
 		IndexReader r = commitIndexAndOpenReader(w);
@@ -221,7 +217,7 @@ public class PathStackJoinTest extends HolisticJoinTestCase {
 
 	public void testIdenticalLabelNestedWithChildOp() throws Exception {
 		PathStackJoin ps = new PathStackJoin(new String[] { "BB", "BB" },
-				new Operator[] { Op.DESCENDANT, Op.CHILD });
+				new BinaryOperator[] { BinaryOperator.DESCENDANT, BinaryOperator.CHILD }, lrdp);
 		IndexWriter w = setupIndex();
 		w.addDocument(getDoc("(AA(BB(BB(BB(BB(CC(DD EE)))))))"));
 		IndexReader r = commitIndexAndOpenReader(w);
@@ -236,7 +232,7 @@ public class PathStackJoinTest extends HolisticJoinTestCase {
 
 	public void testRootChildOpQuery() throws Exception {
 		PathStackJoin ps = new PathStackJoin(new String[] { "BB", "BB" },
-				new Operator[] { Op.CHILD, Op.CHILD });
+				new BinaryOperator[] { BinaryOperator.CHILD, BinaryOperator.CHILD }, lrdp);
 		IndexWriter w = setupIndex();
 		w.addDocument(getDoc("(BB(BB(BB(BB(BB(CC(DD EE)))))))"));
 		IndexReader r = commitIndexAndOpenReader(w);

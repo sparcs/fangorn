@@ -1,7 +1,6 @@
 package au.edu.unimelb.csse.join;
 
 import junit.framework.TestCase;
-import au.edu.unimelb.csse.paypack.BytePacking;
 
 public class NodePositionsTest extends TestCase {
 

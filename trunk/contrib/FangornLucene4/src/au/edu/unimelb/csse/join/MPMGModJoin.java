@@ -5,7 +5,6 @@ import java.io.IOException;
 import org.apache.lucene.index.DocsAndPositionsEnum;
 
 import au.edu.unimelb.csse.BinaryOperator;
-import au.edu.unimelb.csse.BinaryOperatorAware;
 import au.edu.unimelb.csse.LogicalNodePositionAware;
 
 /**
@@ -31,16 +30,10 @@ import au.edu.unimelb.csse.LogicalNodePositionAware;
  * @author sumukh
  * 
  */
-public class MPMGModJoin extends AbstractPairwiseJoin implements FullPairJoin {
+public class MPMGModJoin extends AbstractPairJoin implements FullPairJoin {
 	
-	private LogicalNodePositionAware nodePostionAware;
-	private int positionLength;
-	private BinaryOperatorAware operatorAware;
-
 	public MPMGModJoin(LogicalNodePositionAware nodePositionAware) {
-		this.nodePostionAware = nodePositionAware;
-		positionLength = nodePostionAware.getPositionLength();
-		operatorAware = nodePositionAware.getBinaryOperatorHandler();
+		super(nodePositionAware);
 	}
 
 	@Override
@@ -54,10 +47,10 @@ public class MPMGModJoin extends AbstractPairwiseJoin implements FullPairJoin {
 		while (numNextRead < freq) {
 			if (pmark == prev.size)
 				break;
-			nodePostionAware.getNextPosition(buffer, node);
+			nodePositionAware.getNextPosition(buffer, node);
 			numNextRead++;
 			prev.offset = pmark;
-			while (operatorAware.following(prev, buffer)) {
+			while (operatorAware.following(prev.positions, prev.offset, buffer.positions, buffer.offset)) {
 				// skip before
 				prev.offset += positionLength;
 				pmark = prev.offset;
@@ -65,7 +58,7 @@ public class MPMGModJoin extends AbstractPairwiseJoin implements FullPairJoin {
 			while (prev.offset < prev.size) {
 				if (op.match(prev, buffer, operatorAware)) { // next is child/desc
 					result.add(prev, buffer, positionLength);
-				} else if (operatorAware.preceding(prev, buffer)) {
+				} else if (operatorAware.preceding(prev.positions, prev.offset, buffer.positions, buffer.offset)) {
 					// prev is after
 					break;
 				}

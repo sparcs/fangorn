@@ -1,22 +1,20 @@
 package au.edu.unimelb.csse;
 
-import au.edu.unimelb.csse.join.NodePositions;
-
 public interface BinaryOperatorAware {
-	boolean descendant(NodePositions prev, NodePositions next);
-	boolean ancestor(NodePositions prev, NodePositions next);
-	boolean child(NodePositions prev, NodePositions next);
-	boolean parent(NodePositions prev, NodePositions next);
-	boolean following(NodePositions prev, NodePositions next);
-	boolean preceding(NodePositions prev, NodePositions next);
-	boolean followingSibling(NodePositions prev, NodePositions next);
-	boolean precedingSibling(NodePositions prev, NodePositions next);	
-	boolean immediateFollowing(NodePositions prev, NodePositions next);
-	boolean immediatePreceding(NodePositions prev, NodePositions next);
-	boolean immediateFollowingSibling(NodePositions prev, NodePositions next);
-	boolean immediatePrecedingSibling(NodePositions prev, NodePositions next);
+	boolean descendant(int[] prev, int poff, int[] next, int noff);
+	boolean ancestor(int[] prev, int poff, int[] next, int noff);
+	boolean child(int[] prev, int poff, int[] next, int noff);
+	boolean parent(int[] prev, int poff, int[] next, int noff);
+	boolean following(int[] prev, int poff, int[] next, int noff);
+	boolean preceding(int[] prev, int poff, int[] next, int noff);
+	boolean followingSibling(int[] prev, int poff, int[] next, int noff);
+	boolean precedingSibling(int[] prev, int poff, int[] next, int noff);	
+	boolean immediateFollowing(int[] prev, int poff, int[] next, int noff);
+	boolean immediatePreceding(int[] prev, int poff, int[] next, int noff);
+	boolean immediateFollowingSibling(int[] prev, int poff, int[] next, int noff);
+	boolean immediatePrecedingSibling(int[] prev, int poff, int[] next, int noff);
 	// equivalent to preceding || ancestor
-	boolean startsBefore(NodePositions prev, NodePositions next);
+	boolean startsBefore(int[] prev, int poff, int[] next, int noff);
 	// equivalent to following || descendant
-	boolean startsAfter(NodePositions prev, NodePositions next);
+	boolean startsAfter(int[] prev, int poff, int[] next, int noff);
 }

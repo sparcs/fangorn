@@ -6,19 +6,14 @@ import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.search.DocIdSetIterator;
 
-import au.edu.unimelb.csse.IndexTestCase;
-import au.edu.unimelb.csse.Op;
-import au.edu.unimelb.csse.Operator;
 import au.edu.unimelb.csse.join.AbstractJoin.PostingsAndFreq;
 
-public class AbstractJoinTest extends IndexTestCase {
-	private static final Operator[] ALL_DESCENDANTS = new Operator[] {
-			Op.DESCENDANT, Op.DESCENDANT, Op.DESCENDANT };
-
+public class AbstractJoinTest extends HolisticJoinTestCase {
+	
 	private class AbstractJoinTestStub extends AbstractJoin {
 
 		public AbstractJoinTestStub(String[] labels) {
-			super(labels, new int[] { -1, 0, 1 }, ALL_DESCENDANTS);
+			super(labels, new int[] { -1, 0, 1 }, getDescOp(3));
 		}
 
 		public int getCurrentContextPos() {
@@ -212,9 +207,7 @@ public class AbstractJoinTest extends IndexTestCase {
 	
 	public void testGetQueryRoot() throws Exception {
 		AbstractJoin ts = new TwigStackJoin(new String[] { "A", "B", "C",
-				"D", "E" }, new int[] { -1, 0, 1, 0, 4 }, new Operator[] {
-				Op.DESCENDANT, Op.DESCENDANT, Op.DESCENDANT, Op.DESCENDANT,
-				Op.DESCENDANT });
+				"D", "E" }, new int[] { -1, 0, 1, 0, 4 }, getDescOp(5), lrdp);
 		IndexWriter w = setupIndex();
 		w.addDocument(getDoc("(A(A(E J)(B D))(A(B(C E)(E D)))(A(D(B(A(C J)))(E(D E)))))")); // doc 0
 		IndexReader r = commitIndexAndOpenReader(w);
@@ -224,4 +217,5 @@ public class AbstractJoinTest extends IndexTestCase {
 		PostingsAndFreq queryRoot = ts.root;
 		assertEquals("A", queryRoot.term.text());
 	}
+
 }

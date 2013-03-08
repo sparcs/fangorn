@@ -1,8 +1,8 @@
 package au.edu.unimelb.csse.analyser;
 
-import org.junit.Test;
-
 import junit.framework.TestCase;
+
+import org.junit.Test;
 
 public class TreeLexerTest extends TestCase {
 	

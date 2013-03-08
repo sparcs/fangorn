@@ -5,7 +5,6 @@ import java.io.IOException;
 import org.apache.lucene.index.DocsAndPositionsEnum;
 
 import au.edu.unimelb.csse.BinaryOperator;
-import au.edu.unimelb.csse.BinaryOperatorAware;
 import au.edu.unimelb.csse.LogicalNodePositionAware;
 
 /**
@@ -36,16 +35,11 @@ import au.edu.unimelb.csse.LogicalNodePositionAware;
  * @author sumukh
  * 
  */
-public class MPMGModSingleJoin extends AbstractPairwiseJoin implements
+public class MPMGModSingleJoin extends AbstractPairJoin implements
 		HalfPairJoin {
-	private final LogicalNodePositionAware nodePostionAware;
-	private final int positionLength;
-	private final BinaryOperatorAware operatorAware;
 	
 	public MPMGModSingleJoin(LogicalNodePositionAware nodePositionAware) {
-		this.nodePostionAware = nodePositionAware;
-		positionLength = nodePostionAware.getPositionLength();
-		operatorAware = nodePositionAware.getBinaryOperatorHandler();
+		super(nodePositionAware);
 	}
 
 	@Override
@@ -59,10 +53,10 @@ public class MPMGModSingleJoin extends AbstractPairwiseJoin implements
 		while (numNextRead < freq) {
 			if (pmark == prev.size)
 				break;
-			nodePostionAware.getNextPosition(result, node);
+			nodePositionAware.getNextPosition(result, node);
 			numNextRead++;
 			prev.offset = pmark;
-			while (operatorAware.following(prev, result)) {
+			while (operatorAware.following(prev.positions, prev.offset, result.positions, result.offset)) {
 				// skip before
 				prev.offset += positionLength;
 				pmark = prev.offset;
@@ -72,7 +66,7 @@ public class MPMGModSingleJoin extends AbstractPairwiseJoin implements
 				if (op.match(prev, result, operatorAware)) { // next is child/desc
 					found = true;
 					break; // solution found; abort
-				} else if (operatorAware.preceding(prev, result)) {
+				} else if (operatorAware.preceding(prev.positions, prev.offset, result.positions, result.offset)) {
 					// prev is after
 					break;
 				}

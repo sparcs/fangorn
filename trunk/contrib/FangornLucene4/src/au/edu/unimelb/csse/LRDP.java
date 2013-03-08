@@ -27,6 +27,22 @@ public class LRDP implements LogicalNodePositionAware {
 	public BinaryOperatorAware getBinaryOperatorHandler() {
 		return binaryOperatorHandler;
 	}
+	
+	public int left(int[] positions, int off) {
+		return positions[off + LEFT];
+	}
+	
+	public int right(int[] positions, int off) {
+		return positions[off + RIGHT];
+	}
+	
+	public int depth(int[] positions, int off) {
+		return positions[off + DEPTH];
+	}
+	
+	public int parent(int[] positions, int off) {
+		return positions[off + PARENT];
+	}
 
 	public void getAllPositions(NodePositions buffer, DocsAndPositionsEnum node)
 			throws IOException {
@@ -45,12 +61,14 @@ public class LRDP implements LogicalNodePositionAware {
 	 * 
 	 * @param buffer
 	 * @param node
+	 * @return 
 	 * @throws IOException
 	 */
-	public void getNextPosition(NodePositions buffer, DocsAndPositionsEnum node)
+	public int getNextPosition(NodePositions buffer, DocsAndPositionsEnum node)
 			throws IOException {
-		node.nextPosition();
+		int nextPosition = node.nextPosition();
 		physicalFormat.decode(node.getPayload(), buffer);
+		return nextPosition;
 	}
 
 	@Override
@@ -61,107 +79,95 @@ public class LRDP implements LogicalNodePositionAware {
 	public class LRDPOperators implements BinaryOperatorAware {
 
 		@Override
-		public boolean descendant(NodePositions prev, NodePositions next) {
-			return prev.positions[prev.offset + LEFT] <= next.positions[next.offset
-					+ LEFT]
-					&& prev.positions[prev.offset + RIGHT] >= next.positions[next.offset
-							+ RIGHT]
-					&& prev.positions[prev.offset + DEPTH] < next.positions[next.offset
-							+ DEPTH];
+		public boolean descendant(int[] prev, int poff, int[] next, int noff) {
+			return prev[poff + LEFT] <= next[noff + LEFT]
+					&& prev[poff + RIGHT] >= next[noff + RIGHT]
+					&& prev[poff + DEPTH] < next[noff + DEPTH];
 		}
 
 		@Override
-		public boolean ancestor(NodePositions prev, NodePositions next) {
-			return descendant(next, prev);
+		public boolean ancestor(int[] prev, int poff, int[] next, int noff) {
+			return descendant(next, noff, prev, poff);
 		}
 
 		@Override
-		public boolean child(NodePositions prev, NodePositions next) {
-			return prev.positions[prev.offset + LEFT] <= next.positions[next.offset
-					+ LEFT]
-					&& prev.positions[prev.offset + RIGHT] >= next.positions[next.offset
-							+ RIGHT]
-					&& prev.positions[prev.offset + DEPTH] + 1 == next.positions[next.offset
-							+ DEPTH];
+		public boolean child(int[] prev, int poff, int[] next, int noff) {
+			return prev[poff + LEFT] <= next[noff + LEFT]
+					&& prev[poff + RIGHT] >= next[noff + RIGHT]
+					&& prev[poff + DEPTH] + 1 == next[noff + DEPTH];
 		}
 
 		@Override
-		public boolean parent(NodePositions prev, NodePositions next) {
-			return child(next, prev);
+		public boolean parent(int[] prev, int poff, int[] next, int noff) {
+			return child(next, noff, prev, poff);
 		}
 
 		@Override
-		public boolean following(NodePositions prev, NodePositions next) {
-			return prev.positions[prev.offset + RIGHT] <= next.positions[next.offset
-					+ LEFT];
+		public boolean following(int[] prev, int poff, int[] next, int noff) {
+			return prev[poff + RIGHT] <= next[noff + LEFT];
 		}
 
 		@Override
-		public boolean preceding(NodePositions prev, NodePositions next) {
-			return following(next, prev);
+		public boolean preceding(int[] prev, int poff, int[] next, int noff) {
+			return following(next, noff, prev, poff);
 		}
 
 		@Override
-		public boolean followingSibling(NodePositions prev, NodePositions next) {
-			return prev.positions[prev.offset + RIGHT] <= next.positions[next.offset
-					+ LEFT]
-					&& prev.positions[prev.offset + PARENT] == next.positions[next.offset
-							+ PARENT];
+		public boolean followingSibling(int[] prev, int poff, int[] next,
+				int noff) {
+			return prev[poff + RIGHT] <= next[noff + LEFT]
+					&& prev[poff + PARENT] == next[noff + PARENT];
 		}
 
 		@Override
-		public boolean precedingSibling(NodePositions prev, NodePositions next) {
-			return followingSibling(next, prev);
+		public boolean precedingSibling(int[] prev, int poff, int[] next,
+				int noff) {
+			return followingSibling(next, noff, prev, poff);
 		}
 
 		@Override
-		public boolean immediateFollowing(NodePositions prev, NodePositions next) {
-			return prev.positions[prev.offset + RIGHT] == next.positions[next.offset
-					+ LEFT];
+		public boolean immediateFollowing(int[] prev, int poff, int[] next,
+				int noff) {
+			return prev[poff + RIGHT] == next[noff + LEFT];
 		}
 
 		@Override
-		public boolean immediatePreceding(NodePositions prev, NodePositions next) {
-			return immediateFollowing(next, prev);
+		public boolean immediatePreceding(int[] prev, int poff, int[] next,
+				int noff) {
+			return immediateFollowing(next, noff, prev, poff);
 		}
 
 		@Override
-		public boolean immediateFollowingSibling(NodePositions prev,
-				NodePositions next) {
-			return prev.positions[prev.offset + RIGHT] == next.positions[next.offset
-					+ LEFT]
-					&& prev.positions[prev.offset + PARENT] == next.positions[next.offset
-							+ PARENT];
+		public boolean immediateFollowingSibling(int[] prev, int poff,
+				int[] next, int noff) {
+			return prev[poff + RIGHT] == next[noff + LEFT]
+					&& prev[poff + PARENT] == next[noff + PARENT];
 		}
 
 		@Override
-		public boolean immediatePrecedingSibling(NodePositions prev,
-				NodePositions next) {
-			return immediateFollowingSibling(next, prev);
+		public boolean immediatePrecedingSibling(int[] prev, int poff,
+				int[] next, int noff) {
+			return immediateFollowingSibling(next, noff, prev, poff);
 		}
 
 		/**
 		 * Equivalent to PRECEDING || ANCESTOR
 		 */
 		@Override
-		public boolean startsBefore(NodePositions prev, NodePositions next) {
-			return prev.positions[prev.offset + LEFT] > next.positions[next.offset
-					+ LEFT]
-					|| (prev.positions[prev.offset + LEFT] == next.positions[next.offset
-							+ LEFT] && prev.positions[prev.offset + DEPTH] > next.positions[next.offset
-							+ DEPTH]);
+		public boolean startsBefore(int[] prev, int poff, int[] next, int noff) {
+			return prev[poff + LEFT] > next[noff + LEFT]
+					|| (prev[poff + LEFT] == next[noff + LEFT] && prev[poff
+							+ DEPTH] > next[noff + DEPTH]);
 		}
 
 		/**
 		 * Equivalent to DESCENDANT || FOLLOWING
 		 */
 		@Override
-		public boolean startsAfter(NodePositions prev, NodePositions next) {
-			return prev.positions[prev.offset + LEFT] < next.positions[next.offset
-					+ LEFT]
-					|| (prev.positions[prev.offset + LEFT] == next.positions[next.offset
-							+ LEFT] && prev.positions[prev.offset + DEPTH] < next.positions[next.offset
-							+ DEPTH]);
+		public boolean startsAfter(int[] prev, int poff, int[] next, int noff) {
+			return prev[poff + LEFT] < next[noff + LEFT]
+					|| (prev[poff + LEFT] == next[noff + LEFT] && prev[poff
+							+ DEPTH] < next[noff + DEPTH]);
 		}
 
 	}

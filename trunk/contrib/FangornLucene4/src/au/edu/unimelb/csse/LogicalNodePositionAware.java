@@ -12,7 +12,7 @@ public interface LogicalNodePositionAware {
 	void getAllPositions(NodePositions buffer, DocsAndPositionsEnum node)
 			throws IOException;
 
-	void getNextPosition(NodePositions buffer, DocsAndPositionsEnum node)
+	int getNextPosition(NodePositions buffer, DocsAndPositionsEnum node)
 			throws IOException;
 	
 	int getPositionLength();

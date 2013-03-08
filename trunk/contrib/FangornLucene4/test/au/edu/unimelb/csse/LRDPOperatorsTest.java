@@ -2,15 +2,20 @@ package au.edu.unimelb.csse;
 
 import java.util.Arrays;
 
-import org.junit.Test;
-
 import junit.framework.TestCase;
 
-public class OpTest extends TestCase {
+import org.junit.Test;
+
+import au.edu.unimelb.csse.join.NodePositions;
+import au.edu.unimelb.csse.paypack.BytePacking;
+
+public class LRDPOperatorsTest extends TestCase {
+	private LRDP lrdp = new LRDP(new BytePacking(4));
+	private BinaryOperatorAware opAware = lrdp.getBinaryOperatorHandler();
 
 	@Test
 	public void testChild() {
-		Operator op = Op.CHILD;
+		BinaryOperator op = BinaryOperator.CHILD;
 		int poff = 0;
 		int noff = 0;
 		int[] next = new int[] { 0, 1, 1, 5 };
@@ -25,7 +30,7 @@ public class OpTest extends TestCase {
 
 	@Test
 	public void testDescendant() throws Exception {
-		Operator o = Op.DESCENDANT;
+		BinaryOperator o = BinaryOperator.DESCENDANT;
 		// child
 		assertMatch(o, new int[] { 0, 2, 0, 0 }, 0, new int[] { 1, 2, 1, 4 }, 0);
 		// desc
@@ -46,7 +51,7 @@ public class OpTest extends TestCase {
 	}
 
 	public void testFollowing() throws Exception {
-		Operator o = Op.FOLLOWING;
+		BinaryOperator o = BinaryOperator.FOLLOWING;
 		// immediately after
 		assertMatch(o, new int[] { 1, 2, 1, 2 }, 0, new int[] { 2, 3, 2, 4 }, 0);
 		// after
@@ -66,7 +71,7 @@ public class OpTest extends TestCase {
 	}
 
 	public void testPreceding() throws Exception {
-		Operator o = Op.PRECEDING;
+		BinaryOperator o = BinaryOperator.PRECEDING;
 		// after
 		assertNoMat(o, new int[] { 1, 2, 1, 2 }, 0, new int[] { 2, 3, 2, 4 }, 0);
 		// before
@@ -84,7 +89,7 @@ public class OpTest extends TestCase {
 	}
 
 	public void testImmediateFollowing() throws Exception {
-		Operator o = Op.IMMEDIATE_FOLLOWING;
+		BinaryOperator o = BinaryOperator.IMMEDIATE_FOLLOWING;
 		// following
 		assertNoMat(o, new int[] { 1, 2, 1, 2 }, 0, new int[] { 3, 4, 2, 4 }, 0);
 		// following sibling
@@ -114,7 +119,7 @@ public class OpTest extends TestCase {
 	}
 
 	public void testImmediatePreceding() throws Exception {
-		Operator o = Op.IMMEDIATE_PRECEDING;
+		BinaryOperator o = BinaryOperator.IMMEDIATE_PRECEDING;
 		// following
 		assertNoMat(o, new int[] { 1, 2, 1, 2 }, 0, new int[] { 3, 4, 2, 4 }, 0);
 		// following sibling
@@ -144,7 +149,7 @@ public class OpTest extends TestCase {
 	}
 
 	public void testFollowingSibling() throws Exception {
-		Operator o = Op.FOLLOWING_SIBLING;
+		BinaryOperator o = BinaryOperator.FOLLOWING_SIBLING;
 		// following
 		assertNoMat(o, new int[] { 1, 2, 1, 2 }, 0, new int[] { 3, 4, 2, 4 }, 0);
 		// following sibling
@@ -174,7 +179,7 @@ public class OpTest extends TestCase {
 	}
 
 	public void testPrecedingSibling() throws Exception {
-		Operator o = Op.PRECEDING_SIBLING;
+		BinaryOperator o = BinaryOperator.PRECEDING_SIBLING;
 		// following
 		assertNoMat(o, new int[] { 1, 2, 1, 2 }, 0, new int[] { 3, 4, 2, 4 }, 0);
 		// following sibling
@@ -204,7 +209,7 @@ public class OpTest extends TestCase {
 	}
 
 	public void testImmediateFollowingSibling() throws Exception {
-		Operator o = Op.IMMEDIATE_FOLLOWING_SIBLING;
+		BinaryOperator o = BinaryOperator.IMMEDIATE_FOLLOWING_SIBLING;
 		// following
 		assertNoMat(o, new int[] { 1, 2, 1, 2 }, 0, new int[] { 3, 4, 2, 4 }, 0);
 		// following sibling
@@ -234,7 +239,7 @@ public class OpTest extends TestCase {
 	}
 
 	public void testImmediatePrecedingSibling() throws Exception {
-		Operator o = Op.IMMEDIATE_PRECEDING_SIBLING;
+		BinaryOperator o = BinaryOperator.IMMEDIATE_PRECEDING_SIBLING;
 		// following
 		assertNoMat(o, new int[] { 1, 2, 1, 2 }, 0, new int[] { 3, 4, 2, 4 }, 0);
 		// following sibling
@@ -264,20 +269,42 @@ public class OpTest extends TestCase {
 	}
 
 	// pre matches next for operator op
-	private void assertMatch(Operator op, int[] prev, int poff, int[] next,
+	private void assertMatch(BinaryOperator op, int[] prev, int poff, int[] next,
 			int noff) {
-		assertTrue("Expected " + subArrStr(next, noff) + " as " + op.getName()
+		assertTrue("Expected " + subArrStr(next, noff) + " as " + op.name()
 				+ " of " + subArrStr(prev, poff),
-				op.match(prev, poff, next, noff));
+				op.match(prev, poff, next, noff, opAware));
+		
+		NodePositions p = getNodePositions(prev, poff);
+		NodePositions n = getNodePositions(next, noff);
+		assertTrue("Expected " + subArrStr(next, noff) + " as " + op.name()
+				+ " of " + subArrStr(prev, poff),
+				op.match(p, n, opAware));
+	}
+
+	private NodePositions getNodePositions(int[] prev, int poff) {
+		NodePositions p = new NodePositions();
+		p.setValues(prev);
+		p.offset = poff;
+		return p;
 	}
 
 	// pre does not match next for operator op
-	private void assertNoMat(Operator op, int[] prev, int poff, int[] next,
+	private void assertNoMat(BinaryOperator op, int[] prev, int poff, int[] next,
 			int noff) {
 		assertFalse(
-				"Expected " + subArrStr(next, noff) + " as not " + op.getName()
+				"Expected " + subArrStr(next, noff) + " as not " + op.name()
 						+ " of " + subArrStr(prev, poff),
-				op.match(prev, poff, next, noff));
+				op.match(prev, poff, next, noff, opAware));
+		
+		NodePositions p = getNodePositions(prev, poff);
+		NodePositions n = getNodePositions(next, noff);
+		
+		assertFalse(
+				"Expected " + subArrStr(next, noff) + " as not " + op.name()
+						+ " of " + subArrStr(prev, poff),
+				op.match(p, n, opAware));
+		
 	}
 
 	private String subArrStr(int[] a, int off) {

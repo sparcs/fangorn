@@ -16,89 +16,101 @@ public class CountingBinaryOperatorAware implements BinaryOperatorAware {
 	}
 
 	@Override
-	public boolean descendant(NodePositions prev, NodePositions next) {
+	public boolean descendant(int[] prev, int poff, int[] next,
+			int noff) {
 		count++;
-		return inner.descendant(prev, next);
+		return inner.descendant(prev, poff, next, noff);
 	}
 
 	@Override
-	public boolean ancestor(NodePositions prev, NodePositions next) {
+	public boolean ancestor(int[] prev, int poff, int[] next,
+			int noff) {
 		count++;
-		return inner.ancestor(prev, next);
+		return inner.ancestor(prev, poff, next, noff);
 	}
 
 	@Override
-	public boolean child(NodePositions prev, NodePositions next) {
+	public boolean child(int[] prev, int poff, int[] next,
+			int noff) {
 		count++;
-		return inner.child(prev, next);
+		return inner.child(prev, poff, next, noff);
 	}
 
 	@Override
-	public boolean parent(NodePositions prev, NodePositions next) {
+	public boolean parent(int[] prev, int poff, int[] next,
+			int noff) {
 		count++;
-		return inner.parent(prev, next);
+		return inner.parent(prev, poff, next, noff);
 	}
 
 	@Override
-	public boolean following(NodePositions prev, NodePositions next) {
+	public boolean following(int[] prev, int poff, int[] next,
+			int noff) {
 		count++;
-		return inner.following(prev, next);
+		return inner.following(prev, poff, next, noff);
 	}
 
 	@Override
-	public boolean preceding(NodePositions prev, NodePositions next) {
+	public boolean preceding(int[] prev, int poff, int[] next,
+			int noff) {
 		count++;
-		return inner.preceding(prev, next);
+		return inner.preceding(prev, poff, next, noff);
 	}
 
 	@Override
-	public boolean followingSibling(NodePositions prev, NodePositions next) {
+	public boolean followingSibling(int[] prev, int poff,
+			int[] next, int noff) {
 		count++;
-		return inner.followingSibling(prev, next);
+		return inner.followingSibling(prev, poff, next, noff);
 	}
 
 	@Override
-	public boolean precedingSibling(NodePositions prev, NodePositions next) {
+	public boolean precedingSibling(int[] prev, int poff,
+			int[] next, int noff) {
 		count++;
-		return inner.precedingSibling(prev, next);
+		return inner.precedingSibling(prev, poff, next, noff);
 	}
 
 	@Override
-	public boolean immediateFollowing(NodePositions prev, NodePositions next) {
+	public boolean immediateFollowing(int[] prev, int poff,
+			int[] next, int noff) {
 		count++;
-		return inner.immediateFollowing(prev, next);
+		return inner.immediateFollowing(prev, poff, next, noff);
 	}
 
 	@Override
-	public boolean immediatePreceding(NodePositions prev, NodePositions next) {
+	public boolean immediatePreceding(int[] prev, int poff,
+			int[] next, int noff) {
 		count++;
-		return inner.immediatePreceding(prev, next);
+		return inner.immediatePreceding(prev, poff, next, noff);
 	}
 
 	@Override
-	public boolean immediateFollowingSibling(NodePositions prev,
-			NodePositions next) {
+	public boolean immediateFollowingSibling(int[] prev, int poff,
+			int[] next, int noff) {
 		count++;
-		return inner.immediateFollowingSibling(prev, next);
+		return inner.immediateFollowingSibling(prev, poff, next, noff);
 	}
 
 	@Override
-	public boolean immediatePrecedingSibling(NodePositions prev,
-			NodePositions next) {
+	public boolean immediatePrecedingSibling(int[] prev, int poff,
+			int[] next, int noff) {
 		count++;
-		return inner.immediatePrecedingSibling(prev, next);
+		return inner.immediatePrecedingSibling(prev, poff, next, noff);
 	}
 
 	@Override
-	public boolean startsBefore(NodePositions prev, NodePositions next) {
+	public boolean startsBefore(int[] prev, int poff,
+			int[] next, int noff) {
 		count++;
-		return inner.startsBefore(prev, next);
+		return inner.startsBefore(prev, poff, next, noff);
 	}
 
 	@Override
-	public boolean startsAfter(NodePositions prev, NodePositions next) {
+	public boolean startsAfter(int[] prev, int poff,
+			int[] next, int noff) {
 		count++;
-		return inner.startsAfter(prev, next);
+		return inner.startsAfter(prev, poff, next, noff);
 	}
 
 }

@@ -4,8 +4,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import au.edu.unimelb.csse.Op;
-import au.edu.unimelb.csse.Operator;
+import au.edu.unimelb.csse.BinaryOperator;
+import au.edu.unimelb.csse.LRDP;
 
 /**
  * This is a holistic join algorithm proposed by Bruno et al. (2002):
@@ -19,16 +19,16 @@ import au.edu.unimelb.csse.Operator;
  */
 public class PathStackJoin extends AbstractHolisticJoin {
 
-
-	public PathStackJoin(String[] labels, Operator[] operators) {
-		super(labels, operators);
+	public PathStackJoin(String[] labels, BinaryOperator[] operators,
+			LRDP nodePositionAware) {
+		super(labels, operators, nodePositionAware);
 	}
 
 	public List<int[]> match() throws IOException {
 		List<int[]> results = null;
 		while (!shouldStop()) {
 			int pos = getMinSource();
-			clearPrecedingStackEntries(positions, pos * 4);
+			clearPrecedingStackEntries(positions, pos * positionLength);
 			boolean updated = updateStackIfNeeded(pos);
 			if (updated && postingsFreqs[pos].isLeaf) {
 				if (results == null) {
@@ -71,8 +71,8 @@ public class PathStackJoin extends AbstractHolisticJoin {
 			int[] stack = positionStacks[i];
 			int stackSize = positionStacksSizes[i];
 			while (stackSize > 0
-					&& Op.PRECEDING.match(positions, offset, stack,
-							stackSize * 5 - 5)) {
+					&& operatorAware.preceding(positions, offset, stack,
+							(stackSize - 1) * stackLength)) {
 				stackSize--;
 			}
 			positionStacksSizes[i] = stackSize;
