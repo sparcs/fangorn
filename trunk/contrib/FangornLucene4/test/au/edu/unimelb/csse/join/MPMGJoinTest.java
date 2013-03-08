@@ -2,132 +2,72 @@ package au.edu.unimelb.csse.join;
 
 import org.apache.lucene.index.DocsAndPositionsEnum;
 import org.apache.lucene.index.IndexReader;
-import org.apache.lucene.index.IndexWriter;
-import org.apache.lucene.index.Term;
+import org.junit.Before;
 import org.junit.Test;
 
-import au.edu.unimelb.csse.CountingOp;
-import au.edu.unimelb.csse.IndexTestCase;
+import au.edu.unimelb.csse.BinaryOperator;
 
-public class MPMGJoinTest extends IndexTestCase {
+public class MPMGJoinTest extends PairJoinTestCase {
 
-	
-
-	@Test
-	public void testNoResultsOneMatchDesc() throws Exception {
-		IndexWriter w = setupIndex();
-		w.addDocument(getDoc("(DD(BB AA)(BB AA))")); // doc 0
-		IndexReader r = commitIndexAndOpenReader(w);
-		DocsAndPositionsEnum posEnum = getPosEnum(r, 0, new Term("s", "AA"));
-		MPMGJoin mpmgJoin1 = new MPMGJoin();
-		int[] prev = mpmgJoin1.getAllPositions(posEnum);
-		posEnum = getPosEnum(r, 0, new Term("s", "DD"));
-		long startCount = CountingOp.DESCENDANT.getCount();
-		int[] joinOut = mpmgJoin1.join(prev, CountingOp.DESCENDANT, posEnum);
-		assertEquals(0, joinOut.length);
-		long endCount = CountingOp.DESCENDANT.getCount();
-		assertEquals(1, endCount - startCount);
+	@Override
+	@Before
+	protected void setUp() throws Exception {
+		super.setUp();
+		join = new MPMGJoin(lrdp);
 	}
 
 	@Test
-	public void testNoResultsOneMatchChild() throws Exception {
-		IndexWriter w = setupIndex();
-		w.addDocument(getDoc("(DD(BB AA)(BB AA))")); // doc 0
-		IndexReader r = commitIndexAndOpenReader(w);
-		DocsAndPositionsEnum posEnum = getPosEnum(r, 0, new Term("s", "AA"));
-		MPMGJoin mpmgJoin1 = new MPMGJoin();
-		int[] prev = mpmgJoin1.getAllPositions(posEnum);
-		posEnum = getPosEnum(r, 0, new Term("s", "DD"));
-		long startCount = CountingOp.CHILD.getCount();
-		int[] joinOut = mpmgJoin1.join(prev, CountingOp.CHILD, posEnum);
-		assertEquals(0, joinOut.length);
-		long endCount = CountingOp.CHILD.getCount();
-		assertEquals(1, endCount - startCount);
+	public void testTree1Desc() throws Exception {
+		IndexReader r = setupIndexWithDocs("(DD(AA DD)(AA CC)(AA CC))");
+		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 12);
+		joinAndAssertOutput(4, 5, prev, BinaryOperator.DESCENDANT, posEnum);
+	}
+
+	// next few tests compare the performance of the join for descendant and
+	// child operators
+
+	@Test
+	public void testNoResultsDesc() throws Exception {
+		IndexReader r = setupIndexWithDocs("(DD(BB AA)(BB AA))");
+		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 8);
+		// 1 comparison at desc opr; 2 others in the elseif block
+		joinAndAssertOutput(0, 2, prev, BinaryOperator.DESCENDANT, posEnum);
 	}
 
 	@Test
-	public void testOneResultThreeMatchesDesc() throws Exception {
-		IndexWriter w = setupIndex();
-		w.addDocument(getDoc("(DD(AA DD)(AA CC)(AA CC))")); // doc 0
-		IndexReader r = commitIndexAndOpenReader(w);
-		DocsAndPositionsEnum posEnum = getPosEnum(r, 0, new Term("s", "AA"));
-		MPMGJoin mpmgJoin1 = new MPMGJoin();
-		int[] prev = mpmgJoin1.getAllPositions(posEnum);
-		assertEquals(12, prev.length);
-		posEnum = getPosEnum(r, 0, new Term("s", "DD"));
-		long startCount = CountingOp.DESCENDANT.getCount();
-		int[] joinOut = mpmgJoin1.join(prev, CountingOp.DESCENDANT, posEnum);
-		assertEquals(8, joinOut.length); // one pair
-		long endCount = CountingOp.DESCENDANT.getCount();
-		assertEquals(3, endCount - startCount);
+	public void testNoResultsChild() throws Exception {
+		IndexReader r = setupIndexWithDocs("(DD(BB AA)(BB AA))");
+		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 8);
+		// 1 comparison at child opr; 2 others in the elseif block
+		joinAndAssertOutput(0, 2, prev, BinaryOperator.CHILD, posEnum);
 	}
 
 	@Test
-	public void testTwoExtraMatchesDesc() throws Exception {
-		IndexWriter w = setupIndex();
-		w.addDocument(getDoc("(AA(CC DD)(AA(CC DD)(CC DD))(CC DD))")); // doc 0
-		IndexReader r = commitIndexAndOpenReader(w);
-		DocsAndPositionsEnum posEnum = getPosEnum(r, 0, new Term("s", "AA"));
-		MPMGJoin mpmgJoin1 = new MPMGJoin();
-		int[] prev = mpmgJoin1.getAllPositions(posEnum);
-		assertEquals(8, prev.length);
-		posEnum = getPosEnum(r, 0, new Term("s", "DD"));
-		long startCount = CountingOp.DESCENDANT.getCount();
-		int[] joinOut = mpmgJoin1.join(prev, CountingOp.DESCENDANT, posEnum);
-		assertEquals(48, joinOut.length); // 6 pairs
-		long endCount = CountingOp.DESCENDANT.getCount();
-		assertEquals(8, endCount - startCount);
+	public void testTree2Desc() throws Exception {
+		IndexReader r = setupIndexWithDocs("(AA(CC DD)(AA(CC DD)(CC DD))(CC DD))");
+		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 8);
+		// 8 comparisons at desc opr; 3 at others
+		joinAndAssertOutput(24, 10, prev, BinaryOperator.DESCENDANT, posEnum);
 	}
 
 	@Test
-	public void testTwoExtraMatchesChild() throws Exception {
-		IndexWriter w = setupIndex();
-		w.addDocument(getDoc("(AA(CC DD)(AA(CC DD)(CC DD))(CC DD))")); // doc 0
-		IndexReader r = commitIndexAndOpenReader(w);
-		DocsAndPositionsEnum posEnum = getPosEnum(r, 0, new Term("s", "AA"));
-		MPMGJoin mpmgJoin1 = new MPMGJoin();
-		int[] prev = mpmgJoin1.getAllPositions(posEnum);
-		assertEquals(8, prev.length);
-		posEnum = getPosEnum(r, 0, new Term("s", "DD"));
-		long startCount = CountingOp.CHILD.getCount();
-		int[] joinOut = mpmgJoin1.join(prev, CountingOp.CHILD, posEnum);
-		assertEquals(0, joinOut.length); // 0 pairs
-		long endCount = CountingOp.CHILD.getCount();
-		assertEquals(8, endCount - startCount);
+	public void testTree2Child() throws Exception {
+		IndexReader r = setupIndexWithDocs("(AA(CC DD)(AA(CC DD)(CC DD))(CC DD))");
+		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 8);
+		joinAndAssertOutput(0, 23, prev, BinaryOperator.CHILD, posEnum);
 	}
 
 	@Test
-	public void testTenExtraMatchesDesc() throws Exception {
-		IndexWriter w = setupIndex();
-		w.addDocument(getDoc("(AA(AA DD)(AA DD)(AA DD))")); // doc 0
-		IndexReader r = commitIndexAndOpenReader(w);
-		DocsAndPositionsEnum posEnum = getPosEnum(r, 0, new Term("s", "AA"));
-		MPMGJoin mpmgJoin1 = new MPMGJoin();
-		int[] prev = mpmgJoin1.getAllPositions(posEnum);
-		assertEquals(16, prev.length);
-		posEnum = getPosEnum(r, 0, new Term("s", "DD"));
-		long startCount = CountingOp.DESCENDANT.getCount();
-		int[] joinOut = mpmgJoin1.join(prev, CountingOp.DESCENDANT, posEnum);
-		assertEquals(48, joinOut.length); // 6 pairs
-		long endCount = CountingOp.DESCENDANT.getCount();
-		assertEquals(10, endCount - startCount);
+	public void testTree3Desc() throws Exception {
+		IndexReader r = setupIndexWithDocs("(AA(AA DD)(AA DD)(AA DD))");
+		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 16);
+		joinAndAssertOutput(24, 14, prev, BinaryOperator.DESCENDANT, posEnum);
 	}
 
 	@Test
-	public void testSevenExtraMatchesChild() throws Exception {
-		IndexWriter w = setupIndex();
-		w.addDocument(getDoc("(AA(AA DD)(AA DD)(AA DD))")); // doc 0
-		IndexReader r = commitIndexAndOpenReader(w);
-		DocsAndPositionsEnum posEnum = getPosEnum(r, 0, new Term("s", "AA"));
-		MPMGJoin mpmgJoin1 = new MPMGJoin();
-		int[] prev = mpmgJoin1.getAllPositions(posEnum);
-		assertEquals(16, prev.length);
-		posEnum = getPosEnum(r, 0, new Term("s", "DD"));
-		long startCount = CountingOp.CHILD.getCount();
-		int[] joinOut = mpmgJoin1.join(prev, CountingOp.CHILD, posEnum);
-		assertEquals(24, joinOut.length); // 3 pairs
-		long endCount = CountingOp.CHILD.getCount();
-		assertEquals(10, endCount - startCount);
+	public void testTree3Child() throws Exception {
+		IndexReader r = setupIndexWithDocs("(AA(AA DD)(AA DD)(AA DD))");
+		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 16);
+		joinAndAssertOutput(12, 22, prev, BinaryOperator.CHILD, posEnum);
 	}
-
 }

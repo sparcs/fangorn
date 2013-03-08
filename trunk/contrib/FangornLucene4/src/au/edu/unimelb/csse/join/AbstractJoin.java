@@ -330,7 +330,5 @@ public abstract class AbstractJoin {
 		identifyLeaves();
 	}
 
-	public void setupPerDoc() throws IOException {
-		// do nothing
-	}
+	public abstract void setupPerDoc() throws IOException;
 }

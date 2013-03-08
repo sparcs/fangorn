@@ -1,12 +1,12 @@
 package au.edu.unimelb.csse.join;
 
 import java.io.IOException;
-import java.util.Arrays;
 
 import org.apache.lucene.index.DocsAndPositionsEnum;
 
-import au.edu.unimelb.csse.Op;
-import au.edu.unimelb.csse.Operator;
+import au.edu.unimelb.csse.BinaryOperator;
+import au.edu.unimelb.csse.BinaryOperatorAware;
+import au.edu.unimelb.csse.LogicalNodePositionAware;
 
 /**
  * This is an adaptation of the MPMGJN join by Zhang et.al. (2001)
@@ -31,47 +31,53 @@ import au.edu.unimelb.csse.Operator;
  * @author sumukh
  * 
  */
-public class MPMGModJoin extends FullSolutionPairwiseJoin {
+public class MPMGModJoin extends AbstractPairwiseJoin implements FullPairJoin {
+	
+	private LogicalNodePositionAware nodePostionAware;
+	private int positionLength;
+	private BinaryOperatorAware operatorAware;
 
-	public int[] join(int[] prev, Operator op, DocsAndPositionsEnum node)
-			throws IOException {
-		int[] result = new int[256];
-		int[] curBuffer = new int[4];
-		int resultSize = 0;
-
-		int freq = node.freq();
-		int posIdx = 0;
-		int poff = 0;
-		int pmark = 0;
-		while (posIdx < freq) {
-			if (pmark == prev.length)
-				break;
-			node.nextPosition();
-			posIdx++;
-			curBuffer = payloadFormat.decode(node.getPayload(), curBuffer, 0);;
-			poff = pmark;
-			while (Op.FOLLOWING.match(prev, poff, curBuffer, 0)) {
-				// skip before
-				poff += 4;
-				pmark = poff;
-			}
-			while (poff < prev.length) {
-				if (op.match(prev, poff, curBuffer, 0)) { // next is child/desc
-					result = addToResult(result, resultSize, prev, poff,
-							curBuffer, 0);
-					resultSize++;
-				} else if (Op.PRECEDING.match(prev, poff, curBuffer, 0)) {
-					// prev is after
-					break;
-				}
-				poff += 4;
-			}
-		}
-		return Arrays.copyOf(result, resultSize * 8);
+	public MPMGModJoin(LogicalNodePositionAware nodePositionAware) {
+		this.nodePostionAware = nodePositionAware;
+		positionLength = nodePostionAware.getPositionLength();
+		operatorAware = nodePositionAware.getBinaryOperatorHandler();
 	}
 
 	@Override
-	public boolean validOper(Operator op) {
-		return op.equals(Op.CHILD) || op.equals(Op.DESCENDANT);
+	public void match(NodePositions prev, BinaryOperator op,
+			DocsAndPositionsEnum node, NodePairPositions result,
+			NodePositions... buffers) throws IOException {
+		NodePositions buffer = buffers[0];
+		int freq = node.freq();
+		int numNextRead = 0;
+		int pmark = 0;
+		while (numNextRead < freq) {
+			if (pmark == prev.size)
+				break;
+			nodePostionAware.getNextPosition(buffer, node);
+			numNextRead++;
+			prev.offset = pmark;
+			while (operatorAware.following(prev, buffer)) {
+				// skip before
+				prev.offset += positionLength;
+				pmark = prev.offset;
+			}
+			while (prev.offset < prev.size) {
+				if (op.match(prev, buffer, operatorAware)) { // next is child/desc
+					result.add(prev, buffer, positionLength);
+				} else if (operatorAware.preceding(prev, buffer)) {
+					// prev is after
+					break;
+				}
+				prev.offset += positionLength;
+			}
+			buffer.reset();
+		}
 	}
+
+	@Override
+	public int numBuffers(BinaryOperator op) {
+		return 1;
+	}
+
 }

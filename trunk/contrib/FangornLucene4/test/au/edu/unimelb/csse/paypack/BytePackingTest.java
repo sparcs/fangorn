@@ -5,7 +5,7 @@ import org.apache.lucene.util.BytesRef;
 import au.edu.unimelb.csse.IndexTestCase;
 
 public class BytePackingTest extends IndexTestCase {
-	private BytePacking bp = new BytePacking();
+	private BytePacking bp = new BytePacking(4);
 	
 	public void testDecode() throws Exception {
 		BytesRef bref = new BytesRef(new byte[]{0x01, (byte) 0xFE, 0x05, (byte) 0xFF});

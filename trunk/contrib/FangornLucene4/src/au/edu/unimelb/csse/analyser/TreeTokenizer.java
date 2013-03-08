@@ -281,7 +281,7 @@ public class TreeTokenizer extends Tokenizer {
 		prev = null;
 		numTokens = maxTokStorePos + 1;
 		try {
-			payloadBytesRefs = Constants.PAYLOAD_FORMAT.encode(payloads, numTokens);
+			payloadBytesRefs = Constants.DEFAULT_PAYLOAD_FORMAT.encode(payloads, numTokens);
 		} catch (PayloadFormatException e) {
 			throw new ParseException(e.getMessage());
 		}
