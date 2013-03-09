@@ -6,12 +6,11 @@ import java.util.List;
 
 import au.edu.unimelb.csse.BinaryOperator;
 import au.edu.unimelb.csse.BinaryOperatorAware;
-import au.edu.unimelb.csse.Constants;
 import au.edu.unimelb.csse.LRDP;
-import au.edu.unimelb.csse.paypack.PhysicalPayloadFormatAware;
 
 abstract class AbstractHolisticJoin extends AbstractJoin implements
 		OperatorCompatibilityAware {
+	private static final int POSITIONS_BUFFER_INC = 128;
 	protected LRDP nodePositionAware;
 	protected int positionLength;
 	protected int stackLength;
@@ -32,8 +31,7 @@ abstract class AbstractHolisticJoin extends AbstractJoin implements
 	// stack size is times 5 because an additional pointer is stored at each
 	// position
 	private static int DEFAULT_STACK_SIZE = 50 * 5;
-
-	protected PhysicalPayloadFormatAware payloadFormat = Constants.DEFAULT_PAYLOAD_FORMAT;
+	private NodePositions buffer = new NodePositions();
 
 	public AbstractHolisticJoin(String[] labels, int[] parentPos,
 			BinaryOperator[] operators,
@@ -75,16 +73,26 @@ abstract class AbstractHolisticJoin extends AbstractJoin implements
 			// no need to ensure that timesNextPositionsCalled < freq because
 			// all terms are required to be present at least once for control to
 			// get here
-			preorderPos[i] = postingsFreqs[i].postings.nextPosition();
-			positions = payloadFormat.decode(
-					postingsFreqs[i].postings.getPayload(), positions, i
-							* positionLength);
+			preorderPos[i] = nodePositionAware.getNextPosition(buffer, postingsFreqs[i].postings);
+			loadPositionsFromBuffer(i);
 			nextPosCalledCount[i] = 1; // all nextPostion() are called once
 		}
 		// reset stack sizes
 		for (int i = 0; i < postingsFreqs.length; i++) {
 			positionStacksSizes[i] = 0;
 		}
+	}
+
+	private void loadPositionsFromBuffer(int idx) {
+		while (idx * positionLength + positionLength > positions.length) {
+			int[] newPositions = new int[positions.length + POSITIONS_BUFFER_INC];
+			System.arraycopy(positions, 0, newPositions, 0, positions.length);
+			positions = newPositions;
+		}
+		for (int i = 0; i < positionLength; i++) {
+			positions[idx * positionLength + i] = buffer.positions[buffer.offset + i];
+		}
+		buffer.reset();
 	}
 
 	boolean updateStackIfNeeded(int pos) {
@@ -132,10 +140,8 @@ abstract class AbstractHolisticJoin extends AbstractJoin implements
 	void getNextPosition(int pos) throws IOException {
 		if (nextPosCalledCount[pos] <= freqs[pos]) {
 			if (nextPosCalledCount[pos] != freqs[pos]) {
-				preorderPos[pos] = postingsFreqs[pos].postings.nextPosition();
-				positions = payloadFormat.decode(
-						postingsFreqs[pos].postings.getPayload(), positions,
-						pos * positionLength);
+				preorderPos[pos] = nodePositionAware.getNextPosition(buffer, postingsFreqs[pos].postings);
+				loadPositionsFromBuffer(pos);
 			}
 			nextPosCalledCount[pos] += 1;
 		}

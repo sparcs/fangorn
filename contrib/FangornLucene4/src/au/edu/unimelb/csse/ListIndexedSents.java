@@ -16,13 +16,14 @@ import java.util.zip.GZIPInputStream;
 import au.edu.unimelb.csse.analyser.SentenceAndMetaData;
 import au.edu.unimelb.csse.analyser.SentenceTokenizer;
 import au.edu.unimelb.csse.analyser.TreeTokenizer;
+import au.edu.unimelb.csse.paypack.BytePacking;
 
 public class ListIndexedSents {
 	private String srcDirName;
 	private SentenceTokenizer sentenceTokenizer;
 	private BufferedWriter writer;
 	private int sentIndexedCount = 0;
-	private TreeTokenizer tokenizer = new TreeTokenizer(new StringReader(""));
+	private TreeTokenizer tokenizer;
 	private String sentenceFile;
 
 	public ListIndexedSents(String srcDir, String sentenceFile)
@@ -32,6 +33,8 @@ public class ListIndexedSents {
 				new StringReader("DUMMY")));
 		this.sentenceFile = sentenceFile;
 		writer = new BufferedWriter(new FileWriter(new File(sentenceFile)));
+		LRDP nodePositionAware = new LRDP(new BytePacking(4));
+		tokenizer = new TreeTokenizer(new StringReader(""), nodePositionAware);
 	}
 
 	/**
@@ -59,7 +62,7 @@ public class ListIndexedSents {
 				+ sentenceFile + " in " + (endTime - startTime) / 1000000000
 				+ "s.");
 		writer.close();
-		
+
 	}
 
 	private void indexFile(File f) {

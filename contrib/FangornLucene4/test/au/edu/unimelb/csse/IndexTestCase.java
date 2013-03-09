@@ -26,6 +26,8 @@ import org.junit.After;
 import org.junit.Before;
 
 import au.edu.unimelb.csse.analyser.TreeAnalyzer;
+import au.edu.unimelb.csse.join.NodePositions;
+import au.edu.unimelb.csse.paypack.BytePacking;
 
 public abstract class IndexTestCase extends TestCase {
 	protected static final FieldType fieldType = getFieldType();
@@ -54,7 +56,7 @@ public abstract class IndexTestCase extends TestCase {
 	}
 
 	protected IndexWriter setupIndex() throws IOException {
-		Analyzer a = new TreeAnalyzer();
+		Analyzer a = new TreeAnalyzer(new LRDP(new BytePacking(4)));
 		IndexWriterConfig c = new IndexWriterConfig(Version.LUCENE_40, a);
 		IndexWriter w = new IndexWriter(d, c);
 		return w;
@@ -111,4 +113,11 @@ public abstract class IndexTestCase extends TestCase {
 		}
 	}
 	
+	protected void assertPositions(int[] expected, int expectedOffset, NodePositions prev) {
+		assertEquals("Incorrect number of positions", expected.length, prev.size);
+		assertEquals("Incorrect offset", expectedOffset, prev.offset);
+		for (int i = 0; i < expected.length; i++) {
+			assertEquals("Incorrect value at index " + i, expected[i], prev.positions[i]);
+		}
+	}
 }

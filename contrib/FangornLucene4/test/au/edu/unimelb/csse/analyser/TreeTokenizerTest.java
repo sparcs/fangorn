@@ -11,8 +11,12 @@ import org.apache.lucene.analysis.tokenattributes.PositionIncrementAttribute;
 import org.apache.lucene.util.BytesRef;
 import org.junit.Test;
 
+import au.edu.unimelb.csse.LRDP;
+import au.edu.unimelb.csse.paypack.BytePacking;
+
 public class TreeTokenizerTest extends TestCase {
-	private TreeTokenizer tokenizer = new TreeTokenizer(new StringReader(""));
+	private TreeTokenizer tokenizer = new TreeTokenizer(new StringReader(""),
+			new LRDP(new BytePacking(4)));
 
 	@Test
 	public void testUnreal2TermSentence() throws Exception {
@@ -136,24 +140,28 @@ public class TreeTokenizerTest extends TestCase {
 	}
 
 	private void assertNextToken(final String string, final int left,
-			final int right, final int depth, final int parent) throws IOException {
+			final int right, final int depth, final int parent)
+			throws IOException {
 		boolean success = tokenizer.incrementToken();
 		assertTrue(success);
 		assertText(string);
 		assertPosition();
 		assertPayload(left, right, depth, parent);
 	}
-	
+
 	private void assertPosition() {
-		PositionIncrementAttribute posAttribute = tokenizer.getAttribute(PositionIncrementAttribute.class);
-		assertEquals("Incorrect token position increment", 1, posAttribute.getPositionIncrement());
+		PositionIncrementAttribute posAttribute = tokenizer
+				.getAttribute(PositionIncrementAttribute.class);
+		assertEquals("Incorrect token position increment", 1,
+				posAttribute.getPositionIncrement());
 	}
-	
+
 	private void assertText(final String string) {
-		CharTermAttribute charText = tokenizer.getAttribute(CharTermAttribute.class);
+		CharTermAttribute charText = tokenizer
+				.getAttribute(CharTermAttribute.class);
 		assertEquals(string, charText.toString());
 	}
-	
+
 	private void assertThrowsError(final String s) {
 		try {
 			resetTokenizer(s);
@@ -172,9 +180,13 @@ public class TreeTokenizerTest extends TestCase {
 		PayloadAttribute payloadAttribute = tokenizer
 				.getAttribute(PayloadAttribute.class);
 		BytesRef payload = payloadAttribute.getPayload();
-		assertEquals("Incorrect left payload", left, payload.bytes[payload.offset + 0]);
-		assertEquals("Incorrect right payload", right, payload.bytes[payload.offset + 1]);
-		assertEquals("Incorrect depth payload", depth, payload.bytes[payload.offset + 2]);
-		assertEquals("Incorrect parent payload", parent, payload.bytes[payload.offset + 3]);
+		assertEquals("Incorrect left payload", left,
+				payload.bytes[payload.offset + 0]);
+		assertEquals("Incorrect right payload", right,
+				payload.bytes[payload.offset + 1]);
+		assertEquals("Incorrect depth payload", depth,
+				payload.bytes[payload.offset + 2]);
+		assertEquals("Incorrect parent payload", parent,
+				payload.bytes[payload.offset + 3]);
 	}
 }
