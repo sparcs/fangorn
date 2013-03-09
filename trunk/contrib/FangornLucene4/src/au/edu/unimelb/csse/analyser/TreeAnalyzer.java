@@ -5,7 +5,7 @@ import java.io.Reader;
 
 import org.apache.lucene.analysis.Analyzer;
 
-import au.edu.unimelb.csse.LRDP;
+import au.edu.unimelb.csse.paypack.LRDP;
 
 public class TreeAnalyzer extends Analyzer {
 

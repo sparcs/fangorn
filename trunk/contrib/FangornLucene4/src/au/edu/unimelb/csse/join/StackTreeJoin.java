@@ -5,7 +5,7 @@ import java.io.IOException;
 import org.apache.lucene.index.DocsAndPositionsEnum;
 
 import au.edu.unimelb.csse.BinaryOperator;
-import au.edu.unimelb.csse.LogicalNodePositionAware;
+import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
 
 /**
  * This path join algorithm is an adaptation of the StackTree join described by

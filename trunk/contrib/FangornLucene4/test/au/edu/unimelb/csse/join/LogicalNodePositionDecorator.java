@@ -6,7 +6,7 @@ import org.apache.lucene.index.DocsAndPositionsEnum;
 import org.apache.lucene.util.BytesRef;
 
 import au.edu.unimelb.csse.BinaryOperatorAware;
-import au.edu.unimelb.csse.LogicalNodePositionAware;
+import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
 import au.edu.unimelb.csse.paypack.PayloadFormatException;
 
 public class LogicalNodePositionDecorator implements LogicalNodePositionAware{

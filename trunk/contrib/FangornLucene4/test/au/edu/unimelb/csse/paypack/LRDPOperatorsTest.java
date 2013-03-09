@@ -1,4 +1,4 @@
-package au.edu.unimelb.csse;
+package au.edu.unimelb.csse.paypack;
 
 import java.util.Arrays;
 
@@ -6,8 +6,11 @@ import junit.framework.TestCase;
 
 import org.junit.Test;
 
+import au.edu.unimelb.csse.BinaryOperator;
+import au.edu.unimelb.csse.BinaryOperatorAware;
 import au.edu.unimelb.csse.join.NodePositions;
 import au.edu.unimelb.csse.paypack.BytePacking;
+import au.edu.unimelb.csse.paypack.LRDP;
 
 public class LRDPOperatorsTest extends TestCase {
 	private LRDP lrdp = new LRDP(new BytePacking(4));

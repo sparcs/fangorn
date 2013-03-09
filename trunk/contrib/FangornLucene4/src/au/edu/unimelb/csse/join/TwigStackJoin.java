@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.Stack;
 
 import au.edu.unimelb.csse.BinaryOperator;
-import au.edu.unimelb.csse.LRDP;
+import au.edu.unimelb.csse.paypack.LRDP;
 
 public class TwigStackJoin extends AbstractHolisticJoin {
 

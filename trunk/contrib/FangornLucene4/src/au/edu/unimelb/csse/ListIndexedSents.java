@@ -17,6 +17,7 @@ import au.edu.unimelb.csse.analyser.SentenceAndMetaData;
 import au.edu.unimelb.csse.analyser.SentenceTokenizer;
 import au.edu.unimelb.csse.analyser.TreeTokenizer;
 import au.edu.unimelb.csse.paypack.BytePacking;
+import au.edu.unimelb.csse.paypack.LRDP;
 
 public class ListIndexedSents {
 	private String srcDirName;
