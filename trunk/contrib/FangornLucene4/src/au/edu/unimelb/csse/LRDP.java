@@ -3,8 +3,10 @@ package au.edu.unimelb.csse;
 import java.io.IOException;
 
 import org.apache.lucene.index.DocsAndPositionsEnum;
+import org.apache.lucene.util.BytesRef;
 
 import au.edu.unimelb.csse.join.NodePositions;
+import au.edu.unimelb.csse.paypack.PayloadFormatException;
 import au.edu.unimelb.csse.paypack.PhysicalPayloadFormatAware;
 
 public class LRDP implements LogicalNodePositionAware {
@@ -43,6 +45,22 @@ public class LRDP implements LogicalNodePositionAware {
 	public int parent(int[] positions, int off) {
 		return positions[off + PARENT];
 	}
+	
+	public void setLeft(int[] positions, int offset, int value) {
+		positions[offset + LEFT] = value; 
+	}
+	
+	public void setRight(int[] positions, int offset, int value) {
+		positions[offset + RIGHT] = value;
+	}
+	
+	public void setDepth(int[] positions, int offset, int value) {
+		positions[offset + DEPTH] = value;
+	}
+	
+	public void setParent(int[] positions, int offset, int value) {
+		positions[offset + PARENT] = value;
+	}
 
 	public void getAllPositions(NodePositions buffer, DocsAndPositionsEnum node)
 			throws IOException {
@@ -64,13 +82,14 @@ public class LRDP implements LogicalNodePositionAware {
 	 * @return 
 	 * @throws IOException
 	 */
+	@Override
 	public int getNextPosition(NodePositions buffer, DocsAndPositionsEnum node)
 			throws IOException {
 		int nextPosition = node.nextPosition();
 		physicalFormat.decode(node.getPayload(), buffer);
 		return nextPosition;
 	}
-
+	
 	@Override
 	public int getPositionLength() {
 		return POSITION_LENGTH;
@@ -170,5 +189,10 @@ public class LRDP implements LogicalNodePositionAware {
 							+ DEPTH] < next[noff + DEPTH]);
 		}
 
+	}
+
+	@Override
+	public BytesRef[] encode(int[] positions, int numTokens) throws PayloadFormatException {
+		return physicalFormat.encode(positions, numTokens);
 	}
 }

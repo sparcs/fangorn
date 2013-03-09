@@ -28,6 +28,7 @@ import org.apache.lucene.util.Version;
 import au.edu.unimelb.csse.analyser.SentenceAndMetaData;
 import au.edu.unimelb.csse.analyser.SentenceTokenizer;
 import au.edu.unimelb.csse.analyser.TreeAnalyzer;
+import au.edu.unimelb.csse.paypack.BytePacking;
 
 public class CreateIndex {
 	private String srcDirName;
@@ -45,7 +46,7 @@ public class CreateIndex {
 				new StringReader("DUMMY")));
 
 		Directory d = new MMapDirectory(new File(indexDir));
-		Analyzer a = new TreeAnalyzer();
+		Analyzer a = new TreeAnalyzer(new LRDP(new BytePacking(4)));
 		IndexWriterConfig c = new IndexWriterConfig(Version.LUCENE_40, a);
 		c.setRAMBufferSizeMB(1024);
 		writer = new IndexWriter(d, c);

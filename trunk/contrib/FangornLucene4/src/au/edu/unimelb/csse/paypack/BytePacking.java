@@ -31,27 +31,13 @@ public class BytePacking implements PhysicalPayloadFormatAware {
 	}
 
 	@Override
-	public int[] decode(BytesRef bytesRef, int[] buffer, int offset) {
-		try {
-			buffer[offset + 3] = 0;
-		} catch (ArrayIndexOutOfBoundsException e) {
-			int[] newBuffer = new int[buffer.length + 128];
-			System.arraycopy(buffer, 0, newBuffer, 0, buffer.length);
-			buffer = newBuffer;
-		}
-		for (int i = 0; i < intsPerPos; i++) {
-			buffer[offset + i] = bytesRef.bytes[bytesRef.offset + i] & 0xFF;
-		}
-		return buffer;
-	}
-
-	@Override
 	public void decode(BytesRef payload, NodePositions buffer) {
 		while (buffer.size + intsPerPos >= buffer.positions.length) {
 			buffer.expand();
 		}
 		for (int i = 0; i < intsPerPos; i++) {
-			buffer.positions[buffer.size] = payload.bytes[payload.offset + i] & 0xFF;
+			final int value = payload.bytes[payload.offset + i] & 0xFF;
+			buffer.positions[buffer.size] = value;
 			buffer.size += 1;
 		}
 

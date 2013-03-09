@@ -200,14 +200,6 @@ public class StaircaseJoinTest extends PairJoinTestCase {
 		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 16, 0, "CC", "PP");
 		joinAndAssertOutput(8, 11, prev, BinaryOperator.PARENT, posEnum);
 	}
-
-	private void assertPositions(int[] expected, int expectedOffset, NodePositions prev) {
-		assertEquals("Incorrect number of positions", expected.length, prev.size);
-		assertEquals("Incorrect offset", expectedOffset, prev.offset);
-		for (int i = 0; i < expected.length; i++) {
-			assertEquals("Incorrect value at index " + i, expected[i], prev.positions[i]);
-		}
-	}
 	
 
 }

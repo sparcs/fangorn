@@ -33,9 +33,8 @@ import org.apache.lucene.analysis.tokenattributes.PayloadAttribute;
 import org.apache.lucene.analysis.tokenattributes.PositionIncrementAttribute;
 import org.apache.lucene.util.BytesRef;
 
-import au.edu.unimelb.csse.Constants;
+import au.edu.unimelb.csse.LRDP;
 import au.edu.unimelb.csse.ParseException;
-import au.edu.unimelb.csse.PayOff;
 import au.edu.unimelb.csse.paypack.PayloadFormatException;
 
 public class TreeTokenizer extends Tokenizer {
@@ -49,6 +48,9 @@ public class TreeTokenizer extends Tokenizer {
 	private int[] textPositions = new int[256];
 	private int[] tailUpdateStack = new int[128]; // helps assign right and
 													// parent ids
+
+	private LRDP nodePositionAware;
+	private int positionLength;
 
 	private static final int OPEN_B_TOK = 1;
 	private static final int CLOSE_B_TOK = 2;
@@ -76,10 +78,11 @@ public class TreeTokenizer extends Tokenizer {
 		}
 	}
 
-	public TreeTokenizer(Reader input) {
+	public TreeTokenizer(Reader input, LRDP nodePositionAware) {
 		super(input);
 		addAttribute(PositionIncrementAttribute.class); // adds default
-														// increment
+		this.nodePositionAware = nodePositionAware;
+		positionLength = nodePositionAware.getPositionLength();
 	}
 
 	@Override
@@ -246,7 +249,9 @@ public class TreeTokenizer extends Tokenizer {
 					setPartTailPayloadLeafPreTml(lastRight, lastParent,
 							maxTokStorePos);
 					stackSize--; // pop leaf from stack
-					payloads[tailUpdateStack[stackSize - 1] * 4 + PayOff.RIGHT] = lastRight; // necessary?
+					nodePositionAware.setRight(payloads,
+							tailUpdateStack[stackSize - 1] * positionLength,
+							lastRight); // necessary?
 					prev.expectedToken = CLOSE_B_TOK;
 					if (tokenType == SPACE_TOK) {
 						state = SPACE_STATE;
@@ -281,7 +286,8 @@ public class TreeTokenizer extends Tokenizer {
 		prev = null;
 		numTokens = maxTokStorePos + 1;
 		try {
-			payloadBytesRefs = Constants.DEFAULT_PAYLOAD_FORMAT.encode(payloads, numTokens);
+			payloadBytesRefs = nodePositionAware.encode(
+					payloads, numTokens);
 		} catch (PayloadFormatException e) {
 			throw new ParseException(e.getMessage());
 		}
@@ -290,12 +296,15 @@ public class TreeTokenizer extends Tokenizer {
 	private int setTailPayloadNonTml(int right, int parent, int relevantDepth,
 			int stackSize) {
 		while (stackSize > 0
-				&& payloads[tailUpdateStack[stackSize - 1] * 4 + PayOff.DEPTH] == relevantDepth) {
-			payloads[tailUpdateStack[stackSize - 1] * 4 + PayOff.PARENT] = parent;
+				&& nodePositionAware.depth(payloads,
+						tailUpdateStack[stackSize - 1] * positionLength) == relevantDepth) {
+			nodePositionAware.setParent(payloads,
+					tailUpdateStack[stackSize - 1] * positionLength, parent);
 			stackSize--;
 		}
 		if (stackSize > 0) {
-			payloads[tailUpdateStack[stackSize - 1] * 4 + PayOff.RIGHT] = right;
+			nodePositionAware.setRight(payloads, tailUpdateStack[stackSize - 1]
+					* positionLength, right);
 		}
 		return stackSize;
 	}
@@ -303,12 +312,15 @@ public class TreeTokenizer extends Tokenizer {
 	private void setPartTailPayloadLeafPreTml(int right, int parent, int tokPos) {
 		setTailPayloadLeaf(right, parent, tokPos);
 		// only right payload for pre-terminal
-		payloads[(tokPos - 1) * 4 + PayOff.RIGHT] = right;
+		nodePositionAware.setRight(payloads, (tokPos - 1) * positionLength,
+				right);
 	}
 
 	private void setTailPayloadLeaf(int right, int parent, int maxTokStorePos) {
-		payloads[maxTokStorePos * 4 + PayOff.RIGHT] = right;
-		payloads[maxTokStorePos * 4 + PayOff.PARENT] = parent;
+		nodePositionAware.setRight(payloads, maxTokStorePos * positionLength,
+				right);
+		nodePositionAware.setParent(payloads, maxTokStorePos * positionLength,
+				parent);
 	}
 
 	private void setPartPayload(int left, int depth, int tokPos, int stackSize) {
@@ -318,18 +330,15 @@ public class TreeTokenizer extends Tokenizer {
 
 	private void setLeftAndDepthPayload(int left, int depth, int tokPos) {
 		try {
-			payloads[tokPos * 4] = 0;
-			payloads[tokPos * 4 + 1] = 0;
-			payloads[tokPos * 4 + 2] = 0;
-			payloads[tokPos * 4 + 3] = 0;
+			// ensure length sufficient
+			payloads[tokPos * positionLength + positionLength - 1] = 0;
 		} catch (ArrayIndexOutOfBoundsException e) {
 			int[] oldPayloads = payloads;
 			payloads = new int[oldPayloads.length + 128];
 			System.arraycopy(oldPayloads, 0, payloads, 0, oldPayloads.length);
 		}
-		payloads[tokPos * 4 + PayOff.LEFT] = left;
-		payloads[tokPos * 4 + PayOff.DEPTH] = depth;
-
+		nodePositionAware.setLeft(payloads, tokPos * positionLength, left);
+		nodePositionAware.setDepth(payloads, tokPos * positionLength, depth);
 	}
 
 	private void pushPositionOntoNodeStack(int tokPos, int stackSize) {
