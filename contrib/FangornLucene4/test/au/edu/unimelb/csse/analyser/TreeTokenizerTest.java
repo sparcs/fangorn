@@ -11,8 +11,8 @@ import org.apache.lucene.analysis.tokenattributes.PositionIncrementAttribute;
 import org.apache.lucene.util.BytesRef;
 import org.junit.Test;
 
-import au.edu.unimelb.csse.LRDP;
 import au.edu.unimelb.csse.paypack.BytePacking;
+import au.edu.unimelb.csse.paypack.LRDP;
 
 public class TreeTokenizerTest extends TestCase {
 	private TreeTokenizer tokenizer = new TreeTokenizer(new StringReader(""),

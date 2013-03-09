@@ -28,6 +28,7 @@ import org.junit.Before;
 import au.edu.unimelb.csse.analyser.TreeAnalyzer;
 import au.edu.unimelb.csse.join.NodePositions;
 import au.edu.unimelb.csse.paypack.BytePacking;
+import au.edu.unimelb.csse.paypack.LRDP;
 
 public abstract class IndexTestCase extends TestCase {
 	protected static final FieldType fieldType = getFieldType();

@@ -25,8 +25,8 @@ import org.apache.lucene.util.Version;
 import org.junit.Before;
 import org.junit.Test;
 
-import au.edu.unimelb.csse.LRDP;
 import au.edu.unimelb.csse.paypack.BytePacking;
+import au.edu.unimelb.csse.paypack.LRDP;
 
 public class TreeAnalyzerTest extends TestCase {
 	private static final String FIELD = "content";

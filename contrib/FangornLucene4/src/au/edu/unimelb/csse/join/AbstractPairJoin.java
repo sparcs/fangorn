@@ -2,7 +2,7 @@ package au.edu.unimelb.csse.join;
 
 import au.edu.unimelb.csse.BinaryOperator;
 import au.edu.unimelb.csse.BinaryOperatorAware;
-import au.edu.unimelb.csse.LogicalNodePositionAware;
+import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
 
 abstract class AbstractPairJoin implements OperatorCompatibilityAware {
 

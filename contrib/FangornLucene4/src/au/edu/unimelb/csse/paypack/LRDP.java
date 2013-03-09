@@ -1,13 +1,12 @@
-package au.edu.unimelb.csse;
+package au.edu.unimelb.csse.paypack;
 
 import java.io.IOException;
 
 import org.apache.lucene.index.DocsAndPositionsEnum;
 import org.apache.lucene.util.BytesRef;
 
+import au.edu.unimelb.csse.BinaryOperatorAware;
 import au.edu.unimelb.csse.join.NodePositions;
-import au.edu.unimelb.csse.paypack.PayloadFormatException;
-import au.edu.unimelb.csse.paypack.PhysicalPayloadFormatAware;
 
 public class LRDP implements LogicalNodePositionAware {
 	// offsets

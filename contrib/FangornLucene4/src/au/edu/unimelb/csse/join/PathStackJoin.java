@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import au.edu.unimelb.csse.BinaryOperator;
-import au.edu.unimelb.csse.LRDP;
+import au.edu.unimelb.csse.paypack.LRDP;
 
 /**
  * This is a holistic join algorithm proposed by Bruno et al. (2002):

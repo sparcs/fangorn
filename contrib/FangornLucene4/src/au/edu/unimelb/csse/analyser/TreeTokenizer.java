@@ -33,8 +33,8 @@ import org.apache.lucene.analysis.tokenattributes.PayloadAttribute;
 import org.apache.lucene.analysis.tokenattributes.PositionIncrementAttribute;
 import org.apache.lucene.util.BytesRef;
 
-import au.edu.unimelb.csse.LRDP;
 import au.edu.unimelb.csse.ParseException;
+import au.edu.unimelb.csse.paypack.LRDP;
 import au.edu.unimelb.csse.paypack.PayloadFormatException;
 
 public class TreeTokenizer extends Tokenizer {

@@ -6,7 +6,7 @@ import java.util.List;
 
 import au.edu.unimelb.csse.BinaryOperator;
 import au.edu.unimelb.csse.BinaryOperatorAware;
-import au.edu.unimelb.csse.LRDP;
+import au.edu.unimelb.csse.paypack.LRDP;
 
 abstract class AbstractHolisticJoin extends AbstractJoin implements
 		OperatorCompatibilityAware {

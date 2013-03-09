@@ -5,7 +5,7 @@ import java.io.IOException;
 import org.apache.lucene.index.DocsAndPositionsEnum;
 
 import au.edu.unimelb.csse.BinaryOperator;
-import au.edu.unimelb.csse.LogicalNodePositionAware;
+import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
 
 /**
  * This is an adaptation of the Staircase join by Grust et al. (2003)

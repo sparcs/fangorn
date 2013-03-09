@@ -9,8 +9,8 @@ import org.junit.Before;
 
 import au.edu.unimelb.csse.BinaryOperator;
 import au.edu.unimelb.csse.IndexTestCase;
-import au.edu.unimelb.csse.LRDP;
 import au.edu.unimelb.csse.paypack.BytePacking;
+import au.edu.unimelb.csse.paypack.LRDP;
 
 public abstract class PairJoinTestCase extends IndexTestCase {
 	protected PairJoin join;
