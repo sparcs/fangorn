@@ -27,6 +27,16 @@ public class NodePositions {
 		size = 0;
 		offset = 0;
 	}
+	
+	public void copyFrom(NodePositions other) {
+		if (other.positions.length > positions.length) {
+			int[] newPositions = new int[other.positions.length];
+			positions = newPositions;
+		}
+		System.arraycopy(other.positions, 0, positions, 0, other.size);
+		this.size = other.size;
+		this.offset = other.offset;
+	}
 
 	public boolean removeLast(int length) {
 		if (size - length >= 0) {
@@ -38,7 +48,7 @@ public class NodePositions {
 		}
 		return false;
 	}
-
+	
 	public void push(NodePositions value, int length) {
 		while (size + length >= positions.length) {
 			expand();

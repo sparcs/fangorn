@@ -29,22 +29,6 @@ public class LRDP implements LogicalNodePositionAware {
 		return binaryOperatorHandler;
 	}
 	
-	public int left(int[] positions, int off) {
-		return positions[off + LEFT];
-	}
-	
-	public int right(int[] positions, int off) {
-		return positions[off + RIGHT];
-	}
-	
-	public int depth(int[] positions, int off) {
-		return positions[off + DEPTH];
-	}
-	
-	public int parent(int[] positions, int off) {
-		return positions[off + PARENT];
-	}
-	
 	public void setLeft(int[] positions, int offset, int value) {
 		positions[offset + LEFT] = value; 
 	}
@@ -70,6 +54,8 @@ public class LRDP implements LogicalNodePositionAware {
 			getNextPosition(buffer, node);
 			posIndex++;
 		}
+		//reset buffer offset
+		buffer.offset = 0;
 	}
 
 	/**
@@ -86,6 +72,7 @@ public class LRDP implements LogicalNodePositionAware {
 			throws IOException {
 		int nextPosition = node.nextPosition();
 		physicalFormat.decode(node.getPayload(), buffer);
+		buffer.offset = buffer.size - POSITION_LENGTH;
 		return nextPosition;
 	}
 	
@@ -193,5 +180,14 @@ public class LRDP implements LogicalNodePositionAware {
 	@Override
 	public BytesRef[] encode(int[] positions, int numTokens) throws PayloadFormatException {
 		return physicalFormat.encode(positions, numTokens);
+	}
+
+	@Override
+	public boolean isTreeRootPosition(int[] positions, int offset) {
+		return depth(positions, offset) == 0;
+	}
+
+	public int depth(int[] payloads, int offset) {
+		return payloads[offset + DEPTH];
 	}
 }

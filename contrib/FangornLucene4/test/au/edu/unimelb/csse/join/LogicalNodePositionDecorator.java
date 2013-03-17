@@ -49,6 +49,11 @@ public class LogicalNodePositionDecorator implements LogicalNodePositionAware{
 			throws PayloadFormatException {
 		return inner.encode(positions, numTokens);
 	}
+
+	@Override
+	public boolean isTreeRootPosition(int[] positions, int offset) {
+		return inner.isTreeRootPosition(positions, offset);
+	}
 	
 	
 }

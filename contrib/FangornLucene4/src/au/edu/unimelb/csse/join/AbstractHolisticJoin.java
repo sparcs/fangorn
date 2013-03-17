@@ -6,12 +6,12 @@ import java.util.List;
 
 import au.edu.unimelb.csse.BinaryOperator;
 import au.edu.unimelb.csse.BinaryOperatorAware;
-import au.edu.unimelb.csse.paypack.LRDP;
+import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
 
 abstract class AbstractHolisticJoin extends AbstractJoin implements
-		OperatorCompatibilityAware {
+		OperatorCompatibilityAware, ComputesFullResults {
 	private static final int POSITIONS_BUFFER_INC = 128;
-	protected LRDP nodePositionAware;
+	protected LogicalNodePositionAware nodePositionAware;
 	protected int positionLength;
 	protected int stackLength;
 	protected BinaryOperatorAware operatorAware;
@@ -35,18 +35,18 @@ abstract class AbstractHolisticJoin extends AbstractJoin implements
 
 	public AbstractHolisticJoin(String[] labels, int[] parentPos,
 			BinaryOperator[] operators,
-			LRDP nodePositionAware) {
+			LogicalNodePositionAware nodePositionAware) {
 		super(labels, parentPos, operators);
 		setupVars(nodePositionAware);
 	}
 
 	public AbstractHolisticJoin(String[] labels, BinaryOperator[] operators,
-			LRDP nodePositionAware) {
+			LogicalNodePositionAware nodePositionAware) {
 		super(labels, operators);
 		setupVars(nodePositionAware);
 	}
 
-	private void setupVars(LRDP nodePositionAware) {
+	private void setupVars(LogicalNodePositionAware nodePositionAware) {
 		this.nodePositionAware = nodePositionAware;
 		this.positionLength = nodePositionAware.getPositionLength();
 		this.stackLength = positionLength + 1;
@@ -62,8 +62,6 @@ abstract class AbstractHolisticJoin extends AbstractJoin implements
 		positionStacksSizes = new int[postingsFreqs.length];
 		resultStackPointers = new int[postingsFreqs.length];
 	}
-
-	public abstract List<int[]> match() throws IOException;
 
 	// is called only when AbstractJoin.nextDoc() returns a valid result
 	@Override
@@ -165,9 +163,9 @@ abstract class AbstractHolisticJoin extends AbstractJoin implements
 		if (parentPos[pf.position] == -1) { // root
 			if (BinaryOperator.CHILD.equals(operators[pf.position])) {
 				// root of query should be root of tree
-				int depth = nodePositionAware.depth(positionStacks[pf.position], i * stackLength);
-				if (depth != 0)
+				if (!nodePositionAware.isTreeRootPosition(positionStacks[pf.position], i * stackLength)) {
 					return;
+				}
 			}
 			results.add(Arrays.copyOf(result, result.length));
 		} else {

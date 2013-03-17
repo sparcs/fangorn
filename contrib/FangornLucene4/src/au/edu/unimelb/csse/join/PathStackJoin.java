@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import au.edu.unimelb.csse.BinaryOperator;
-import au.edu.unimelb.csse.paypack.LRDP;
+import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
 
 /**
  * This is a holistic join algorithm proposed by Bruno et al. (2002):
@@ -20,10 +20,11 @@ import au.edu.unimelb.csse.paypack.LRDP;
 public class PathStackJoin extends AbstractHolisticJoin {
 
 	public PathStackJoin(String[] labels, BinaryOperator[] operators,
-			LRDP nodePositionAware) {
+			LogicalNodePositionAware nodePositionAware) {
 		super(labels, operators, nodePositionAware);
 	}
 
+	@Override
 	public List<int[]> match() throws IOException {
 		List<int[]> results = null;
 		while (!shouldStop()) {

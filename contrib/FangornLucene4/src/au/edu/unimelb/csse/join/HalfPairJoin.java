@@ -16,7 +16,7 @@ import au.edu.unimelb.csse.BinaryOperator;
 public interface HalfPairJoin extends PairJoin {
 
 	/**
-	 * Ensure that all params and buffers have their offsets and sizes reset
+	 * Ensure that all params and buffers have their offsets and sizes set
 	 * appropriately before passing them into this function
 	 * 
 	 * @param prev
@@ -28,4 +28,7 @@ public interface HalfPairJoin extends PairJoin {
 	void match(NodePositions prev, BinaryOperator op,
 			DocsAndPositionsEnum node, NodePositions... buffers)
 			throws IOException;
+
+	void match(NodePositions prev, BinaryOperator op, NodePositions next,
+			NodePositions... buffers) throws IOException;
 }
