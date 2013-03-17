@@ -62,7 +62,7 @@ public abstract class IndexTestCase extends TestCase {
 		IndexWriter w = new IndexWriter(d, c);
 		return w;
 	}
-	
+
 	protected IndexReader setupIndexWithDocs(String... docs) throws IOException {
 		IndexWriter w = setupIndex();
 		for (String doc : docs) {
@@ -113,12 +113,15 @@ public abstract class IndexTestCase extends TestCase {
 					returned[i]);
 		}
 	}
-	
-	protected void assertPositions(int[] expected, int expectedOffset, NodePositions prev) {
-		assertEquals("Incorrect number of positions", expected.length, prev.size);
+
+	protected void assertPositions(int[] expected, int expectedOffset,
+			NodePositions prev) {
+		assertEquals("Incorrect number of positions", expected.length,
+				prev.size);
 		assertEquals("Incorrect offset", expectedOffset, prev.offset);
 		for (int i = 0; i < expected.length; i++) {
-			assertEquals("Incorrect value at index " + i, expected[i], prev.positions[i]);
+			assertEquals("Incorrect value at index " + i, expected[i],
+					prev.positions[i]);
 		}
 	}
 }

@@ -16,6 +16,8 @@ public interface LogicalNodePositionAware {
 
 	int getNextPosition(NodePositions buffer, DocsAndPositionsEnum node)
 			throws IOException;
+	
+	boolean isTreeRootPosition(int[] positions, int offset);
 
 	int getPositionLength();
 

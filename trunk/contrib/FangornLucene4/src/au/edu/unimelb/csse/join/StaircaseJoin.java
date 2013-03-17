@@ -35,15 +35,27 @@ public class StaircaseJoin extends AbstractPairJoin implements HalfPairJoin {
 			DocsAndPositionsEnum node, NodePositions... buffers)
 			throws IOException {
 		prune(prev, op, buffers);
-
-		NodePositions result = buffers[0];
 		NodePositions next = buffers[1];
-		result.reset();
 		next.reset();
-		
 		nodePositionAware.getAllPositions(next, node);
+		doJoin(prev, op, next, buffers);
+	}
 
-		if (BinaryOperator.FOLLOWING.equals(op) || BinaryOperator.PRECEDING.equals(op)) {
+	@Override
+	public void match(NodePositions prev, BinaryOperator op,
+			NodePositions next, NodePositions... buffers) throws IOException {
+		prune(prev, op, buffers);
+		next.offset = 0;
+		doJoin(prev, op, next, buffers);
+	}
+
+	private void doJoin(NodePositions prev, BinaryOperator op,
+			NodePositions next, NodePositions... buffers) {
+		NodePositions result = buffers[0];
+		result.reset();
+
+		if (BinaryOperator.FOLLOWING.equals(op)
+				|| BinaryOperator.PRECEDING.equals(op)) {
 			for (next.offset = 0; next.offset < next.size; next.offset += positionLength) {
 				if (op.match(prev, next, operatorAware)) {
 					result.push(next, positionLength);
@@ -54,7 +66,8 @@ public class StaircaseJoin extends AbstractPairJoin implements HalfPairJoin {
 				if (op.match(prev, next, operatorAware)) {
 					result.push(next, positionLength);
 					next.offset += positionLength;
-				} else if (operatorAware.following(prev.positions, prev.offset, next.positions, next.offset)) {
+				} else if (operatorAware.following(prev.positions, prev.offset,
+						next.positions, next.offset)) {
 					prev.offset += positionLength;
 				} else {
 					next.offset += positionLength;
@@ -65,7 +78,8 @@ public class StaircaseJoin extends AbstractPairJoin implements HalfPairJoin {
 				if (op.match(prev, next, operatorAware)) {
 					result.push(next, positionLength);
 					next.offset += positionLength;
-				} else if (operatorAware.startsAfter(prev.positions, prev.offset, next.positions, next.offset)) {
+				} else if (operatorAware.startsAfter(prev.positions,
+						prev.offset, next.positions, next.offset)) {
 					prev.offset += positionLength;
 				} else {
 					next.offset += positionLength;
@@ -79,10 +93,12 @@ public class StaircaseJoin extends AbstractPairJoin implements HalfPairJoin {
 					result.push(next, positionLength);
 					next.offset += positionLength;
 					prev.offset = pmark;
-				} else if (operatorAware.following(prev.positions, prev.offset, next.positions, next.offset)) {
+				} else if (operatorAware.following(prev.positions, prev.offset,
+						next.positions, next.offset)) {
 					prev.offset += positionLength;
 					pmark = prev.offset;
-				} else if (operatorAware.descendant(prev.positions, prev.offset, next.positions, next.offset)) {
+				} else if (operatorAware.descendant(prev.positions,
+						prev.offset, next.positions, next.offset)) {
 					prev.offset += positionLength;
 					if (prev.offset == prev.size) {
 						next.offset += positionLength;
@@ -102,10 +118,12 @@ public class StaircaseJoin extends AbstractPairJoin implements HalfPairJoin {
 					next.offset += positionLength;
 					prev.offset = pmark;
 				} else if (pmark == prev.offset
-						&& operatorAware.following(prev.positions, prev.offset, next.positions, next.offset)) {
+						&& operatorAware.following(prev.positions, prev.offset,
+								next.positions, next.offset)) {
 					prev.offset += positionLength;
 					pmark = prev.offset;
-				} else if (operatorAware.startsBefore(prev.positions, prev.offset, next.positions, next.offset)) {
+				} else if (operatorAware.startsBefore(prev.positions,
+						prev.offset, next.positions, next.offset)) {
 					next.offset += positionLength;
 					prev.offset = pmark;
 				} else {
@@ -118,7 +136,6 @@ public class StaircaseJoin extends AbstractPairJoin implements HalfPairJoin {
 			}
 		}
 	}
-
 
 	void prune(NodePositions prev, BinaryOperator op, NodePositions[] buffers) {
 		if (prev.size <= 4)
@@ -138,11 +155,15 @@ public class StaircaseJoin extends AbstractPairJoin implements HalfPairJoin {
 		NodePositions stack = buffers[0];
 		NodePositions mark = buffers[1];
 		NodePositions offsetStack = buffers[2];
+		stack.reset();
+		mark.reset();
+		offsetStack.reset();
 		stack.push(prev, positionLength);
 		offsetStack.pushInt(0);
 		for (int i = positionLength; i < prev.size; i += positionLength) {
 			prev.offset = i;
-			if (operatorAware.descendant(stack.positions, stack.offset, prev.positions, prev.offset)) {
+			if (operatorAware.descendant(stack.positions, stack.offset,
+					prev.positions, prev.offset)) {
 				stack.push(prev, positionLength);
 				offsetStack.pushInt(i);
 			} else {
@@ -150,7 +171,8 @@ public class StaircaseJoin extends AbstractPairJoin implements HalfPairJoin {
 				mark.pushInt(offsetStack.popInt());
 				boolean pushedToStack = false;
 				while (stack.size > 0) {
-					if (operatorAware.descendant(stack.positions, stack.offset, prev.positions, prev.offset)) {
+					if (operatorAware.descendant(stack.positions, stack.offset,
+							prev.positions, prev.offset)) {
 						stack.push(prev, positionLength);
 						offsetStack.pushInt(i);
 						pushedToStack = true;
@@ -175,11 +197,14 @@ public class StaircaseJoin extends AbstractPairJoin implements HalfPairJoin {
 	void pruneDescendant(NodePositions prev, NodePositions[] buffers) {
 		NodePositions stack = buffers[0];
 		NodePositions mark = buffers[1];
+		stack.reset();
+		mark.reset();
 		stack.push(prev, positionLength);
 		mark.pushInt(0);
 		for (int i = positionLength; i < prev.size; i += positionLength) {
 			prev.offset = i;
-			if (!operatorAware.descendant(stack.positions, stack.offset, prev.positions, prev.offset)) {
+			if (!operatorAware.descendant(stack.positions, stack.offset,
+					prev.positions, prev.offset)) {
 				mark.pushInt(i);
 				stack.pop(positionLength);
 				stack.push(prev, positionLength);
@@ -190,14 +215,16 @@ public class StaircaseJoin extends AbstractPairJoin implements HalfPairJoin {
 
 	void pruneFollowing(NodePositions prev, NodePositions[] buffers) {
 		int idx = 0;
-		prev.offset = positionLength;;
-		while (prev.offset < prev.size && operatorAware.descendant(prev.positions, idx, prev.positions, prev.offset)) {
+		prev.offset = positionLength;
+		while (prev.offset < prev.size
+				&& operatorAware.descendant(prev.positions, idx,
+						prev.positions, prev.offset)) {
 			idx = prev.offset;
 			prev.offset += positionLength;
 		}
 		prev.retain(idx, positionLength);
 	}
-	
+
 	void prunePreceding(NodePositions prev, NodePositions[] buffers) {
 		prev.retain(prev.size - positionLength, positionLength);
 	}
@@ -206,7 +233,7 @@ public class StaircaseJoin extends AbstractPairJoin implements HalfPairJoin {
 	public int numBuffers(BinaryOperator op) {
 		if (BinaryOperator.ANCESTOR.equals(op)) {
 			return 3;
-		} 
+		}
 		return 2;
 	}
 

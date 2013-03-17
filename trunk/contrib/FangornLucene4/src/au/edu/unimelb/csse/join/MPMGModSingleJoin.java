@@ -35,9 +35,8 @@ import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
  * @author sumukh
  * 
  */
-public class MPMGModSingleJoin extends AbstractPairJoin implements
-		HalfPairJoin {
-	
+public class MPMGModSingleJoin extends AbstractPairJoin implements HalfPairJoin {
+
 	public MPMGModSingleJoin(LogicalNodePositionAware nodePositionAware) {
 		super(nodePositionAware);
 	}
@@ -48,6 +47,7 @@ public class MPMGModSingleJoin extends AbstractPairJoin implements
 			throws IOException {
 		int freq = node.freq();
 		NodePositions result = buffers[0]; // buffer used as result
+		result.reset();
 		int numNextRead = 0;
 		int pmark = 0;
 		while (numNextRead < freq) {
@@ -56,21 +56,24 @@ public class MPMGModSingleJoin extends AbstractPairJoin implements
 			nodePositionAware.getNextPosition(result, node);
 			numNextRead++;
 			prev.offset = pmark;
-			while (operatorAware.following(prev.positions, prev.offset, result.positions, result.offset)) {
-				// skip before
-				prev.offset += positionLength;
-				pmark = prev.offset;
-			}
 			boolean found = false;
-			while (prev.offset < prev.size) {
-				if (op.match(prev, result, operatorAware)) { // next is child/desc
-					found = true;
-					break; // solution found; abort
-				} else if (operatorAware.preceding(prev.positions, prev.offset, result.positions, result.offset)) {
-					// prev is after
-					break;
+			if (BinaryOperator.DESCENDANT.equals(op)
+					|| BinaryOperator.CHILD.equals(op)) {
+				while (prev.offset < prev.size && operatorAware.following(prev.positions, prev.offset,
+						result.positions, result.offset)) {
+					// skip before
+					prev.offset += positionLength;
+					pmark = prev.offset;
 				}
-				prev.offset += positionLength;
+				found = checkDescChild(prev, op, result, found);
+			} else { // ancestor or parent
+				while (prev.offset < prev.size && operatorAware.startsAfter(prev.positions, prev.offset,
+						result.positions, result.offset)) {
+					// skip before
+					prev.offset += positionLength;
+					pmark = prev.offset;
+				}
+				found = checkAncParent(prev, op, result, found);
 			}
 			if (!found) {
 				result.removeLast(positionLength);
@@ -81,5 +84,72 @@ public class MPMGModSingleJoin extends AbstractPairJoin implements
 	@Override
 	public int numBuffers(BinaryOperator op) {
 		return 1;
+	}
+
+	@Override
+	public void match(NodePositions prev, BinaryOperator op,
+			NodePositions next, NodePositions... buffers) throws IOException {
+		NodePositions result = buffers[0]; // buffer used as result
+		result.reset();
+		next.offset = 0;
+		int pmark = 0;
+		while (next.offset < next.size) {
+			if (pmark == prev.size)
+				break;	
+			prev.offset = pmark;
+			boolean found = false;
+			if (BinaryOperator.DESCENDANT.equals(op)
+					|| BinaryOperator.CHILD.equals(op)) {
+				while (prev.offset < prev.size && operatorAware.following(prev.positions, prev.offset,
+						next.positions, next.offset)) {
+					// skip before
+					prev.offset += positionLength;
+					pmark = prev.offset;
+				}
+				found = checkDescChild(prev, op, next, found);
+			} else { // ancestor or parent
+				while (prev.offset < prev.size && operatorAware.startsAfter(prev.positions, prev.offset,
+						next.positions, next.offset)) {
+					// skip before
+					prev.offset += positionLength;
+					pmark = prev.offset;
+				}
+				found = checkAncParent(prev, op, next, found);
+			}
+			if (found) {
+				result.push(next, positionLength);
+			}
+			next.offset += positionLength;
+		}
+	}
+
+	private boolean checkAncParent(NodePositions prev, BinaryOperator op,
+			NodePositions next, boolean found) {
+		while (prev.offset < prev.size) {
+			if (op.match(prev, next, operatorAware)) {
+				found = true;
+				break;
+			} else if (operatorAware.following(next.positions, next.offset, prev.positions, prev.offset)) {
+				break;
+			}
+			prev.offset += positionLength;
+		}
+		return found;
+	}
+
+	private boolean checkDescChild(NodePositions prev, BinaryOperator op,
+			NodePositions next, boolean found) {
+		while (prev.offset < prev.size) {
+			if (op.match(prev, next, operatorAware)) {
+				found = true;
+				break; // solution found; abort
+			} else if (operatorAware.preceding(prev.positions,
+					prev.offset, next.positions, next.offset)) {
+				// prev is after
+				break;
+			}
+			prev.offset += positionLength;
+		}
+		return found;
 	}
 }
