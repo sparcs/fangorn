@@ -6,19 +6,17 @@ import junit.framework.TestCase;
 
 import org.junit.Test;
 
-import au.edu.unimelb.csse.BinaryOperator;
-import au.edu.unimelb.csse.BinaryOperatorAware;
+import au.edu.unimelb.csse.Operator;
+import au.edu.unimelb.csse.OperatorAware;
 import au.edu.unimelb.csse.join.NodePositions;
-import au.edu.unimelb.csse.paypack.BytePacking;
-import au.edu.unimelb.csse.paypack.LRDP;
 
 public class LRDPOperatorsTest extends TestCase {
 	private LRDP lrdp = new LRDP(new BytePacking(4));
-	private BinaryOperatorAware opAware = lrdp.getBinaryOperatorHandler();
+	private OperatorAware opAware = lrdp.getBinaryOperatorHandler();
 
 	@Test
 	public void testChild() {
-		BinaryOperator op = BinaryOperator.CHILD;
+		Operator op = Operator.CHILD;
 		int poff = 0;
 		int noff = 0;
 		int[] next = new int[] { 0, 1, 1, 5 };
@@ -33,7 +31,7 @@ public class LRDPOperatorsTest extends TestCase {
 
 	@Test
 	public void testDescendant() throws Exception {
-		BinaryOperator o = BinaryOperator.DESCENDANT;
+		Operator o = Operator.DESCENDANT;
 		// child
 		assertMatch(o, new int[] { 0, 2, 0, 0 }, 0, new int[] { 1, 2, 1, 4 }, 0);
 		// desc
@@ -54,7 +52,7 @@ public class LRDPOperatorsTest extends TestCase {
 	}
 
 	public void testFollowing() throws Exception {
-		BinaryOperator o = BinaryOperator.FOLLOWING;
+		Operator o = Operator.FOLLOWING;
 		// immediately after
 		assertMatch(o, new int[] { 1, 2, 1, 2 }, 0, new int[] { 2, 3, 2, 4 }, 0);
 		// after
@@ -74,7 +72,7 @@ public class LRDPOperatorsTest extends TestCase {
 	}
 
 	public void testPreceding() throws Exception {
-		BinaryOperator o = BinaryOperator.PRECEDING;
+		Operator o = Operator.PRECEDING;
 		// after
 		assertNoMat(o, new int[] { 1, 2, 1, 2 }, 0, new int[] { 2, 3, 2, 4 }, 0);
 		// before
@@ -92,7 +90,7 @@ public class LRDPOperatorsTest extends TestCase {
 	}
 
 	public void testImmediateFollowing() throws Exception {
-		BinaryOperator o = BinaryOperator.IMMEDIATE_FOLLOWING;
+		Operator o = Operator.IMMEDIATE_FOLLOWING;
 		// following
 		assertNoMat(o, new int[] { 1, 2, 1, 2 }, 0, new int[] { 3, 4, 2, 4 }, 0);
 		// following sibling
@@ -122,7 +120,7 @@ public class LRDPOperatorsTest extends TestCase {
 	}
 
 	public void testImmediatePreceding() throws Exception {
-		BinaryOperator o = BinaryOperator.IMMEDIATE_PRECEDING;
+		Operator o = Operator.IMMEDIATE_PRECEDING;
 		// following
 		assertNoMat(o, new int[] { 1, 2, 1, 2 }, 0, new int[] { 3, 4, 2, 4 }, 0);
 		// following sibling
@@ -152,7 +150,7 @@ public class LRDPOperatorsTest extends TestCase {
 	}
 
 	public void testFollowingSibling() throws Exception {
-		BinaryOperator o = BinaryOperator.FOLLOWING_SIBLING;
+		Operator o = Operator.FOLLOWING_SIBLING;
 		// following
 		assertNoMat(o, new int[] { 1, 2, 1, 2 }, 0, new int[] { 3, 4, 2, 4 }, 0);
 		// following sibling
@@ -182,7 +180,7 @@ public class LRDPOperatorsTest extends TestCase {
 	}
 
 	public void testPrecedingSibling() throws Exception {
-		BinaryOperator o = BinaryOperator.PRECEDING_SIBLING;
+		Operator o = Operator.PRECEDING_SIBLING;
 		// following
 		assertNoMat(o, new int[] { 1, 2, 1, 2 }, 0, new int[] { 3, 4, 2, 4 }, 0);
 		// following sibling
@@ -212,7 +210,7 @@ public class LRDPOperatorsTest extends TestCase {
 	}
 
 	public void testImmediateFollowingSibling() throws Exception {
-		BinaryOperator o = BinaryOperator.IMMEDIATE_FOLLOWING_SIBLING;
+		Operator o = Operator.IMMEDIATE_FOLLOWING_SIBLING;
 		// following
 		assertNoMat(o, new int[] { 1, 2, 1, 2 }, 0, new int[] { 3, 4, 2, 4 }, 0);
 		// following sibling
@@ -242,7 +240,7 @@ public class LRDPOperatorsTest extends TestCase {
 	}
 
 	public void testImmediatePrecedingSibling() throws Exception {
-		BinaryOperator o = BinaryOperator.IMMEDIATE_PRECEDING_SIBLING;
+		Operator o = Operator.IMMEDIATE_PRECEDING_SIBLING;
 		// following
 		assertNoMat(o, new int[] { 1, 2, 1, 2 }, 0, new int[] { 3, 4, 2, 4 }, 0);
 		// following sibling
@@ -272,7 +270,7 @@ public class LRDPOperatorsTest extends TestCase {
 	}
 
 	// pre matches next for operator op
-	private void assertMatch(BinaryOperator op, int[] prev, int poff, int[] next,
+	private void assertMatch(Operator op, int[] prev, int poff, int[] next,
 			int noff) {
 		assertTrue("Expected " + subArrStr(next, noff) + " as " + op.name()
 				+ " of " + subArrStr(prev, poff),
@@ -287,13 +285,14 @@ public class LRDPOperatorsTest extends TestCase {
 
 	private NodePositions getNodePositions(int[] prev, int poff) {
 		NodePositions p = new NodePositions();
-		p.setValues(prev);
+		System.arraycopy(prev, 0, p.positions, 0, prev.length);
+		p.size = prev.length;
 		p.offset = poff;
 		return p;
 	}
 
 	// pre does not match next for operator op
-	private void assertNoMat(BinaryOperator op, int[] prev, int poff, int[] next,
+	private void assertNoMat(Operator op, int[] prev, int poff, int[] next,
 			int noff) {
 		assertFalse(
 				"Expected " + subArrStr(next, noff) + " as not " + op.name()

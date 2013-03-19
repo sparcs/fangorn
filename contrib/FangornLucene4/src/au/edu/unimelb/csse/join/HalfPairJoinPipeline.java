@@ -4,15 +4,18 @@ import java.io.IOException;
 
 import org.apache.lucene.index.DocsAndPositionsEnum;
 
-import au.edu.unimelb.csse.BinaryOperator;
+import au.edu.unimelb.csse.Operator;
+import au.edu.unimelb.csse.OperatorInverse;
 import au.edu.unimelb.csse.join.AbstractJoin.PostingsAndFreq;
 import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
 
 class HalfPairJoinPipeline {
 	Pipe root;
-	LogicalNodePositionAware nodePositionAware;
-	HalfPairJoin join;
-	BinaryOperator[] operators;
+	final LogicalNodePositionAware nodePositionAware;
+	final HalfPairJoin join;
+	Operator[] operators;
+	NodePositions prevPositions;
+	NodePositions[] buffers;
 
 	public HalfPairJoinPipeline(LogicalNodePositionAware nodePositionAware,
 			HalfPairJoin join) {
@@ -20,16 +23,20 @@ class HalfPairJoinPipeline {
 		this.join = join;
 	}
 
-	Pipe createExecPipeline(PostingsAndFreq pfRoot, BinaryOperator[] operators,
-			NodePositions prev, NodePositions... buffer) {
+	Pipe createExecPipeline(PostingsAndFreq pfRoot, Operator[] operators) {
 		this.operators = operators;
-		if (BinaryOperator.CHILD.equals(operators[pfRoot.position])) {
+		if (Operator.CHILD.equals(operators[pfRoot.position])) {
 			root = new GetRootNodePipe(pfRoot.postings);
 		} else {
 			root = new GetAllPipe(pfRoot.postings);
 		}
 		pathFromNode(pfRoot, root);
 		return root;
+	}
+	
+	void setPrevAndBuffers(NodePositions prev, NodePositions... buffers) {
+		this.prevPositions = prev;
+		this.buffers = buffers;
 	}
 
 	private void pathFromNode(PostingsAndFreq node, Pipe prevPipe) {
@@ -44,8 +51,8 @@ class HalfPairJoinPipeline {
 			return;
 		}
 		for (int i = 0; i < node.children.length; i++) {
-			BinaryOperator op = operators[node.children[i].position];
-			MetaPipe meta = new MetaPipe(BinaryOperatorInverse.get(op), prevPipe);
+			Operator op = operators[node.children[i].position];
+			MetaPipe meta = new MetaPipe(OperatorInverse.get(op), prevPipe);
 			Pipe last = addInReverse(node.children[i]);
 			meta.setInner(last.getStart());
 			prevPipe.setNext(meta);
@@ -59,20 +66,20 @@ class HalfPairJoinPipeline {
 		} else if (node.children.length == 1) {
 			Pipe prev = addInReverse(node.children[0]);
 			Pipe current = new SimplePipe(node.postings,
-					BinaryOperatorInverse.get(operators[node.children[0].position]), prev);
+					OperatorInverse.get(operators[node.children[0].position]), prev);
 			prev.setNext(current);
 			return current;
 		}
 		PostingsAndFreq firstChild = node.children[0];
 		Pipe prev = addInReverse(firstChild);
 		Pipe current = new SimplePipe(node.postings,
-				BinaryOperatorInverse.get(operators[firstChild.position]), prev);
+				OperatorInverse.get(operators[firstChild.position]), prev);
 		prev.setNext(current);
 		prev = current;
 		for (int i = 1; i < node.children.length; i++) {
 			PostingsAndFreq child = node.children[i];
 			MetaPipe meta = new MetaPipe(
-					BinaryOperatorInverse.get(operators[child.position]), prev);
+					OperatorInverse.get(operators[child.position]), prev);
 			Pipe last = addInReverse(child);
 			meta.setInner(last.getStart());
 			prev.setNext(meta);
@@ -121,9 +128,9 @@ class HalfPairJoinPipeline {
 	}
 
 	class SimplePipe extends AbstractPipe {
-		private BinaryOperator op;
+		private Operator op;
 
-		public SimplePipe(DocsAndPositionsEnum node, BinaryOperator op, Pipe prev) {
+		public SimplePipe(DocsAndPositionsEnum node, Operator op, Pipe prev) {
 			super(node);
 			this.op = op;
 			this.prev = prev;
@@ -131,7 +138,6 @@ class HalfPairJoinPipeline {
 
 		@Override
 		public NodePositions execute() throws IOException {
-			prevPositions.offset = 0;
 			join.match(prevPositions, op, node, buffers);
 			if (buffers[0].size > 0) {
 				return continueExection();
@@ -139,7 +145,7 @@ class HalfPairJoinPipeline {
 			return buffers[0];
 		}
 		
-		BinaryOperator getOp() {
+		Operator getOp() {
 			return op;
 		}
 		
@@ -152,17 +158,13 @@ class HalfPairJoinPipeline {
 	class MetaPipe implements Pipe {
 		private Pipe inner;
 		private Pipe next;
-		private BinaryOperator op;
+		private Operator op;
 		private NodePositions metaPrev;
-		private NodePositions[] buffers;
-		private NodePositions innerResultsCopy;
-		private NodePositions prevPositions;
 		private Pipe prev;
 
-		public MetaPipe(BinaryOperator op, Pipe prev) {
+		public MetaPipe(Operator op, Pipe prev) {
 			this.op = op;
 			metaPrev = new NodePositions();
-			innerResultsCopy = new NodePositions();
 			this.prev = prev;
 		}
 
@@ -172,27 +174,19 @@ class HalfPairJoinPipeline {
 
 		@Override
 		public NodePositions execute() throws IOException {
+			metaPrev.makeCloneOf(prevPositions);
 			prevPositions.reset();
-			inner.setPrevPositionsAndBuffer(prevPositions, buffers);
 			NodePositions results = inner.execute();
 			if (results.size == 0) {
 				return results;
 			}
-			innerResultsCopy.copyFrom(results);
-			join.match(innerResultsCopy, op, metaPrev, buffers);
+			prevPositions.makeCloneOf(results);
+			join.match(prevPositions, op, metaPrev, buffers);
 			if (next == null) {
 				return buffers[0];
 			}
-			metaPrev.copyFrom(buffers[0]);
-			next.setPrevPositionsAndBuffer(metaPrev, buffers);
+			prevPositions.makeCloneOf(buffers[0]);
 			return next.execute();
-		}
-
-		@Override
-		public void setPrevPositionsAndBuffer(NodePositions prevPositions, NodePositions[] buffers) {
-			metaPrev.copyFrom(prevPositions);
-			this.prevPositions = prevPositions;
-			this.buffers = buffers;
 		}
 
 		@Override
@@ -205,7 +199,7 @@ class HalfPairJoinPipeline {
 			return next;
 		}
 		
-		BinaryOperator getOp() {
+		Operator getOp() {
 			return op;
 		}
 
@@ -231,20 +225,13 @@ class HalfPairJoinPipeline {
 	}
 
 	abstract class AbstractPipe implements Pipe {
-		NodePositions prevPositions;
-		NodePositions[] buffers;
+		
 		Pipe next;
 		Pipe prev;
 		DocsAndPositionsEnum node;
 
 		public AbstractPipe(DocsAndPositionsEnum node) {
 			this.node = node;
-		}
-
-		@Override
-		public void setPrevPositionsAndBuffer(NodePositions prevPositions, NodePositions[] buffer) {
-			this.prevPositions = prevPositions;
-			this.buffers = buffer;
 		}
 
 		public void setNext(Pipe pipe) {
@@ -254,10 +241,7 @@ class HalfPairJoinPipeline {
 		NodePositions continueExection() throws IOException {
 			if (next == null || buffers[0].size == 0)
 				return buffers[0];
-			NodePositions result = buffers[0];
-			buffers[0] = prevPositions;
-			prevPositions = result;
-			next.setPrevPositionsAndBuffer(prevPositions, buffers);
+			prevPositions.makeCloneOf(buffers[0]);
 			return next.execute();
 		}
 		
@@ -284,7 +268,6 @@ class HalfPairJoinPipeline {
 	}
 
 	interface Pipe {
-		void setPrevPositionsAndBuffer(NodePositions prev, NodePositions[] buffers);
 
 		NodePositions execute() throws IOException;
 

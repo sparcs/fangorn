@@ -4,8 +4,9 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
-import au.edu.unimelb.csse.BinaryOperator;
-import au.edu.unimelb.csse.BinaryOperatorAware;
+import au.edu.unimelb.csse.Operator;
+import au.edu.unimelb.csse.OperatorAware;
+import au.edu.unimelb.csse.OperatorCompatibilityAware;
 import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
 
 abstract class AbstractHolisticJoin extends AbstractJoin implements
@@ -14,7 +15,7 @@ abstract class AbstractHolisticJoin extends AbstractJoin implements
 	protected LogicalNodePositionAware nodePositionAware;
 	protected int positionLength;
 	protected int stackLength;
-	protected BinaryOperatorAware operatorAware;
+	protected OperatorAware operatorAware;
 
 	// positions, freq, preorderPos and nextPosCalledCount are indexed by
 	// the order of arrangement of positionFreqs not by positionFreqs.position
@@ -34,13 +35,13 @@ abstract class AbstractHolisticJoin extends AbstractJoin implements
 	private NodePositions buffer = new NodePositions();
 
 	public AbstractHolisticJoin(String[] labels, int[] parentPos,
-			BinaryOperator[] operators,
+			Operator[] operators,
 			LogicalNodePositionAware nodePositionAware) {
 		super(labels, parentPos, operators);
 		setupVars(nodePositionAware);
 	}
 
-	public AbstractHolisticJoin(String[] labels, BinaryOperator[] operators,
+	public AbstractHolisticJoin(String[] labels, Operator[] operators,
 			LogicalNodePositionAware nodePositionAware) {
 		super(labels, operators);
 		setupVars(nodePositionAware);
@@ -146,9 +147,9 @@ abstract class AbstractHolisticJoin extends AbstractJoin implements
 	}
 
 	@Override
-	public boolean check(BinaryOperator op) {
-		return BinaryOperator.CHILD.equals(op)
-				|| BinaryOperator.DESCENDANT.equals(op);
+	public boolean check(Operator op) {
+		return Operator.CHILD.equals(op)
+				|| Operator.DESCENDANT.equals(op);
 	}
 
 	void getPathSolutions(List<int[]> results, PostingsAndFreq leafPf) {
@@ -161,7 +162,7 @@ abstract class AbstractHolisticJoin extends AbstractJoin implements
 		System.arraycopy(positionStacks[pf.position], i * stackLength, result,
 				pf.position * positionLength, positionLength);
 		if (parentPos[pf.position] == -1) { // root
-			if (BinaryOperator.CHILD.equals(operators[pf.position])) {
+			if (Operator.CHILD.equals(operators[pf.position])) {
 				// root of query should be root of tree
 				if (!nodePositionAware.isTreeRootPosition(positionStacks[pf.position], i * stackLength)) {
 					return;
@@ -169,7 +170,7 @@ abstract class AbstractHolisticJoin extends AbstractJoin implements
 			}
 			results.add(Arrays.copyOf(result, result.length));
 		} else {
-			if (BinaryOperator.CHILD.equals(operators[pf.position])) {
+			if (Operator.CHILD.equals(operators[pf.position])) {
 				int parentStackPointer = positionStacks[pf.position][i * stackLength + positionLength];
 				for (int j = 0; j <= parentStackPointer; j++) {
 					if (operatorAware.child(positionStacks[pf.parent.position],

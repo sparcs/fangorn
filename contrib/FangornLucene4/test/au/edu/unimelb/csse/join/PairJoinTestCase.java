@@ -7,8 +7,8 @@ import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.Term;
 import org.junit.Before;
 
-import au.edu.unimelb.csse.BinaryOperator;
 import au.edu.unimelb.csse.IndexTestCase;
+import au.edu.unimelb.csse.Operator;
 import au.edu.unimelb.csse.paypack.BytePacking;
 import au.edu.unimelb.csse.paypack.LRDP;
 
@@ -16,7 +16,7 @@ public abstract class PairJoinTestCase extends IndexTestCase {
 	protected PairJoin join;
 	protected LogicalNodePositionDecorator lrdp;
 	private CountingBinaryOperatorAware countingOperatorAware;
-	private NodePairPositions result;
+	public NodePairPositions result;
 	protected NodePositions buffer;
 	protected NodePositions prev;
 
@@ -33,9 +33,8 @@ public abstract class PairJoinTestCase extends IndexTestCase {
 	}
 
 	protected void joinAndAssertOutput(int expectedNumResults,
-			int expectedComparisons, NodePositions prev,
-			BinaryOperator operator, DocsAndPositionsEnum posEnum)
-			throws IOException {
+			int expectedComparisons, NodePositions prev, Operator operator,
+			DocsAndPositionsEnum posEnum) throws IOException {
 		int startCount = countingOperatorAware.getCount();
 		int resultSize = 0;
 		final int numBuffers = join.numBuffers(operator);
@@ -75,6 +74,17 @@ public abstract class PairJoinTestCase extends IndexTestCase {
 		assertEquals(expectedPrevLength, prev.size);
 		posEnum = getPosEnum(r, docid, new Term("s", nextTerm));
 		return posEnum;
+	}
+
+	protected void assertNodePairPositions(int[] expectedPos1,
+			int[] expectedPos2, int idx, int posLength) {
+		int arrOff = idx * posLength;
+		for (int i = 0; i < posLength; i++) {
+			assertEquals("Incorrect value in result node1 at position "
+					+ (arrOff + i), expectedPos1[i], result.node1[arrOff + i]);
+			assertEquals("Incorrect value in result node2 at position "
+					+ (arrOff + i), expectedPos2[i], result.node2[arrOff + i]);
+		}
 	}
 
 }

@@ -5,7 +5,7 @@ import java.util.List;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 
-import au.edu.unimelb.csse.BinaryOperator;
+import au.edu.unimelb.csse.Operator;
 
 public class PathStackJoinTest extends HolisticJoinTestCase {
 
@@ -217,7 +217,7 @@ public class PathStackJoinTest extends HolisticJoinTestCase {
 
 	public void testIdenticalLabelNestedWithChildOp() throws Exception {
 		PathStackJoin ps = new PathStackJoin(new String[] { "BB", "BB" },
-				new BinaryOperator[] { BinaryOperator.DESCENDANT, BinaryOperator.CHILD }, lrdp);
+				new Operator[] { Operator.DESCENDANT, Operator.CHILD }, lrdp);
 		IndexWriter w = setupIndex();
 		w.addDocument(getDoc("(AA(BB(BB(BB(BB(CC(DD EE)))))))"));
 		IndexReader r = commitIndexAndOpenReader(w);
@@ -232,7 +232,7 @@ public class PathStackJoinTest extends HolisticJoinTestCase {
 
 	public void testRootChildOpQuery() throws Exception {
 		PathStackJoin ps = new PathStackJoin(new String[] { "BB", "BB" },
-				new BinaryOperator[] { BinaryOperator.CHILD, BinaryOperator.CHILD }, lrdp);
+				new Operator[] { Operator.CHILD, Operator.CHILD }, lrdp);
 		IndexWriter w = setupIndex();
 		w.addDocument(getDoc("(BB(BB(BB(BB(BB(CC(DD EE)))))))"));
 		IndexReader r = commitIndexAndOpenReader(w);

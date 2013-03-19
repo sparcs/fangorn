@@ -15,8 +15,8 @@ import org.apache.lucene.index.TermsEnum;
 import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.util.ArrayUtil;
 
-import au.edu.unimelb.csse.BinaryOperator;
 import au.edu.unimelb.csse.Constants;
+import au.edu.unimelb.csse.Operator;
 
 /**
  * 
@@ -33,7 +33,7 @@ abstract class AbstractJoin {
 	Iterator<AtomicReaderContext> contextIter;
 
 	protected int docID = -1;
-	protected BinaryOperator[] operators;
+	protected Operator[] operators;
 	protected PostingsAndFreq root;
 
 	static class PostingsAndFreq implements Comparable<PostingsAndFreq> {
@@ -129,7 +129,7 @@ abstract class AbstractJoin {
 		}
 	}
 
-	AbstractJoin(String[] labels, BinaryOperator[] operators) {
+	AbstractJoin(String[] labels, Operator[] operators) {
 		this(labels, getPathPositions(labels), operators);
 	}
 
@@ -141,7 +141,7 @@ abstract class AbstractJoin {
 		return parentPos;
 	}
 
-	AbstractJoin(String[] labels, int[] parentPos, BinaryOperator[] operators) {
+	AbstractJoin(String[] labels, int[] parentPos, Operator[] operators) {
 		this.labels = labels;
 		this.parentPos = parentPos;
 		this.postingsFreqs = new PostingsAndFreq[labels.length];

@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import au.edu.unimelb.csse.BinaryOperator;
+import au.edu.unimelb.csse.Operator;
 import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
 
 /**
@@ -19,7 +19,7 @@ import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
  */
 public class PathStackJoin extends AbstractHolisticJoin {
 
-	public PathStackJoin(String[] labels, BinaryOperator[] operators,
+	public PathStackJoin(String[] labels, Operator[] operators,
 			LogicalNodePositionAware nodePositionAware) {
 		super(labels, operators, nodePositionAware);
 	}

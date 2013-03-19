@@ -13,22 +13,11 @@ public class NodePositions {
 		offset = 0;
 	}
 
-	public void expand() {
-		int[] newPositions = new int[positions.length + SIZE_INCREMENT];
-		System.arraycopy(positions, 0, newPositions, 0, positions.length);
-		positions = newPositions;
-	}
-
-	public boolean hasMore(int positionLength) {
-		return offset + positionLength <= size;
-	}
-
-	public void reset() {
-		size = 0;
-		offset = 0;
-	}
-	
-	public void copyFrom(NodePositions other) {
+	/**
+	 * Overwrites all existing information with that in other
+	 * @param other
+	 */
+	public void makeCloneOf(NodePositions other) {
 		if (other.positions.length > positions.length) {
 			int[] newPositions = new int[other.positions.length];
 			positions = newPositions;
@@ -36,6 +25,17 @@ public class NodePositions {
 		System.arraycopy(other.positions, 0, positions, 0, other.size);
 		this.size = other.size;
 		this.offset = other.offset;
+	}
+
+	public void expand() {
+		int[] newPositions = new int[positions.length + SIZE_INCREMENT];
+		System.arraycopy(positions, 0, newPositions, 0, positions.length);
+		positions = newPositions;
+	}
+
+	public void reset() {
+		size = 0;
+		offset = 0;
 	}
 
 	public boolean removeLast(int length) {
@@ -59,14 +59,6 @@ public class NodePositions {
 		offset = size - length;
 	}
 	
-	public void pushInt(int value) {
-		if (size + 1 >= positions.length) {
-			expand();
-		}
-		positions[size++] = value;
-		offset++;
-	}
-	
 	public void pop(int length) {
 		if (size >= length) {
 			size -= length;
@@ -76,6 +68,14 @@ public class NodePositions {
 		}
 	}
 	
+	public void pushInt(int value) {
+		if (size + 1 >= positions.length) {
+			expand();
+		}
+		positions[size++] = value;
+		offset++;
+	}
+
 	public int popInt() {
 		if (size > 0) {
 			int value = positions[size - 1];
@@ -86,6 +86,26 @@ public class NodePositions {
 			return value;
 		}
 		return -1;
+	}
+
+	public void retain(NodePositions mark, int length) {
+		int newOffset = 0;
+		if (mark.size * length == size) {
+			offset = 0;
+			return; // retain all
+		}
+		for (int i = 0; i < mark.size; i++) {
+			System.arraycopy(positions, mark.positions[i], positions, newOffset, length);
+			newOffset += length;
+		}
+		offset = 0;
+		size = mark.size * length;
+	}
+
+	public void retain(int retainOffset, int length) {
+		System.arraycopy(positions, retainOffset, positions, 0, length);
+		this.offset = 0;
+		size = length; 
 	}
 
 	@Override
@@ -123,31 +143,5 @@ public class NodePositions {
 		}
 		sb.append(" ]");
 		return sb.toString();
-	}
-
-	public void retain(NodePositions mark, int length) {
-		int newOffset = 0;
-		if (mark.size * length == size) {
-			offset = 0;
-			return; // retain all
-		}
-		for (int i = 0; i < mark.size; i++) {
-			System.arraycopy(positions, mark.positions[i], positions, newOffset, length);
-			newOffset += length;
-		}
-		offset = 0;
-		size = mark.size * length;
-	}
-
-	public void setValues(int[] values) {
-		System.arraycopy(values, 0, positions, 0, values.length);
-		size = values.length;
-		offset = 0;
-	}
-
-	public void retain(int retainOffset, int length) {
-		System.arraycopy(positions, retainOffset, positions, 0, length);
-		this.offset = 0;
-		size = length; 
 	}
 }

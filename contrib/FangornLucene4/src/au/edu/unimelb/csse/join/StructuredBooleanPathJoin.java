@@ -4,7 +4,7 @@ import java.io.IOException;
 
 import org.apache.lucene.index.IndexReader;
 
-import au.edu.unimelb.csse.BinaryOperator;
+import au.edu.unimelb.csse.Operator;
 import au.edu.unimelb.csse.join.HalfPairJoinPipeline.Pipe;
 import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
 
@@ -14,7 +14,7 @@ public class StructuredBooleanPathJoin extends StructuredPathJoin implements
 	Pipe start;
 
 	public StructuredBooleanPathJoin(String[] labels, int[] parentPos,
-			BinaryOperator[] operators, HalfPairJoin join,
+			Operator[] operators, HalfPairJoin join,
 			LogicalNodePositionAware nodePositionAware) {
 		super(labels, parentPos, operators, join, nodePositionAware);
 		execPipeline = new HalfPairJoinPipeline(nodePositionAware, join);
@@ -25,9 +25,9 @@ public class StructuredBooleanPathJoin extends StructuredPathJoin implements
 		boolean success = super.setup(r);
 		if (!success)
 			return false;
-		start = execPipeline.createExecPipeline(root, operators, prev, buffers);
-		super.setupBuffers(execPipeline.getMaxBufferSize());
-		start.setPrevPositionsAndBuffer(prev, buffers);
+		start = execPipeline.createExecPipeline(root, operators);
+		buffers = getBuffers(execPipeline.getMaxBufferSize());
+		execPipeline.setPrevAndBuffers(prev, buffers);
 		return true;
 	}
 

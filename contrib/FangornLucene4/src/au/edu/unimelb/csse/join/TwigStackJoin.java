@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 
-import au.edu.unimelb.csse.BinaryOperator;
+import au.edu.unimelb.csse.Operator;
 import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
 
 public class TwigStackJoin extends AbstractHolisticJoin {
@@ -21,7 +21,7 @@ public class TwigStackJoin extends AbstractHolisticJoin {
 	MergeNode rootMergeNode;
 
 	public TwigStackJoin(String[] labels, int[] parentPos,
-			BinaryOperator[] operators, LogicalNodePositionAware nodePositionAware) {
+			Operator[] operators, LogicalNodePositionAware nodePositionAware) {
 		super(labels, parentPos, operators, nodePositionAware);
 		pfIdxByPfPos = new int[labels.length];
 		maxPosReached = new boolean[labels.length];

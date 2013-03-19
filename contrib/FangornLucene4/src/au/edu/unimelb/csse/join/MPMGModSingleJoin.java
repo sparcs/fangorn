@@ -4,7 +4,7 @@ import java.io.IOException;
 
 import org.apache.lucene.index.DocsAndPositionsEnum;
 
-import au.edu.unimelb.csse.BinaryOperator;
+import au.edu.unimelb.csse.Operator;
 import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
 
 /**
@@ -42,7 +42,7 @@ public class MPMGModSingleJoin extends AbstractPairJoin implements HalfPairJoin 
 	}
 
 	@Override
-	public void match(NodePositions prev, BinaryOperator op,
+	public void match(NodePositions prev, Operator op,
 			DocsAndPositionsEnum node, NodePositions... buffers)
 			throws IOException {
 		int freq = node.freq();
@@ -57,8 +57,8 @@ public class MPMGModSingleJoin extends AbstractPairJoin implements HalfPairJoin 
 			numNextRead++;
 			prev.offset = pmark;
 			boolean found = false;
-			if (BinaryOperator.DESCENDANT.equals(op)
-					|| BinaryOperator.CHILD.equals(op)) {
+			if (Operator.DESCENDANT.equals(op)
+					|| Operator.CHILD.equals(op)) {
 				while (prev.offset < prev.size && operatorAware.following(prev.positions, prev.offset,
 						result.positions, result.offset)) {
 					// skip before
@@ -82,12 +82,12 @@ public class MPMGModSingleJoin extends AbstractPairJoin implements HalfPairJoin 
 	}
 
 	@Override
-	public int numBuffers(BinaryOperator op) {
+	public int numBuffers(Operator op) {
 		return 1;
 	}
 
 	@Override
-	public void match(NodePositions prev, BinaryOperator op,
+	public void match(NodePositions prev, Operator op,
 			NodePositions next, NodePositions... buffers) throws IOException {
 		NodePositions result = buffers[0]; // buffer used as result
 		result.reset();
@@ -98,8 +98,8 @@ public class MPMGModSingleJoin extends AbstractPairJoin implements HalfPairJoin 
 				break;	
 			prev.offset = pmark;
 			boolean found = false;
-			if (BinaryOperator.DESCENDANT.equals(op)
-					|| BinaryOperator.CHILD.equals(op)) {
+			if (Operator.DESCENDANT.equals(op)
+					|| Operator.CHILD.equals(op)) {
 				while (prev.offset < prev.size && operatorAware.following(prev.positions, prev.offset,
 						next.positions, next.offset)) {
 					// skip before
@@ -123,7 +123,7 @@ public class MPMGModSingleJoin extends AbstractPairJoin implements HalfPairJoin 
 		}
 	}
 
-	private boolean checkAncParent(NodePositions prev, BinaryOperator op,
+	private boolean checkAncParent(NodePositions prev, Operator op,
 			NodePositions next, boolean found) {
 		while (prev.offset < prev.size) {
 			if (op.match(prev, next, operatorAware)) {
@@ -137,7 +137,7 @@ public class MPMGModSingleJoin extends AbstractPairJoin implements HalfPairJoin 
 		return found;
 	}
 
-	private boolean checkDescChild(NodePositions prev, BinaryOperator op,
+	private boolean checkDescChild(NodePositions prev, Operator op,
 			NodePositions next, boolean found) {
 		while (prev.offset < prev.size) {
 			if (op.match(prev, next, operatorAware)) {

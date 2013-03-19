@@ -4,7 +4,7 @@ import java.io.IOException;
 
 import org.apache.lucene.index.DocsAndPositionsEnum;
 
-import au.edu.unimelb.csse.BinaryOperator;
+import au.edu.unimelb.csse.Operator;
 import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
 
 /**
@@ -33,14 +33,17 @@ public class MPMGJoin extends AbstractPairJoin implements FullPairJoin {
 	}
 
 	@Override
-	public void match(NodePositions prev, BinaryOperator op,
+	public void match(NodePositions prev, Operator op,
 			DocsAndPositionsEnum node, NodePairPositions result,
 			NodePositions... buffers) throws IOException {
 		NodePositions buffer = buffers[0];
+		buffer.reset();
+		result.reset();
+		prev.offset = 0;
 		nodePositionAware.getAllPositions(buffer, node);
 		int nmark = 0;
 
-		while (prev.hasMore(positionLength)) {
+		while (prev.offset + positionLength <= prev.size) {
 			if (buffer.offset == buffer.size) {
 				prev.offset += positionLength;
 				buffer.offset = nmark;
@@ -51,7 +54,7 @@ public class MPMGJoin extends AbstractPairJoin implements FullPairJoin {
 			} else if (operatorAware.startsBefore(prev.positions, prev.offset, buffer.positions, buffer.offset)) {
 				buffer.offset += positionLength;
 				nmark = buffer.offset;
-			} else if (BinaryOperator.DESCENDANT.equals(op)
+			} else if (Operator.DESCENDANT.equals(op)
 					|| !operatorAware.descendant(prev.positions, prev.offset, buffer.positions, buffer.offset)) {
 				// desc: skip to next prev
 				// child: skip if not descendant
@@ -64,7 +67,7 @@ public class MPMGJoin extends AbstractPairJoin implements FullPairJoin {
 	}
 
 	@Override
-	public int numBuffers(BinaryOperator op) {
+	public int numBuffers(Operator op) {
 		return 1;
 	}
 }

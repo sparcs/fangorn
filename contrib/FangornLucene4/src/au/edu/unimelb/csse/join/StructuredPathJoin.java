@@ -2,21 +2,31 @@ package au.edu.unimelb.csse.join;
 
 import java.io.IOException;
 
-import au.edu.unimelb.csse.BinaryOperator;
+import au.edu.unimelb.csse.Operator;
 import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
 
 abstract class StructuredPathJoin extends AbstractJoin {
 	NodePositions[] buffers;
 	NodePositions prev;
 	LogicalNodePositionAware nodePositionAware;
+	PairJoin join;
 
 	StructuredPathJoin(String[] labels, int[] parentPos,
-			BinaryOperator[] operators, PairJoin join, LogicalNodePositionAware nodePositionAware) {
+			Operator[] operators, PairJoin join, LogicalNodePositionAware nodePositionAware) {
 		super(labels, parentPos, operators);
-		prev = new NodePositions();
+		this.join = join;
 		this.nodePositionAware = nodePositionAware;
+		prev = new NodePositions();
 	}
 
+	NodePositions[] getBuffers(int size) {
+		NodePositions[] buffers = new NodePositions[size];
+		for (int i = 0; i < size; i++) {
+			buffers[i] = new NodePositions();
+		}
+		return buffers;
+	}
+	
 	
 	@Override
 	public void setupPerDoc() throws IOException {
@@ -25,11 +35,6 @@ abstract class StructuredPathJoin extends AbstractJoin {
 	}
 
 
-	public void setupBuffers(int maxBufferSize) {
-		buffers = new NodePositions[maxBufferSize];
-		for (int i = 0; i < buffers.length; i++) {
-			buffers[i] = new NodePositions();
-		}
-	}
+	
 	
 }

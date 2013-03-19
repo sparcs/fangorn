@@ -1,6 +1,6 @@
 package au.edu.unimelb.csse;
 
-public interface BinaryOperatorAware {
+public interface OperatorAware {
 	boolean descendant(int[] prev, int poff, int[] next, int noff);
 	boolean ancestor(int[] prev, int poff, int[] next, int noff);
 	boolean child(int[] prev, int poff, int[] next, int noff);

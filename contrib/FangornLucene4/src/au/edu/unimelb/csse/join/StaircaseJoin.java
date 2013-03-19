@@ -4,7 +4,7 @@ import java.io.IOException;
 
 import org.apache.lucene.index.DocsAndPositionsEnum;
 
-import au.edu.unimelb.csse.BinaryOperator;
+import au.edu.unimelb.csse.Operator;
 import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
 
 /**
@@ -26,14 +26,15 @@ public class StaircaseJoin extends AbstractPairJoin implements HalfPairJoin {
 	}
 
 	@Override
-	public boolean check(BinaryOperator op) {
+	public boolean check(Operator op) {
 		return true;
 	}
 
 	@Override
-	public void match(NodePositions prev, BinaryOperator op,
+	public void match(NodePositions prev, Operator op,
 			DocsAndPositionsEnum node, NodePositions... buffers)
 			throws IOException {
+		prev.offset = 0;
 		prune(prev, op, buffers);
 		NodePositions next = buffers[1];
 		next.reset();
@@ -42,26 +43,27 @@ public class StaircaseJoin extends AbstractPairJoin implements HalfPairJoin {
 	}
 
 	@Override
-	public void match(NodePositions prev, BinaryOperator op,
+	public void match(NodePositions prev, Operator op,
 			NodePositions next, NodePositions... buffers) throws IOException {
+		prev.offset = 0;
 		prune(prev, op, buffers);
 		next.offset = 0;
 		doJoin(prev, op, next, buffers);
 	}
 
-	private void doJoin(NodePositions prev, BinaryOperator op,
+	private void doJoin(NodePositions prev, Operator op,
 			NodePositions next, NodePositions... buffers) {
 		NodePositions result = buffers[0];
 		result.reset();
 
-		if (BinaryOperator.FOLLOWING.equals(op)
-				|| BinaryOperator.PRECEDING.equals(op)) {
+		if (Operator.FOLLOWING.equals(op)
+				|| Operator.PRECEDING.equals(op)) {
 			for (next.offset = 0; next.offset < next.size; next.offset += positionLength) {
 				if (op.match(prev, next, operatorAware)) {
 					result.push(next, positionLength);
 				}
 			}
-		} else if (BinaryOperator.DESCENDANT.equals(op)) {
+		} else if (Operator.DESCENDANT.equals(op)) {
 			while (next.offset < next.size && prev.offset < prev.size) {
 				if (op.match(prev, next, operatorAware)) {
 					result.push(next, positionLength);
@@ -73,7 +75,7 @@ public class StaircaseJoin extends AbstractPairJoin implements HalfPairJoin {
 					next.offset += positionLength;
 				}
 			}
-		} else if (BinaryOperator.ANCESTOR.equals(op)) {
+		} else if (Operator.ANCESTOR.equals(op)) {
 			while (next.offset < next.size && prev.offset < prev.size) {
 				if (op.match(prev, next, operatorAware)) {
 					result.push(next, positionLength);
@@ -85,7 +87,7 @@ public class StaircaseJoin extends AbstractPairJoin implements HalfPairJoin {
 					next.offset += positionLength;
 				}
 			}
-		} else if (BinaryOperator.CHILD.equals(op)) {
+		} else if (Operator.CHILD.equals(op)) {
 			// similar to MPMG join but the marker is on poff here
 			int pmark = 0;
 			while (next.offset < next.size && prev.offset < prev.size) {
@@ -109,7 +111,7 @@ public class StaircaseJoin extends AbstractPairJoin implements HalfPairJoin {
 					prev.offset = pmark;
 				}
 			}
-		} else if (BinaryOperator.PARENT.equals(op)) {
+		} else if (Operator.PARENT.equals(op)) {
 			// skip the first few precedings
 			int pmark = 0;
 			while (next.offset < next.size && prev.offset < prev.size) {
@@ -137,16 +139,16 @@ public class StaircaseJoin extends AbstractPairJoin implements HalfPairJoin {
 		}
 	}
 
-	void prune(NodePositions prev, BinaryOperator op, NodePositions[] buffers) {
+	void prune(NodePositions prev, Operator op, NodePositions[] buffers) {
 		if (prev.size <= 4)
 			return;
-		if (BinaryOperator.DESCENDANT.equals(op)) {
+		if (Operator.DESCENDANT.equals(op)) {
 			pruneDescendant(prev, buffers);
-		} else if (BinaryOperator.ANCESTOR.equals(op)) {
+		} else if (Operator.ANCESTOR.equals(op)) {
 			pruneAncestor(prev, buffers);
-		} else if (BinaryOperator.FOLLOWING.equals(op)) {
+		} else if (Operator.FOLLOWING.equals(op)) {
 			pruneFollowing(prev, buffers);
-		} else if (BinaryOperator.PRECEDING.equals(op)) {
+		} else if (Operator.PRECEDING.equals(op)) {
 			prunePreceding(prev, buffers);
 		}
 	}
@@ -230,8 +232,8 @@ public class StaircaseJoin extends AbstractPairJoin implements HalfPairJoin {
 	}
 
 	@Override
-	public int numBuffers(BinaryOperator op) {
-		if (BinaryOperator.ANCESTOR.equals(op)) {
+	public int numBuffers(Operator op) {
+		if (Operator.ANCESTOR.equals(op)) {
 			return 3;
 		}
 		return 2;
