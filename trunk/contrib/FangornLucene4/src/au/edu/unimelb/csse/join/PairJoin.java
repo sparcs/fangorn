@@ -1,7 +1,7 @@
 package au.edu.unimelb.csse.join;
 
-import au.edu.unimelb.csse.BinaryOperator;
+import au.edu.unimelb.csse.Operator;
 
 public interface PairJoin {
-	int numBuffers(BinaryOperator op);
+	int numBuffers(Operator op);
 }

@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 
-import au.edu.unimelb.csse.BinaryOperator;
+import au.edu.unimelb.csse.Operator;
 import au.edu.unimelb.csse.join.AbstractJoin.PostingsAndFreq;
 
 public class AbstractHolisticJoinTest extends HolisticJoinTestCase {
@@ -73,7 +73,7 @@ public class AbstractHolisticJoinTest extends HolisticJoinTestCase {
 
 	public void testGetPathSolutionsTestsRootChildOp() throws Exception {
 		PathStackJoin ps = new PathStackJoin(new String[] { "AA", "BB", "CC" },
-				new BinaryOperator[] { BinaryOperator.CHILD, BinaryOperator.DESCENDANT, BinaryOperator.CHILD }, lrdp);
+				new Operator[] { Operator.CHILD, Operator.DESCENDANT, Operator.CHILD }, lrdp);
 		IndexWriter w = setupIndex();
 		// this example shows the function of parent stack pointers 
 		//   stored at each position  

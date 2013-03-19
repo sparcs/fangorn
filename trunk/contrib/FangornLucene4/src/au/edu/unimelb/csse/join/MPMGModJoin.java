@@ -4,7 +4,7 @@ import java.io.IOException;
 
 import org.apache.lucene.index.DocsAndPositionsEnum;
 
-import au.edu.unimelb.csse.BinaryOperator;
+import au.edu.unimelb.csse.Operator;
 import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
 
 /**
@@ -37,10 +37,12 @@ public class MPMGModJoin extends AbstractPairJoin implements FullPairJoin {
 	}
 
 	@Override
-	public void match(NodePositions prev, BinaryOperator op,
+	public void match(NodePositions prev, Operator op,
 			DocsAndPositionsEnum node, NodePairPositions result,
 			NodePositions... buffers) throws IOException {
 		NodePositions buffer = buffers[0];
+		buffer.reset();
+		result.reset();
 		int freq = node.freq();
 		int numNextRead = 0;
 		int pmark = 0;
@@ -57,7 +59,7 @@ public class MPMGModJoin extends AbstractPairJoin implements FullPairJoin {
 			}
 			while (prev.offset < prev.size) {
 				if (op.match(prev, buffer, operatorAware)) { // next is child/desc
-					result.add(prev, buffer, positionLength);
+					result.sortedAdd(prev, buffer, nodePositionAware);
 				} else if (operatorAware.preceding(prev.positions, prev.offset, buffer.positions, buffer.offset)) {
 					// prev is after
 					break;
@@ -69,7 +71,7 @@ public class MPMGModJoin extends AbstractPairJoin implements FullPairJoin {
 	}
 
 	@Override
-	public int numBuffers(BinaryOperator op) {
+	public int numBuffers(Operator op) {
 		return 1;
 	}
 

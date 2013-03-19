@@ -5,7 +5,7 @@ import java.io.IOException;
 import org.apache.lucene.index.DocsAndPositionsEnum;
 import org.apache.lucene.util.BytesRef;
 
-import au.edu.unimelb.csse.BinaryOperatorAware;
+import au.edu.unimelb.csse.OperatorAware;
 import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
 import au.edu.unimelb.csse.paypack.PayloadFormatException;
 
@@ -23,7 +23,7 @@ public class LogicalNodePositionDecorator implements LogicalNodePositionAware{
 	}
 
 	@Override
-	public BinaryOperatorAware getBinaryOperatorHandler() {
+	public OperatorAware getBinaryOperatorHandler() {
 		return countingOperatorAware;
 	}
 
@@ -53,6 +53,11 @@ public class LogicalNodePositionDecorator implements LogicalNodePositionAware{
 	@Override
 	public boolean isTreeRootPosition(int[] positions, int offset) {
 		return inner.isTreeRootPosition(positions, offset);
+	}
+
+	@Override
+	public int compare(int[] a1, int o1, int[] a2, int o2) {
+		return inner.compare(a1, o1, a2, o2);
 	}
 	
 	

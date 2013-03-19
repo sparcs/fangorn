@@ -4,7 +4,7 @@ import java.io.IOException;
 
 import org.apache.lucene.index.DocsAndPositionsEnum;
 
-import au.edu.unimelb.csse.BinaryOperator;
+import au.edu.unimelb.csse.Operator;
 import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
 
 /**
@@ -33,11 +33,15 @@ public class StackTreeJoin extends AbstractPairJoin implements
 	}
 
 	@Override
-	public void match(NodePositions prev, BinaryOperator op,
+	public void match(NodePositions prev, Operator op,
 			DocsAndPositionsEnum node, NodePairPositions result,
 			NodePositions... buffers) throws IOException {
 		NodePositions buffer = buffers[0];
+		buffer.reset();
 		NodePositions stack = buffers[1];
+		stack.reset();
+		result.reset();
+		prev.offset = 0;
 
 		nodePositionAware.getAllPositions(buffer, node);
 
@@ -62,13 +66,13 @@ public class StackTreeJoin extends AbstractPairJoin implements
 					stack.pop(positionLength);
 				}
 				if (stack.size > 0 && op.match(stack, buffer, operatorAware)) {
-					if (op.equals(BinaryOperator.CHILD)) {
-						result.add(prev, buffer, positionLength);
+					if (op.equals(Operator.CHILD)) {
+						result.sortedAdd(prev, buffer, nodePositionAware);
 					} else {
 						int numStackNodes = stack.size / positionLength;
 						for (int i = 0; i < numStackNodes; i++) {
 							stack.offset = i * positionLength; 
-							result.add(stack,buffer, positionLength);
+							result.sortedAdd(stack,buffer, nodePositionAware);
 						}
 						stack.offset = stack.size - positionLength;
 					}
@@ -84,13 +88,13 @@ public class StackTreeJoin extends AbstractPairJoin implements
 			}
 			if (stack.size > 0
 					&& op.match(stack, buffer, operatorAware)) {
-				if (op.equals(BinaryOperator.CHILD)) {
-					result.add(stack, buffer, positionLength);
+				if (op.equals(Operator.CHILD)) {
+					result.sortedAdd(stack, buffer, nodePositionAware);
 				} else {
 					int numStackNodes = stack.size / positionLength;
 					for (int i = 0; i < numStackNodes; i++) {
 						stack.offset = i * positionLength; 
-						result.add(stack,buffer, positionLength);
+						result.sortedAdd(stack,buffer, nodePositionAware);
 					}
 					stack.offset = stack.size - positionLength;
 				}
@@ -100,7 +104,7 @@ public class StackTreeJoin extends AbstractPairJoin implements
 	}
 
 	@Override
-	public int numBuffers(BinaryOperator op) {
+	public int numBuffers(Operator op) {
 		return 2;
 	}
 

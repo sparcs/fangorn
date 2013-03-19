@@ -1,12 +1,12 @@
 package au.edu.unimelb.csse.join;
 
-import au.edu.unimelb.csse.BinaryOperatorAware;
+import au.edu.unimelb.csse.OperatorAware;
 
-public class CountingBinaryOperatorAware implements BinaryOperatorAware {
-	private BinaryOperatorAware inner;
+public class CountingBinaryOperatorAware implements OperatorAware {
+	private OperatorAware inner;
 	private int count;
 
-	public CountingBinaryOperatorAware(BinaryOperatorAware inner) {
+	public CountingBinaryOperatorAware(OperatorAware inner) {
 		this.inner = inner;
 		count = 0;
 	}

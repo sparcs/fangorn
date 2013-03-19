@@ -5,7 +5,7 @@ import java.io.IOException;
 import org.apache.lucene.index.DocsAndPositionsEnum;
 import org.apache.lucene.util.BytesRef;
 
-import au.edu.unimelb.csse.BinaryOperatorAware;
+import au.edu.unimelb.csse.OperatorAware;
 import au.edu.unimelb.csse.join.NodePositions;
 
 public class LRDP implements LogicalNodePositionAware {
@@ -18,29 +18,29 @@ public class LRDP implements LogicalNodePositionAware {
 	public static final int POSITION_LENGTH = 4;
 
 	private PhysicalPayloadFormatAware physicalFormat;
-	private BinaryOperatorAware binaryOperatorHandler;
+	private OperatorAware binaryOperatorHandler;
 
 	public LRDP(PhysicalPayloadFormatAware physicalFormat) {
 		this.physicalFormat = physicalFormat;
 		this.binaryOperatorHandler = new LRDPOperators();
 	}
 
-	public BinaryOperatorAware getBinaryOperatorHandler() {
+	public OperatorAware getBinaryOperatorHandler() {
 		return binaryOperatorHandler;
 	}
-	
+
 	public void setLeft(int[] positions, int offset, int value) {
-		positions[offset + LEFT] = value; 
+		positions[offset + LEFT] = value;
 	}
-	
+
 	public void setRight(int[] positions, int offset, int value) {
 		positions[offset + RIGHT] = value;
 	}
-	
+
 	public void setDepth(int[] positions, int offset, int value) {
 		positions[offset + DEPTH] = value;
 	}
-	
+
 	public void setParent(int[] positions, int offset, int value) {
 		positions[offset + PARENT] = value;
 	}
@@ -54,7 +54,7 @@ public class LRDP implements LogicalNodePositionAware {
 			getNextPosition(buffer, node);
 			posIndex++;
 		}
-		//reset buffer offset
+		// reset buffer offset
 		buffer.offset = 0;
 	}
 
@@ -64,7 +64,7 @@ public class LRDP implements LogicalNodePositionAware {
 	 * 
 	 * @param buffer
 	 * @param node
-	 * @return 
+	 * @return
 	 * @throws IOException
 	 */
 	@Override
@@ -75,13 +75,13 @@ public class LRDP implements LogicalNodePositionAware {
 		buffer.offset = buffer.size - POSITION_LENGTH;
 		return nextPosition;
 	}
-	
+
 	@Override
 	public int getPositionLength() {
 		return POSITION_LENGTH;
 	}
 
-	public class LRDPOperators implements BinaryOperatorAware {
+	public class LRDPOperators implements OperatorAware {
 
 		@Override
 		public boolean descendant(int[] prev, int poff, int[] next, int noff) {
@@ -178,7 +178,8 @@ public class LRDP implements LogicalNodePositionAware {
 	}
 
 	@Override
-	public BytesRef[] encode(int[] positions, int numTokens) throws PayloadFormatException {
+	public BytesRef[] encode(int[] positions, int numTokens)
+			throws PayloadFormatException {
 		return physicalFormat.encode(positions, numTokens);
 	}
 
@@ -190,4 +191,22 @@ public class LRDP implements LogicalNodePositionAware {
 	public int depth(int[] payloads, int offset) {
 		return payloads[offset + DEPTH];
 	}
+
+	@Override
+	public int compare(int[] pos1, int off1, int[] pos2, int off2) {
+		int leftDiff = pos1[off1 + LEFT] - pos2[off2 + LEFT];
+		if (leftDiff != 0) {
+			return leftDiff;
+		}
+		int rightDiff = pos1[off1 + RIGHT] - pos2[off2 + RIGHT];
+		if (rightDiff != 0) {
+			return -1 * rightDiff;
+		}
+		int depthDiff = pos1[off1 + DEPTH] - pos2[off2 + DEPTH];
+		if (depthDiff != 0) {
+			return depthDiff;
+		}
+		return pos1[off1 + PARENT] - pos2[off2 + PARENT];
+	}
+
 }

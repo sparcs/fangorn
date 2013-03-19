@@ -1,7 +1,7 @@
 package au.edu.unimelb.csse.join;
 
-import au.edu.unimelb.csse.BinaryOperator;
 import au.edu.unimelb.csse.IndexTestCase;
+import au.edu.unimelb.csse.Operator;
 import au.edu.unimelb.csse.join.AbstractJoin.PostingsAndFreq;
 import au.edu.unimelb.csse.paypack.BytePacking;
 import au.edu.unimelb.csse.paypack.LRDP;
@@ -27,10 +27,10 @@ public abstract class HolisticJoinTestCase extends IndexTestCase {
 		}
 	}
 	
-	protected BinaryOperator[] getDescOp(int size) {
-		BinaryOperator[] r = new BinaryOperator[size];
+	protected Operator[] getDescOp(int size) {
+		Operator[] r = new Operator[size];
 		for (int i = 0 ; i < size; i++) {
-			r[i] = BinaryOperator.DESCENDANT;
+			r[i] = Operator.DESCENDANT;
 		}
 		return r;
 	}

@@ -2,8 +2,8 @@ package au.edu.unimelb.csse.join;
 
 import org.apache.lucene.index.IndexReader;
 
-import au.edu.unimelb.csse.BinaryOperator;
 import au.edu.unimelb.csse.IndexTestCase;
+import au.edu.unimelb.csse.Operator;
 import au.edu.unimelb.csse.paypack.BytePacking;
 import au.edu.unimelb.csse.paypack.LRDP;
 import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
@@ -30,11 +30,13 @@ public class StructuredBooleanPathJoinTest extends IndexTestCase {
 					join.buffers[0]);
 		}
 	}
+	
+	//TODO: write more tests
 
-	private BinaryOperator[] getDescOp(int num) {
-		BinaryOperator[] results = new BinaryOperator[num];
+	private Operator[] getDescOp(int num) {
+		Operator[] results = new Operator[num];
 		for (int i = 0; i < results.length; i++) {
-			results[i] = BinaryOperator.DESCENDANT;
+			results[i] = Operator.DESCENDANT;
 		}
 		return results;
 	}

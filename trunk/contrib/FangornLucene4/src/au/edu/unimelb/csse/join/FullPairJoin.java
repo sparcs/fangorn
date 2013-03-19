@@ -4,7 +4,7 @@ import java.io.IOException;
 
 import org.apache.lucene.index.DocsAndPositionsEnum;
 
-import au.edu.unimelb.csse.BinaryOperator;
+import au.edu.unimelb.csse.Operator;
 
 /**
  * Joins the positions of a pair of nodes. Returns the positions from both nodes
@@ -26,7 +26,7 @@ public interface FullPairJoin extends PairJoin {
 	 * @param buffers
 	 * @throws IOException
 	 */
-	void match(NodePositions prev, BinaryOperator op,
+	void match(NodePositions prev, Operator op,
 			DocsAndPositionsEnum node, NodePairPositions result,
 			NodePositions... buffers) throws IOException;
 	

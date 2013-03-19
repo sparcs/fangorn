@@ -2,136 +2,136 @@ package au.edu.unimelb.csse;
 
 import au.edu.unimelb.csse.join.NodePositions;
 
-public interface BinaryOperator {
+public interface Operator {
 	boolean match(NodePositions prev, NodePositions next,
-			BinaryOperatorAware aware);
+			OperatorAware aware);
 
 	boolean match(int[] prev, int poff, int[] next, int noff,
-			BinaryOperatorAware aware);
+			OperatorAware aware);
 
 	String name();
 
-	BinaryOperator DESCENDANT = new AbstractBinaryOperator("descendant") {
+	Operator DESCENDANT = new AbstractBinaryOperator("descendant") {
 
 		@Override
 		public boolean match(int[] prev, int poff, int[] next,
-				int noff, BinaryOperatorAware opAware) {
+				int noff, OperatorAware opAware) {
 			return opAware.descendant(prev, poff, next, noff);
 		}
 
 	};
 
-	BinaryOperator ANCESTOR = new AbstractBinaryOperator("ancestor") {
+	Operator ANCESTOR = new AbstractBinaryOperator("ancestor") {
 
 		@Override
 		public boolean match(int[] prev, int poff, int[] next,
-				int noff, BinaryOperatorAware opAware) {
+				int noff, OperatorAware opAware) {
 			return opAware.ancestor(prev, poff, next, noff);
 		}
 
 	};
 
-	BinaryOperator CHILD = new AbstractBinaryOperator("child") {
+	Operator CHILD = new AbstractBinaryOperator("child") {
 
 		@Override
 		public boolean match(int[] prev, int poff, int[] next,
-				int noff, BinaryOperatorAware opAware) {
+				int noff, OperatorAware opAware) {
 			return opAware.child(prev, poff, next, noff);
 		}
 
 	};
 
-	BinaryOperator PARENT = new AbstractBinaryOperator("parent") {
+	Operator PARENT = new AbstractBinaryOperator("parent") {
 
 		@Override
 		public boolean match(int[] prev, int poff, int[] next,
-				int noff, BinaryOperatorAware opAware) {
+				int noff, OperatorAware opAware) {
 			return opAware.parent(prev, poff, next, noff);
 		}
 
 	};
 
-	BinaryOperator FOLLOWING = new AbstractBinaryOperator("following") {
+	Operator FOLLOWING = new AbstractBinaryOperator("following") {
 
 		@Override
 		public boolean match(int[] prev, int poff, int[] next,
-				int noff, BinaryOperatorAware opAware) {
+				int noff, OperatorAware opAware) {
 			return opAware.following(prev, poff, next, noff);
 		}
 
 	};
 
-	BinaryOperator PRECEDING = new AbstractBinaryOperator("preceding") {
+	Operator PRECEDING = new AbstractBinaryOperator("preceding") {
 
 		@Override
 		public boolean match(int[] prev, int poff, int[] next,
-				int noff, BinaryOperatorAware opAware) {
+				int noff, OperatorAware opAware) {
 			return opAware.preceding(prev, poff, next, noff);
 		}
 
 	};
 
-	BinaryOperator FOLLOWING_SIBLING = new AbstractBinaryOperator(
+	Operator FOLLOWING_SIBLING = new AbstractBinaryOperator(
 			"following-sibling") {
 
 		@Override
 		public boolean match(int[] prev, int poff, int[] next,
-				int noff, BinaryOperatorAware opAware) {
+				int noff, OperatorAware opAware) {
 			return opAware.followingSibling(prev, poff, next, noff);
 		}
 
 	};
 
-	BinaryOperator PRECEDING_SIBLING = new AbstractBinaryOperator(
+	Operator PRECEDING_SIBLING = new AbstractBinaryOperator(
 			"preceding-sibling") {
 
 		@Override
 		public boolean match(int[] prev, int poff, int[] next,
-				int noff, BinaryOperatorAware opAware) {
+				int noff, OperatorAware opAware) {
 			return opAware.precedingSibling(prev, poff, next, noff);
 		}
 
 	};
 
-	BinaryOperator IMMEDIATE_FOLLOWING = new AbstractBinaryOperator(
+	Operator IMMEDIATE_FOLLOWING = new AbstractBinaryOperator(
 			"immediate-following") {
 
 		@Override
 		public boolean match(int[] prev, int poff, int[] next,
-				int noff, BinaryOperatorAware opAware) {
+				int noff, OperatorAware opAware) {
 			return opAware.immediateFollowing(prev, poff, next, noff);
 		}
 
 	};
 
-	BinaryOperator IMMEDIATE_PRECEDING = new AbstractBinaryOperator(
+	Operator IMMEDIATE_PRECEDING = new AbstractBinaryOperator(
 			"immediate-preceding") {
 
 		@Override
 		public boolean match(int[] prev, int poff, int[] next,
-				int noff, BinaryOperatorAware opAware) {
+				int noff, OperatorAware opAware) {
 			return opAware.immediatePreceding(prev, poff, next, noff);
 		}
 
 	};
 
-	BinaryOperator IMMEDIATE_FOLLOWING_SIBLING = new AbstractBinaryOperator(
+	Operator IMMEDIATE_FOLLOWING_SIBLING = new AbstractBinaryOperator(
 			"immediate-following-sibling") {
 
 		@Override
 		public boolean match(int[] prev, int poff, int[] next,
-				int noff, BinaryOperatorAware opAware) {
+				int noff, OperatorAware opAware) {
 			return opAware.immediateFollowingSibling(prev, poff, next, noff);
 		}
 
 	};
 
-	BinaryOperator IMMEDIATE_PRECEDING_SIBLING = new AbstractBinaryOperator(
+	Operator IMMEDIATE_PRECEDING_SIBLING = new AbstractBinaryOperator(
 			"immediate-preceding-sibling") {
 
 		@Override
 		public boolean match(int[] prev, int poff, int[] next,
-				int noff, BinaryOperatorAware opAware) {
+				int noff, OperatorAware opAware) {
 			return opAware.immediatePrecedingSibling(prev, poff, next, noff);
 		}
 
@@ -139,7 +139,7 @@ public interface BinaryOperator {
 
 }
 
-abstract class AbstractBinaryOperator implements BinaryOperator {
+abstract class AbstractBinaryOperator implements Operator {
 
 	private String name;
 
@@ -153,14 +153,14 @@ abstract class AbstractBinaryOperator implements BinaryOperator {
 
 	@Override
 	public boolean match(NodePositions prev, NodePositions next,
-			BinaryOperatorAware aware) {
+			OperatorAware aware) {
 		return match(prev.positions, prev.offset, next.positions, next.offset, aware);
 	}
 
 	@Override
 	public boolean equals(Object obj) {
-		if (obj instanceof BinaryOperator) {
-			BinaryOperator o = (BinaryOperator) obj;
+		if (obj instanceof Operator) {
+			Operator o = (Operator) obj;
 			return this.name == o.name();
 		}
 		return false;
