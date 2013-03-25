@@ -307,6 +307,8 @@ public abstract class AbstractJoin {
 			int pos = postingsFreqs[i].position;
 			if (parentPos[pos] != -1) {
 				postingsFreqs[i].parent = postingsFreqs[parentPos[pos]];
+			} else {
+				postingsFreqs[i].parent = null;
 			}
 			List<PostingsAndFreq> children = new ArrayList<AbstractJoin.PostingsAndFreq>();
 			for (int j = 0; j < postingsFreqs.length; j++) {
