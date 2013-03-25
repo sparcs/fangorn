@@ -99,15 +99,17 @@ public class TwigStackJoin extends AbstractHolisticJoin {
 		}
 		int pfIdx = pfIdxByPfPos[pf.position];
 		if (maxIdx == -1 && minIdx == -1) {
-			if (maxPosReached[pfIdx]) return -1;
+			if (maxPosReached[pfIdx])
+				return -1;
 			return pfIdx;
 		}
-		if (maxPosReached[pfIdx])
-			return minIdx;
-		while (nextPosCalledCount[pfIdx] <= freqs[pfIdx]
+		while (!maxPosReached[pfIdx] && nextPosCalledCount[pfIdx] <= freqs[pfIdx]
 				&& operatorAware.following(positions, pfIdx * positionLength,
 						positions, maxIdx * positionLength)) {
 			getNextPosition(pfIdx);
+		}
+		if (maxPosReached[pfIdx]) {
+			return minIdx;
 		}
 		if (operatorAware.startsBefore(positions, minIdx * positionLength,
 				positions, pfIdx * positionLength))
