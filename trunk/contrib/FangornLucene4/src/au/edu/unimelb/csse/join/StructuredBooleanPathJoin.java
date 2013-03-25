@@ -36,5 +36,11 @@ public class StructuredBooleanPathJoin extends StructuredPathJoin implements
 		final NodePositions result = start.execute();
 		return result.size > 0;
 	}
+	
+	@Override
+	public void setupPerAtomicContext() {
+		super.setupPerAtomicContext();
+		start = execPipeline.createExecPipeline(root, operators);
+	}
 
 }

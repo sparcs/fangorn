@@ -139,6 +139,28 @@ public class NodePairPositionsTest extends TestCase {
 				3 }, 5, lrdp.getPositionLength(), npp);
 	}
 
+	public void testInsertsBetweenTwoPositionsDoesNotOverForLargeSizes() throws Exception {
+		int[] node11 = new int[NodePositions.DEFAULT_SIZE];
+		int[] node21 = new int[NodePositions.DEFAULT_SIZE];
+		for (int i = 0; i < NodePositions.DEFAULT_SIZE; i++) {
+			node11[i] = i + 1;
+			node21[i] = i + 5;
+		}
+		NodePairPositions npp = getNodePairPositions(node11, node21);
+
+		NodePositions prev = new NodePositions(new int[] { 121, 122, 123, 124 });
+		NodePositions next = new NodePositions(new int[] { 129, 130, 131, 132 });
+		npp.sortedAdd(prev, next, lrdp);
+
+		assertNodePairPositions(new int[] { 121, 122, 123, 124 }, new int[] { 125, 126,
+				127, 128 }, 30, lrdp.getPositionLength(), npp);
+		assertNodePairPositions(new int[] { 121, 122, 123, 124 }, new int[] { 129, 130,
+				131, 132 }, 31, lrdp.getPositionLength(), npp);
+		assertNodePairPositions(new int[] { 125, 126, 127, 128 }, new int[] { 129, 130,
+				131, 132 }, 32, lrdp.getPositionLength(), npp);
+		
+	}
+
 	private NodePairPositions getNodePairPositions(int[] node1, int[] node2) {
 		NodePairPositions npp = new NodePairPositions();
 		assertTrue("Both arrays should be of the same length",

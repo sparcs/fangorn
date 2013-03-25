@@ -9,9 +9,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.GZIPInputStream;
 
@@ -39,8 +36,10 @@ public class CreateIndex {
 	private FieldType ft;
 	private static final int BUF_SIZE = 510;
 	private static final int CPU_CORES = 4;
-	private static final int THREAD_POOL_SIZE = (int) Math.round(CPU_CORES * 1.5);
- 
+	private static final int THREAD_POOL_SIZE = (int) Math
+			.round(CPU_CORES * 1.5);
+	private FieldType docNumField;
+
 	public CreateIndex(String srcDir, String indexDir) throws IOException {
 		this.srcDirName = srcDir;
 		sentenceTokenizer = new SentenceTokenizer(new BufferedReader(
@@ -52,6 +51,11 @@ public class CreateIndex {
 		c.setRAMBufferSizeMB(1024);
 		writer = new IndexWriter(d, c);
 		ft = createFieldType();
+		
+		docNumField = new FieldType();
+		docNumField.setTokenized(false);
+		docNumField.setIndexed(false);
+		docNumField.setStored(true);
 	}
 
 	/**
@@ -80,8 +84,8 @@ public class CreateIndex {
 		writer.commit();
 		writer.close();
 		long endTime = System.nanoTime();
-		System.out.println("Indexed " + sentIndexedCount.get() + " sentences in "
-				+ (endTime - startTime) / 1000000000 + "s.");
+		System.out.println("Indexed " + sentIndexedCount.get()
+				+ " sentences in " + (endTime - startTime) / 1000000000 + "s.");
 	}
 
 	private void indexFile(File f) {
@@ -99,37 +103,41 @@ public class CreateIndex {
 				sentenceTokenizer.reset(bufferedReader);
 				SentenceAndMetaData sm;
 				while ((sm = sentenceTokenizer.next()) != null) {
-					int bufIndex = 0;
-					String[] sents = new String[BUF_SIZE];
-					while (bufIndex < BUF_SIZE - 1 && sm != null) {
-						sents[bufIndex++] = sm.sentence();
-						sm = sentenceTokenizer.next();
-					}
-					if (sm != null) {
-						sents[bufIndex++] = sm.sentence();
-					}
-					ExecutorService executor = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
-					for (int i = 0; i < bufIndex; i++) {
-						executor.execute(new ExecutorThread(sents[i]));
-					}
-					executor.shutdown();
-					executor.awaitTermination(BUF_SIZE * 100, TimeUnit.SECONDS);
-					
-					// String sentence = sm.sentence();
-					// Document doc = new Document();
-					// doc.add(new Field(Constants.FIELD_NAME, sentence, ft));
-					// try {
-					// writer.addDocument(doc);
-					// sentIndexedCount++;
-					// } catch (IOException e) {
-					// // this catch block is necessary because a parse
-					// // exception is converted into an IOException while
-					// // adding doc
-					// System.err.println(e.getMessage());
+					// int bufIndex = 0;
+					// String[] sents = new String[BUF_SIZE];
+					// while (bufIndex < BUF_SIZE - 1 && sm != null) {
+					// sents[bufIndex++] = sm.sentence();
+					// sm = sentenceTokenizer.next();
 					// }
-					if (sm == null) {
-						break;
+					// if (sm != null) {
+					// sents[bufIndex++] = sm.sentence();
+					// }
+					// ExecutorService executor =
+					// Executors.newFixedThreadPool(THREAD_POOL_SIZE);
+					// for (int i = 0; i < bufIndex; i++) {
+					// executor.execute(new ExecutorThread(sents[i]));
+					// }
+					// executor.shutdown();
+					// executor.awaitTermination(BUF_SIZE * 100,
+					// TimeUnit.SECONDS);
+					//
+					String sentence = sm.sentence();
+					Document doc = new Document();
+					doc.add(new Field(Constants.FIELD_NAME, sentence, ft));
+					doc.add(new Field("docnum", f.getName() + "."
+							+ sm.lineOffset(), docNumField));
+					try {
+						writer.addDocument(doc);
+						sentIndexedCount.getAndIncrement();
+					} catch (IOException e) {
+						// this catch block is necessary because a parse
+						// exception is converted into an IOException while
+						// adding doc
+						System.err.println(e.getMessage());
 					}
+					// if (sm == null) {
+					// break;
+					// }
 				}
 			} catch (FileNotFoundException e) {
 				System.err.println("File " + f.getAbsolutePath()
@@ -137,9 +145,9 @@ public class CreateIndex {
 			} catch (IOException e) {
 				System.err.println("Error reading file " + f.getAbsolutePath()
 						+ ".");
-			} catch (InterruptedException e) {
-				System.err
-						.println("Interrupted while waiting for concurrent indexing to complete.");
+//			} catch (InterruptedException e) {
+//				System.err
+//						.println("Interrupted while waiting for concurrent indexing to complete.");
 			}
 		} else {
 			for (File sf : listFiles) {

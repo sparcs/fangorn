@@ -40,7 +40,7 @@ public class BytePacking implements PhysicalPayloadFormatAware {
 			buffer.positions[buffer.size] = value;
 			buffer.size += 1;
 		}
-
+//		buffer.offset = buffer.size - intsPerPos;
 	}
 
 }

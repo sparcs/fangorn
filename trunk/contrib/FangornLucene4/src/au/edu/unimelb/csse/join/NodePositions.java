@@ -1,7 +1,7 @@
 package au.edu.unimelb.csse.join;
 
 public class NodePositions {
-	private static final int DEFAULT_SIZE = 128;
+	static final int DEFAULT_SIZE = 128;
 	private static final int SIZE_INCREMENT = 128;
 	public int[] positions;
 	public int size; // used while writing
@@ -10,6 +10,16 @@ public class NodePositions {
 	public NodePositions() {
 		positions = new int[DEFAULT_SIZE];
 		size = 0;
+		offset = 0;
+	}
+	
+	public NodePositions(int[] positions) {
+		this();
+		while (this.positions.length < positions.length) {
+			expand();
+		}
+		System.arraycopy(positions, 0, this.positions, 0, positions.length);
+		size = positions.length;
 		offset = 0;
 	}
 

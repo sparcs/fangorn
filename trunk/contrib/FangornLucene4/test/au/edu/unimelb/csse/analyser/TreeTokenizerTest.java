@@ -126,6 +126,30 @@ public class TreeTokenizerTest extends TestCase {
 		assertNextToken("K", 3, 4, 2, 7);
 		assertNextToken("L", 3, 4, 3, 6);
 	}
+	
+	public void testSentence() throws Exception {
+		resetTokenizer("(S1 (S (NP (NNP Beatrice)) (VP (AUX is) (NP (DT a) (JJ Hungarian) (NN rock) (NN band))) (. .)))");
+		
+		assertNextToken("S1", 0, 7, 0, 0);
+		assertNextToken("S", 0, 7, 1, 12);
+		assertNextToken("NP", 0, 1, 2, 11);
+		assertNextToken("NNP", 0, 1, 3, 2);
+		assertNextToken("Beatrice", 0, 1, 4, 1);
+		assertNextToken("VP", 1, 6, 2, 11);
+		assertNextToken("AUX", 1, 2, 3, 9);
+		assertNextToken("is", 1, 2, 4, 3);
+		assertNextToken("NP", 2, 6, 3, 9);
+		assertNextToken("DT", 2, 3, 4, 8);
+		assertNextToken("a", 2, 3, 5, 4);
+		assertNextToken("JJ", 3, 4, 4, 8);
+		assertNextToken("Hungarian", 3, 4, 5, 5);
+		assertNextToken("NN", 4, 5, 4, 8);
+		assertNextToken("rock", 4, 5, 5, 6);
+		assertNextToken("NN", 5, 6, 4, 8);
+		assertNextToken("band", 5, 6, 5, 7);
+		assertNextToken(".", 6, 7, 2, 11);
+		assertNextToken(".", 6, 7, 3, 10);
+	}
 
 	@Test
 	public void testIncorrectSentencesAreIdentified() throws Exception {

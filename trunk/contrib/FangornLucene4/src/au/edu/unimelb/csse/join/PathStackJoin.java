@@ -18,6 +18,7 @@ import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
  * 
  */
 public class PathStackJoin extends AbstractHolisticJoin {
+	List<int[]> results = new ArrayList<int[]>();;
 
 	public PathStackJoin(String[] labels, Operator[] operators,
 			LogicalNodePositionAware nodePositionAware) {
@@ -26,15 +27,12 @@ public class PathStackJoin extends AbstractHolisticJoin {
 
 	@Override
 	public List<int[]> match() throws IOException {
-		List<int[]> results = null;
+		results.clear();
 		while (!shouldStop()) {
 			int pos = getMinSource();
 			clearPrecedingStackEntries(positions, pos * positionLength);
 			boolean updated = updateStackIfNeeded(pos);
 			if (updated && postingsFreqs[pos].isLeaf) {
-				if (results == null) {
-					results = new ArrayList<int[]>();
-				}
 				getPathSolutions(results, postingsFreqs[pos]);
 				positionStacksSizes[postingsFreqs[pos].position]--;
 			}

@@ -63,4 +63,33 @@ public class BytePackingTest extends IndexTestCase {
 		assertEquals(240, br.bytes[br.offset + 3] & 255);
 		
 	}
+	
+	public void testEncodeAndDecode() throws Exception {
+		BytesRef[] brs = bp.encode(new int[]{1, 254, 5, 255}, 1);
+		assertEquals(1, brs.length);
+		BytesRef br = brs[0];
+		assertEquals(1, br.bytes[br.offset]);
+		assertEquals(254, br.bytes[br.offset + 1] & 255);
+		assertEquals(5, br.bytes[br.offset + 2]);
+		assertEquals(255, br.bytes[br.offset + 3] & 255);
+		
+		NodePositions buffer = new NodePositions();
+		bp.decode(br, buffer);
+		assertEquals(4, buffer.size);
+		int[] expectedPos = new int[] {1, 254, 5, 255};
+		for (int i = 0; i < 4; i++) {
+			assertEquals(expectedPos[i], buffer.positions[i]);
+		}
+		assertEquals(0, buffer.offset);
+		
+		brs = bp.encode(new int[] {100, 121, 36, 210}, 1);
+		bp.decode(brs[0], buffer);
+		
+		assertEquals(8, buffer.size);
+		expectedPos = new int[] {100, 121, 36, 210};
+		for (int i = 4; i < 8; i++) {
+			assertEquals(expectedPos[i - 4], buffer.positions[i]);
+		}
+		assertEquals(0, buffer.offset);
+	}
 }

@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import org.apache.lucene.document.Document;
 import org.apache.lucene.index.AtomicReader;
 import org.apache.lucene.index.AtomicReaderContext;
 import org.apache.lucene.index.DocsAndPositionsEnum;
@@ -23,7 +24,7 @@ import au.edu.unimelb.csse.Operator;
  * @author sumukh
  * 
  */
-abstract class AbstractJoin {
+public abstract class AbstractJoin {
 
 	protected String[] labels;
 	protected PostingsAndFreq[] postingsFreqs;
@@ -31,6 +32,7 @@ abstract class AbstractJoin {
 	protected int currentContextPos = -1;
 	protected int atomicContextsCount;
 	Iterator<AtomicReaderContext> contextIter;
+	private AtomicReader reader;
 
 	protected int docID = -1;
 	protected Operator[] operators;
@@ -236,7 +238,7 @@ abstract class AbstractJoin {
 		final int[] docFreq = new int[labels.length];
 		while (!foundAll && contextIter.hasNext()) {
 			foundAll = true;
-			AtomicReader reader = contextIter.next().reader();
+			reader = contextIter.next().reader();
 			final Terms fieldTerms = reader.terms(Constants.FIELD_NAME);
 			final TermsEnum termsIterator = fieldTerms.iterator(null);
 			for (int i = 0; i < labels.length; i++) {
@@ -266,6 +268,9 @@ abstract class AbstractJoin {
 					}
 				} else {
 					postingsFreqs[i].reset(posEnum[i], docFreq[i], i, terms[i]);
+					if (parentPos[i] == -1) {
+						root = postingsFreqs[i];
+					}
 				}
 			}
 			setParentChild();
@@ -291,6 +296,10 @@ abstract class AbstractJoin {
 			setupPerAtomicContext();
 		}
 		return foundAll;
+	}
+	
+	public Document getDocument(int docId) throws IOException {
+		return reader.document(docId);
 	}
 
 	private void setParentChild() {
