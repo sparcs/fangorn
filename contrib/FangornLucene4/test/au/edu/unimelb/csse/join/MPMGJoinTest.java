@@ -89,4 +89,12 @@ public class MPMGJoinTest extends PairJoinTestCase {
 		assertNodePairPositions(new int[] { 1, 3, 1, 6 }, new int[] { 2, 3, 3,
 				3 }, 5, lrdp.getPositionLength());
 	}
+	
+	public void testDoesNotMatch() throws Exception {
+		String sent = "(S1 (S (S (NP (NNP Chubb)) (VP (VBP &amp))) (: ;) (S (NP (NNP Co) (NN insurance) (NN company)) (VP (VP (AUX was) (RB not) (VP (VBN convinced) (PP (IN of) (NP (NP (DT the) (NN claim)) (PP (IN of) (NP (VBN stolen) (NN jewelry))))))) (CC and) (VP ( VBD accused) (NP (NNP Millard)) (PP (IN of) (NP (NN insurance) (NN fraud)))))) (. .)))";
+		IndexReader r = setupIndexWithDocs(sent);
+		DocsAndPositionsEnum vpPosEnum = initPrevGetNext(r, 28, 0, "NP", "VP");
+		
+		joinAndAssertOutput(0, 20, prev, Operator.DESCENDANT, vpPosEnum);
+	}
 }

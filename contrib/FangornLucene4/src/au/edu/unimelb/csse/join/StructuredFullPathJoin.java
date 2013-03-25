@@ -47,5 +47,11 @@ public class StructuredFullPathJoin extends StructuredPathJoin implements Comput
 		start.execute();
 		return execPipeline.results;
 	}
+	
+	@Override
+	public void setupPerAtomicContext() {
+		super.setupPerAtomicContext();
+		start = execPipeline.createExecPipeline(root, operators);
+	}
 
 }

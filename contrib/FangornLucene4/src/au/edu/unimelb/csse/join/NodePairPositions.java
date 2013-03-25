@@ -57,8 +57,8 @@ public class NodePairPositions {
 			expand();
 		}
 		int pos = getInsertPos(prev, next, npa);
-		System.arraycopy(node1, pos * length, node1, pos * length + length, size - pos);
-		System.arraycopy(node2, pos * length, node2, pos * length + length, size - pos);
+		System.arraycopy(node1, pos * length, node1, pos * length + length, size - pos * length);
+		System.arraycopy(node2, pos * length, node2, pos * length + length, size - pos * length);
 		for (int i = 0; i < length; i++) {
 			node1[pos * length + i] = prev.positions[prev.offset + i];
 			node2[pos * length + i] = next.positions[next.offset + i];

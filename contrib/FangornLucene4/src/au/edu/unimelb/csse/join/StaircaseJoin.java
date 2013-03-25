@@ -43,21 +43,20 @@ public class StaircaseJoin extends AbstractPairJoin implements HalfPairJoin {
 	}
 
 	@Override
-	public void match(NodePositions prev, Operator op,
-			NodePositions next, NodePositions... buffers) throws IOException {
+	public void match(NodePositions prev, Operator op, NodePositions next,
+			NodePositions... buffers) throws IOException {
 		prev.offset = 0;
 		prune(prev, op, buffers);
 		next.offset = 0;
 		doJoin(prev, op, next, buffers);
 	}
 
-	private void doJoin(NodePositions prev, Operator op,
-			NodePositions next, NodePositions... buffers) {
+	private void doJoin(NodePositions prev, Operator op, NodePositions next,
+			NodePositions... buffers) {
 		NodePositions result = buffers[0];
 		result.reset();
 
-		if (Operator.FOLLOWING.equals(op)
-				|| Operator.PRECEDING.equals(op)) {
+		if (Operator.FOLLOWING.equals(op) || Operator.PRECEDING.equals(op)) {
 			for (next.offset = 0; next.offset < next.size; next.offset += positionLength) {
 				if (op.match(prev, next, operatorAware)) {
 					result.push(next, positionLength);
@@ -89,52 +88,36 @@ public class StaircaseJoin extends AbstractPairJoin implements HalfPairJoin {
 			}
 		} else if (Operator.CHILD.equals(op)) {
 			// similar to MPMG join but the marker is on poff here
-			int pmark = 0;
-			while (next.offset < next.size && prev.offset < prev.size) {
-				if (op.match(prev, next, operatorAware)) {
-					result.push(next, positionLength);
-					next.offset += positionLength;
-					prev.offset = pmark;
-				} else if (operatorAware.following(prev.positions, prev.offset,
-						next.positions, next.offset)) {
-					prev.offset += positionLength;
-					pmark = prev.offset;
-				} else if (operatorAware.descendant(prev.positions,
-						prev.offset, next.positions, next.offset)) {
-					prev.offset += positionLength;
-					if (prev.offset == prev.size) {
-						next.offset += positionLength;
-						prev.offset = pmark;
+			while (next.offset < next.size) {
+				prev.offset = 0;
+				while (prev.offset < prev.size) {
+					if (op.match(prev, next, operatorAware)) {
+						result.push(next, positionLength);
+						break;
+					} else if (operatorAware.startsAfter(prev.positions,
+							prev.offset, next.positions, next.offset)) {
+						prev.offset += positionLength;
+					} else { // N is preceding or ancestor
+						break;
 					}
-				} else { // is preceding or ancestor
-					next.offset += positionLength;
-					prev.offset = pmark;
 				}
+				next.offset += positionLength;
 			}
 		} else if (Operator.PARENT.equals(op)) {
 			// skip the first few precedings
-			int pmark = 0;
-			while (next.offset < next.size && prev.offset < prev.size) {
-				if (op.match(prev, next, operatorAware)) {
-					result.push(next, positionLength);
-					next.offset += positionLength;
-					prev.offset = pmark;
-				} else if (pmark == prev.offset
-						&& operatorAware.following(prev.positions, prev.offset,
-								next.positions, next.offset)) {
-					prev.offset += positionLength;
-					pmark = prev.offset;
-				} else if (operatorAware.startsBefore(prev.positions,
-						prev.offset, next.positions, next.offset)) {
-					next.offset += positionLength;
-					prev.offset = pmark;
-				} else {
+			while (next.offset < next.size) {
+				prev.offset = 0;
+				while (prev.offset < prev.size) {
+					if (op.match(prev, next, operatorAware)) {
+						result.push(next, positionLength);
+						break;
+					} else if (operatorAware.preceding(prev.positions, prev.offset, next.positions, next.offset)) {
+						//commenting out this else block will give the same number of results but with fewer no. of comparisons
+						break;
+					}
 					prev.offset += positionLength;
 				}
-				if (prev.offset >= prev.size && next.offset < next.size) {
-					prev.offset = pmark;
-					next.offset += positionLength;
-				}
+				next.offset += positionLength;
 			}
 		}
 	}

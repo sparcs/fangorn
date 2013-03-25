@@ -181,7 +181,7 @@ public class StaircaseJoinTest extends PairJoinTestCase {
 				+ "(AA(PP WW)(AA(DD(CC WW)))(CC WW))" + "(ZZ(CC WW))"
 				+ "(AA(FF WW))" + "(AA(CC(AA(DD(CC WW))))))");
 		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 28, 0, "AA", "CC");
-		joinAndAssertOutput(16, 35, prev, Operator.CHILD, posEnum);
+		joinAndAssertOutput(16, 54, prev, Operator.CHILD, posEnum);
 		assertPositions(new int[] { 1, 2, 3, 3, 2, 3, 2, 5, 5, 6, 2, 11, 8, 9,
 				2, 20 }, 12, buffer);
 	}
@@ -195,13 +195,27 @@ public class StaircaseJoinTest extends PairJoinTestCase {
 	public void testChildOp() throws Exception {
 		IndexReader r = setupIndexWithDocs("(SS(CC WW)(PP(CC WW)(JJ WW))(PP(QQ(CC WW))(PP(CC WW)(ZZ WW))))");
 		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 12, 0, "PP", "CC");
-		joinAndAssertOutput(8, 16, prev, Operator.CHILD, posEnum);
+		joinAndAssertOutput(8, 14, prev, Operator.CHILD, posEnum);
 	}
 
 	public void testParentOp() throws Exception {
 		IndexReader r = setupIndexWithDocs("(SS(CC WW)(PP(CC WW)(JJ WW))(PP(QQ(CC WW))(PP(CC WW)(ZZ WW))))");
 		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 16, 0, "CC", "PP");
-		joinAndAssertOutput(8, 11, prev, Operator.PARENT, posEnum);
+		joinAndAssertOutput(8, 18, prev, Operator.PARENT, posEnum);
+	}
+	
+	public void testChildError() throws Exception {
+		String sent = "(S1 (S (PP (IN In) (NP (NP (NNP September)) (, ,) (NP (CD 2008)))) (, ,) (NP (DT the) (NN organization)) (VP (VBD marked) (NP (NP (NP (DT the) (JJ 5th) ('' ') (NN anniversary) ('' ')) (PP (IN of) (NP (NP (NP (DT the) (NNP RIAA) (POS 's)) (NN litigation) (NN campaign)) (PP (IN by) (S (VP (VBG publishing) (NP (DT a) (ADJP (RB highly) (JJ critical)) (, ,) (JJ detailed) (NN report))))) (, ,) (VP (VBN entitled) ('' ') (NP (NNP RIAA)) (PP (IN v.) (NP (NNP The) (NNP People))))))) (: :) (NP (NP (CD Five) (NNS Years)) (RB Later) (POS '))) (, ,) (S (VP (VBG concluding) (SBAR (IN that) (S (NP (DT the) (NN campaign)) (VP (AUX was) (NP (DT a) (NN failure)))))))) (. .)))";
+		IndexReader r = setupIndexWithDocs(sent);
+		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 68, 0, "NP", "VP");
+		joinAndAssertOutput(4, 113, prev, Operator.CHILD, posEnum);
+	}
+	
+	public void testParentError() throws Exception {
+		String sent = "(S1 (S (PP (IN In) (NP (NP (NNP September)) (, ,) (NP (CD 2008)))) (, ,) (NP (DT the) (NN organization)) (VP (VBD marked) (NP (NP (NP (DT the) (JJ 5th) ('' ') (NN anniversary) ('' ')) (PP (IN of) (NP (NP (NP (DT the) (NNP RIAA) (POS 's)) (NN litigation) (NN campaign)) (PP (IN by) (S (VP (VBG publishing) (NP (DT a) (ADJP (RB highly) (JJ critical)) (, ,) (JJ detailed) (NN report))))) (, ,) (VP (VBN entitled) ('' ') (NP (NNP RIAA)) (PP (IN v.) (NP (NNP The) (NNP People))))))) (: :) (NP (NP (CD Five) (NNS Years)) (RB Later) (POS '))) (, ,) (S (VP (VBG concluding) (SBAR (IN that) (S (NP (DT the) (NN campaign)) (VP (AUX was) (NP (DT a) (NN failure)))))))) (. .)))";
+		IndexReader r = setupIndexWithDocs(sent);
+		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 20, 0, "VP", "NP");
+		joinAndAssertOutput(4, 99, prev, Operator.PARENT, posEnum);
 	}
 
 }

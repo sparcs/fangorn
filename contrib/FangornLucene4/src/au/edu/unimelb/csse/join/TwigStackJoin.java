@@ -59,9 +59,9 @@ public class TwigStackJoin extends AbstractHolisticJoin {
 		int[] stack = positionStacks[node.position];
 		int stackSize = positionStacksSizes[node.position];
 		while (stackSize > 0
-				&& operatorAware.following(stack, (stackSize - 1)
-						* stackLength, positions, pfIdx
-						* positionLength)) {
+				&& operatorAware.following(stack,
+						(stackSize - 1) * stackLength, positions, pfIdx
+								* positionLength)) {
 			stackSize--;
 		}
 		positionStacksSizes[node.position] = stackSize;
@@ -98,6 +98,10 @@ public class TwigStackJoin extends AbstractHolisticJoin {
 			}
 		}
 		int pfIdx = pfIdxByPfPos[pf.position];
+		if (maxIdx == -1 && minIdx == -1) {
+			if (maxPosReached[pfIdx]) return -1;
+			return pfIdx;
+		}
 		if (maxPosReached[pfIdx])
 			return minIdx;
 		while (nextPosCalledCount[pfIdx] <= freqs[pfIdx]

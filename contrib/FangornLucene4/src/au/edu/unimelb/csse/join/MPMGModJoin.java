@@ -52,7 +52,7 @@ public class MPMGModJoin extends AbstractPairJoin implements FullPairJoin {
 			nodePositionAware.getNextPosition(buffer, node);
 			numNextRead++;
 			prev.offset = pmark;
-			while (operatorAware.following(prev.positions, prev.offset, buffer.positions, buffer.offset)) {
+			while (prev.offset < prev.size & operatorAware.following(prev.positions, prev.offset, buffer.positions, buffer.offset)) {
 				// skip before
 				prev.offset += positionLength;
 				pmark = prev.offset;
