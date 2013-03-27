@@ -82,6 +82,9 @@ public class FullPairJoinPipeline {
 			} else {
 				if (nodePositionAware.compare(result, position * length,
 						prevPositions.positions, prevPositions.offset) != 0) {
+					while (prevPositions.size + length > prevPositions.positions.length) {
+						prevPositions.expand();
+					}
 					for (int i = 0; i < length; i++) {
 						prevPositions.positions[prevPositions.size + i] = result[position
 								* length + i];

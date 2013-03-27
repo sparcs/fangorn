@@ -181,7 +181,7 @@ public class PathStackJoinTest extends HolisticJoinTestCase {
 		ps.setup(r);
 		ps.nextDoc();
 		List<int[]> matches = ps.match();
-		assertNull(matches);
+		assertEquals(0, matches.size());
 	}
 
 	public void testRepeatMatch() throws Exception {
