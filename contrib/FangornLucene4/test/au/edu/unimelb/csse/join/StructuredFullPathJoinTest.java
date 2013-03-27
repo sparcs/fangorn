@@ -2,6 +2,7 @@ package au.edu.unimelb.csse.join;
 
 import java.util.List;
 
+import org.apache.lucene.index.DocsAndPositionsEnum;
 import org.apache.lucene.index.IndexReader;
 
 import au.edu.unimelb.csse.IndexTestCase;
@@ -81,6 +82,26 @@ public class StructuredFullPathJoinTest extends IndexTestCase {
 			List<int[]> results = sfpj.match();
 			assertEquals(0, results.size());
 		}
+	}
+
+	public void testBranchedQuery() throws Exception {
+		LogicalNodePositionAware lrdp = new LRDP(new BytePacking(4));
+		StructuredFullPathJoin join = new StructuredFullPathJoin(new String[] {
+				"S", "VP", "PP", "IN", "NP", "VBN" }, new int[] { -1, 0, 1, 2,
+				2, 4 },
+				new Operator[] { Operator.DESCENDANT, Operator.CHILD,
+						Operator.CHILD, Operator.CHILD, Operator.CHILD,
+						Operator.CHILD }, new StackTreeJoin(lrdp), lrdp);
+
+		String sent = "(S1 (S (NP (PRP He)) (ADVP (RB first)) (VP (VBZ appears) (PP (IN in) (NP (DT the) (VBN animated) (NN series))) (PP (IN in) (NP (DT the) (DT A) (NNP Real) (NNP American) (NN Hero) (NNS mini-series)))) (. .)))";
+		IndexReader r = setupIndexWithDocs(sent);
+
+		join.setup(r);
+		int docid = join.nextDoc();
+		assertEquals(0, docid);
+
+		List<int[]> results = join.match();
+		assertEquals(1, results.size());
 	}
 
 }

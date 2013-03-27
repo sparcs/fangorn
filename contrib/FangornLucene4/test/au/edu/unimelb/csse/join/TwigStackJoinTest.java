@@ -54,15 +54,16 @@ public class TwigStackJoinTest extends HolisticJoinTestCase {
 		int doc = ts.nextDoc();
 		assertEquals(0, doc);
 
-		/**
-		 * nodes with ids: (A1(A2(E1 J1)(B1 D1))(A3(B2(C1 E2)(E3
-		 * D2)))(A4(D3(B3(A5(C2 J2)))(E4(D4 E5)))))
+		/*-
+		 * nodes with ids:
+		 * (A1(A2(E1 J1)(B1 D1))(A3(B2(C1 E2)(E3 D2)))(A4(D3(B3(A5(C2 J2)))(E4(D4 E5)))))
 		 * 
-		 * positionsLists: A: (5): [[0, 6, 0, 0], [0, 2, 1, 15], [2, 4, 1, 15],
-		 * [4, 6, 1, 15], [4, 5, 4, 10]] B: (3): [[1, 2, 2, 3], [2, 4, 2, 7],
-		 * [4, 5, 3, 13]] C: (2): [[2, 3, 3, 6], [4, 5, 5, 9]] D: (4): [[1, 2,
-		 * 3, 2], [3, 4, 4, 5], [4, 6, 2, 14], [5, 6, 4, 12]] E: (5): [[0, 1, 2,
-		 * 3], [2, 3, 4, 4], [3, 4, 3, 6], [5, 6, 3, 13], [5, 6, 5, 11]]
+		 * positionsLists:
+		 * A: (5): [[0, 6, 0, 0], [0, 2, 1, 15], [2, 4, 1, 15], [4, 6, 1, 15], [4, 5, 4, 10]]
+		 * B: (3): [[1, 2, 2, 3], [2, 4, 2, 7], [4, 5, 3, 13]]
+		 * C: (2): [[2, 3, 3, 6], [4, 5, 5, 9]]
+		 * D: (4): [[1, 2, 3, 2], [3, 4, 4, 5], [4, 6, 2, 14], [5, 6, 4, 12]]
+		 * E: (5): [[0, 1, 2, 3], [2, 3, 4, 4], [3, 4, 3, 6], [5, 6, 3, 13], [5, 6, 5, 11]]
 		 */
 		assertIntArray(new int[] { 0, 6, 0, 0, 1, 2, 2, 3, 2, 3, 3, 6, 1, 2, 3,
 				2, 0, 1, 2, 3 }, ts.positions);
@@ -198,14 +199,39 @@ public class TwigStackJoinTest extends HolisticJoinTestCase {
 		assertEquals(-1, minPos); // end
 	}
 
-	/**
+	/*-
 	 * Tree with indexes:
 	 * 
-	 * (A [0,6,0,0] (A [0,2,1,15] (E [0,1,2,3] J) [0,1,3,1] (B [1,2,2,3] D)
-	 * [1,2,3,2] ) (A [2,4,1,15] (B [2,4,2,7] (C [2,3,3,6] E) [2,3,4,4] (E
-	 * [3,4,3,6] D) [3,4,4,5] ) ) (A [4,6,1,15] (D [4,6,2,14] (B [4,5,3,13] (A
-	 * [4,5,4,10] (C [4,5,5,9] J) [4,5,6,8] ) ) (E [5,6,3,13] (D [5,6,4,12] E)
-	 * [5,6,5,11] ) ) ) )
+	 * (A  [0,6,0,0]
+	 *    (A   [0,2,1,15]
+	 *       (E   [0,1,2,3]
+	 *          J)   [0,1,3,1]
+	 *       (B   [1,2,2,3]
+	 *          D)   [1,2,3,2]
+	 *    )
+	 *    (A   [2,4,1,15]
+	 *       (B   [2,4,2,7]
+	 *          (C   [2,3,3,6]
+	 *             E)   [2,3,4,4]
+	 *          (E   [3,4,3,6]
+	 *             D)   [3,4,4,5]
+	 *       )
+	 *    )
+	 *    (A   [4,6,1,15]
+	 *       (D   [4,6,2,14]
+	 *          (B   [4,5,3,13]
+	 *             (A   [4,5,4,10]
+	 *                (C   [4,5,5,9]
+	 *                   J)   [4,5,6,8]
+	 *             )
+	 *          )
+	 *          (E   [5,6,3,13]
+	 *             (D   [5,6,4,12]
+	 *                E)   [5,6,5,11]
+	 *          )
+	 *       )
+	 *    )
+	 * )
 	 * 
 	 * @throws Exception
 	 */
@@ -253,15 +279,29 @@ public class TwigStackJoinTest extends HolisticJoinTestCase {
 				4, 12, 5, 6, 5, 11 }, eList.get(5));
 	}
 
-	/**
-	 * Query: A | B / \ C G / \ D H / \ \ E F I / \ J L | | K M
-	 * 
-	 * As list: A B C D E F G H I J K L M 0 1 2 3 4 5 6 7 8 9 10 11 12
-	 * 
-	 * Partial results at: E, F, K, M (as positions: 4, 5, 10, 12)
-	 * 
-	 * Intermediate merge nodes: B, D, I (as positions: 1, 3, 8)
-	 * 
+	/*-
+	 * Query:
+	 *         A
+	 *         |
+	 *         B
+	 *        / \
+	 *       C   G
+	 *      /     \
+	 *     D       H
+	 *    / \       \
+	 *   E   F       I
+	 *              / \
+	 *             J   L
+	 *             |   |
+	 *             K   M
+	 *   
+	 *  As list: A B C D E F G H I J K  L  M
+	 *           0 1 2 3 4 5 6 7 8 9 10 11 12
+	 *   
+	 *  Partial results at: E, F, K, M (as positions: 4, 5, 10, 12)
+	 *  
+	 *  Intermediate merge nodes: B, D, I (as positions: 1, 3, 8) 
+	 *  
 	 * @throws Exception
 	 */
 	public void testMergeNodeCreation() throws Exception {
@@ -378,13 +418,34 @@ public class TwigStackJoinTest extends HolisticJoinTestCase {
 		IndexWriter w = setupIndex();
 		String sent = "(S(NP(NP (JJ Critical) (NN reception))(PP(IN for)(NP (DT the) (NN show))))(VP(AUX has)(VP (AUX been)(ADJP (JJ mixed))))(. .))";
 		w.addDocument(getDoc(sent));
-		
+
 		IndexReader r = commitIndexAndOpenReader(w);
 		ts.setup(r);
 		ts.nextDoc();
-		
+
 		List<int[]> results = ts.match();
 		assertEquals(0, results.size());
+	}
+
+	/*-
+	 *  NP: (6): [[0, 11, 2, 27], [0, 2, 3, 19], [3, 10, 4, 18], [3, 6, 5, 16], [9, 10, 7, 14], [12, 15, 3, 25]]
+	 *  VP: (2): [[7, 10, 5, 16], [11, 15, 2, 27]]
+	 * 
+	 * @throws Exception
+	 */
+	public void testReturnsTwoResults() throws Exception {
+		TwigStackJoin ts = new TwigStackJoin(new String[] { "NP", "VP" },
+				new int[] { -1, 0 }, getDescOp(2), lrdp);
+
+		String sent = "(S1 (S (NP (NP (NNP Meir) (NNP Wilchek)) (PRN (-LRB- -LRB-) (NP (NP (NNP Hebrew) (: :) ('' ')) (, ,) (VP (VBN born) (PP (IN in) (NP (CD 1935))))) (-RRB- -RRB-))) (VP (AUX is) (NP (DT an) (JJ Israeli) (NN biochemist))) (. .)))";
+		IndexReader r = setupIndexWithDocs(sent);
+		ts.setup(r);
+
+		ts.nextDoc();
+
+		List<int[]> results = ts.match();
+
+		assertEquals(2, results.size());
 	}
 
 	private void assertMaxPosReached(boolean[] expected, TwigStackJoin ts) {

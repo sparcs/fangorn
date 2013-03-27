@@ -35,8 +35,7 @@ public class TwigStackJoin extends AbstractHolisticJoin {
 			if (pfIdx == -1) {
 				break;
 			}
-			if (!postingsFreqs[pfIdx].isLeaf
-					&& postingsFreqs[pfIdx].parent != null) {
+			if (postingsFreqs[pfIdx].parent != null) {
 				cleanStack(postingsFreqs[pfIdx].parent, pfIdx);
 			}
 			if (postingsFreqs[pfIdx].parent == null
@@ -231,13 +230,15 @@ public class TwigStackJoin extends AbstractHolisticJoin {
 				return partialResultsLists.get(position);
 			}
 			List<int[]> results = new ArrayList<int[]>();
-			List<int[]> prev = children.get(0).mergedResults();
+			List<int[]> prev = new ArrayList<int[]>();
+			prev.addAll(children.get(0).mergedResults());
 			Collections.sort(prev, ancPathComp);
 			for (int i = 1; i < children.size(); i++) {
 				List<int[]> next = children.get(i).mergedResults();
 				Collections.sort(next, ancPathComp);
 				int[] descIdxArr = descPos.get(i);
 				int prevSkip = 0;
+				results.clear();
 				for (int j = 0; j < next.size(); j++) {
 					for (int k = prevSkip; k < prev.size(); k++) {
 						int[] pr = prev.get(k);
@@ -261,7 +262,8 @@ public class TwigStackJoin extends AbstractHolisticJoin {
 						}
 					}
 				}
-				prev = results;
+				prev.clear();
+				prev.addAll(results);
 			}
 			return results;
 		}

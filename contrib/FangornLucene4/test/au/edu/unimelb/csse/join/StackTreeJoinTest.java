@@ -70,5 +70,5 @@ public class StackTreeJoinTest extends PairJoinTestCase {
 		assertNodePairPositions(new int[] { 1, 3, 1, 6 }, new int[] { 2, 3, 3,
 				3 }, 5, lrdp.getPositionLength());
 	}
-
+	
 }
