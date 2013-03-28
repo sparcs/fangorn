@@ -37,7 +37,7 @@ public class CorrectnessTest {
 
 	private void run() throws IOException {
 		Queries queries = new Queries();
-		for (int i = 26; i < 27; i++) {
+		for (int i = 0; i < Queries.SIZE; i++) {
 			TreeQuery query = queries.getQuery(i);
 			Map<Integer, List<JoinType>> numDocsJoinType = new HashMap<Integer, List<JoinType>>();
 			Map<Integer, List<JoinType>> numMatchesJoinType = new HashMap<Integer, List<JoinType>>();
