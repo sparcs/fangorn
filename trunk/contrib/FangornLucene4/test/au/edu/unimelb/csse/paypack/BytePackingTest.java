@@ -92,4 +92,13 @@ public class BytePackingTest extends IndexTestCase {
 		}
 		assertEquals(0, buffer.offset);
 	}
+	
+	public void testEncodeNumLargerThan255ThrowsException() throws Exception {
+		try {
+			bp.encode(new int[]{1, 300, 5, 315}, 1);
+			fail("expected exception");
+		} catch (PayloadFormatException pfe) {
+			//do nothing
+		}
+	}
 }
