@@ -34,10 +34,10 @@ public class CreateIndex {
 	private IndexWriter writer;
 	private AtomicInteger sentIndexedCount = new AtomicInteger(0);
 	private FieldType ft;
-	private static final int BUF_SIZE = 510;
-	private static final int CPU_CORES = 4;
-	private static final int THREAD_POOL_SIZE = (int) Math
-			.round(CPU_CORES * 1.5);
+//	private static final int BUF_SIZE = 510;
+//	private static final int CPU_CORES = 4;
+//	private static final int THREAD_POOL_SIZE = (int) Math
+//			.round(CPU_CORES * 1.5);
 	private FieldType docNumField;
 
 	public CreateIndex(String srcDir, String indexDir) throws IOException {

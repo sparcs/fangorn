@@ -2,7 +2,6 @@ package au.edu.unimelb.csse.join;
 
 import java.util.List;
 
-import org.apache.lucene.index.DocsAndPositionsEnum;
 import org.apache.lucene.index.IndexReader;
 
 import au.edu.unimelb.csse.IndexTestCase;
