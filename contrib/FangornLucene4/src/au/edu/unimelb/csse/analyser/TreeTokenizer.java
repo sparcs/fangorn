@@ -289,7 +289,8 @@ public class TreeTokenizer extends Tokenizer {
 			payloadBytesRefs = nodePositionAware.encode(
 					payloads, numTokens);
 		} catch (PayloadFormatException e) {
-			throw new ParseException(e.getMessage());
+			throw new ParseException("Cannot parse sentence " + sentence
+					+ "." + e.getMessage());
 		}
 	}
 
