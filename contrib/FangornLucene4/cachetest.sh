@@ -5,7 +5,7 @@ file=`echo "$fileprefix$mem"`;
 for query in `seq 0 28`; do
 for join in 'MPMG1' 'MPMG2' 'STACKTREE' 'MPMG3' 'STAIRCASE' 'TWIGSTACK' 'PATHSTACK'; do
 sudo sh clearcache.sh;
-java -Xmx${mem}m -cp .:./fangornL4.jar:./lib/lucene-core-4.0-SNAPSHOT.jar:./lib/lucene-analyzers-common-4.0-SNAPSHOT.jar -Xmx6144m au.edu.unimelb.csse.exp.CacheEffectTest $join $query | tee -a $file;
+java -Xmx${mem}m -cp .:./fangornL4.jar:./lib/lucene-core-4.0-SNAPSHOT.jar:./lib/lucene-analyzers-common-4.0-SNAPSHOT.jar au.edu.unimelb.csse.exp.CacheEffectTest $join $query | tee -a $file;
 done;
 done;
 done;
