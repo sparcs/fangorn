@@ -4,11 +4,10 @@ import junit.framework.TestCase;
 
 import org.junit.Test;
 
-import au.edu.unimelb.csse.paypack.BytePacking;
 import au.edu.unimelb.csse.paypack.LRDP;
 
 public class NodePairPositionsTest extends TestCase {
-	private LRDP lrdp = new LRDP(new BytePacking(4));
+	private LRDP lrdp = new LRDP(LRDP.PhysicalPayloadFormat.BYTE1111);
 
 	public void testSortedAddIntoEmptyJustAdds() throws Exception {
 		NodePairPositions npp = new NodePairPositions();

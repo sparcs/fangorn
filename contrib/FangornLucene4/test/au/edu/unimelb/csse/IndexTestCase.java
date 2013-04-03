@@ -27,7 +27,6 @@ import org.junit.Before;
 
 import au.edu.unimelb.csse.analyser.TreeAnalyzer;
 import au.edu.unimelb.csse.join.NodePositions;
-import au.edu.unimelb.csse.paypack.BytePacking;
 import au.edu.unimelb.csse.paypack.LRDP;
 
 public abstract class IndexTestCase extends TestCase {
@@ -57,7 +56,7 @@ public abstract class IndexTestCase extends TestCase {
 	}
 
 	protected IndexWriter setupIndex() throws IOException {
-		Analyzer a = new TreeAnalyzer(new LRDP(new BytePacking(4)));
+		Analyzer a = new TreeAnalyzer(new LRDP(LRDP.PhysicalPayloadFormat.BYTE1111));
 		IndexWriterConfig c = new IndexWriterConfig(Version.LUCENE_40, a);
 		IndexWriter w = new IndexWriter(d, c);
 		return w;

@@ -3,11 +3,10 @@ package au.edu.unimelb.csse.join;
 import au.edu.unimelb.csse.IndexTestCase;
 import au.edu.unimelb.csse.Operator;
 import au.edu.unimelb.csse.join.AbstractJoin.PostingsAndFreq;
-import au.edu.unimelb.csse.paypack.BytePacking;
 import au.edu.unimelb.csse.paypack.LRDP;
 
 public abstract class HolisticJoinTestCase extends IndexTestCase {
-	protected LRDP lrdp = new LRDP(new BytePacking(4));
+	protected LRDP lrdp = new LRDP(LRDP.PhysicalPayloadFormat.BYTE1111);
 
 	/**
 	 * PostingsAndFreq array should be sorted first by docFreq and then by their

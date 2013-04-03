@@ -12,12 +12,11 @@ import au.edu.unimelb.csse.join.AbstractJoin.PostingsAndFreq;
 import au.edu.unimelb.csse.join.FullPairJoinPipeline.FirstPipe;
 import au.edu.unimelb.csse.join.FullPairJoinPipeline.Pipe;
 import au.edu.unimelb.csse.join.FullPairJoinPipeline.SimplePipe;
-import au.edu.unimelb.csse.paypack.BytePacking;
 import au.edu.unimelb.csse.paypack.LRDP;
 import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
 
 public class FullPairJoinPipelineTest extends IndexTestCase {
-	private LogicalNodePositionAware lrdp = new LRDP(new BytePacking(4));
+	private LogicalNodePositionAware lrdp = new LRDP(LRDP.PhysicalPayloadFormat.BYTE1111);
 	private FullPairJoin join = new MPMGJoin(lrdp);
 
 	public void testCreatesOneNodeDescPipeline() throws Exception {

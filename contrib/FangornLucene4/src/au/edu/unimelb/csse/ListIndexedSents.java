@@ -16,7 +16,6 @@ import java.util.zip.GZIPInputStream;
 import au.edu.unimelb.csse.analyser.SentenceAndMetaData;
 import au.edu.unimelb.csse.analyser.SentenceTokenizer;
 import au.edu.unimelb.csse.analyser.TreeTokenizer;
-import au.edu.unimelb.csse.paypack.BytePacking;
 import au.edu.unimelb.csse.paypack.LRDP;
 
 public class ListIndexedSents {
@@ -34,7 +33,7 @@ public class ListIndexedSents {
 				new StringReader("DUMMY")));
 		this.sentenceFile = sentenceFile;
 		writer = new BufferedWriter(new FileWriter(new File(sentenceFile)));
-		LRDP nodePositionAware = new LRDP(new BytePacking(4));
+		LRDP nodePositionAware = new LRDP(LRDP.PhysicalPayloadFormat.BYTE1111);
 		tokenizer = new TreeTokenizer(new StringReader(""), nodePositionAware);
 	}
 

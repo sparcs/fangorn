@@ -12,32 +12,33 @@ import org.apache.lucene.store.MMapDirectory;
 
 import au.edu.unimelb.csse.join.ComputesBooleanResult;
 import au.edu.unimelb.csse.join.ComputesFullResults;
-import au.edu.unimelb.csse.paypack.BytePacking;
-import au.edu.unimelb.csse.paypack.BytePacking2212;
 import au.edu.unimelb.csse.paypack.LRDP;
+import au.edu.unimelb.csse.paypack.LRDP.PhysicalPayloadFormat;
 import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
 
 public class CacheEffectTest {
-	private static final LogicalNodePositionAware LRDP = new LRDP(
-			new BytePacking2212());
+	private final LogicalNodePositionAware lrdp;
 	private static final String INDEX_DIR = "/opt/wiki-index-all";
 	private static final int TIMES = 6;
 	private IndexReader reader;
-	
-	public CacheEffectTest() throws IOException {
+
+	public CacheEffectTest(PhysicalPayloadFormat ppf) throws IOException {
+		lrdp = new LRDP(ppf);
 		Directory directory = MMapDirectory.open(new File(INDEX_DIR));
 		reader = DirectoryReader.open(directory);
 	}
 
 	public static void main(String[] args) throws IOException {
-		if (args.length != 2) {
+		if (args.length != 3) {
 			throw new IllegalArgumentException(
-					"Program expects two parameters: <jointype> <querynum>");
+					"Program expects two parameters: <jointype> <querynum> <physicalbyteformat>");
 		}
 		String joinTypeString = args[0];
 		JoinType joinType = JoinType.valueOf(joinTypeString);
 		int queryNum = Integer.valueOf(args[1]);
-		CacheEffectTest test = new CacheEffectTest();
+		LRDP.PhysicalPayloadFormat ppf = LRDP.PhysicalPayloadFormat
+				.valueOf(args[2]);
+		CacheEffectTest test = new CacheEffectTest(ppf);
 		test.run(joinType, queryNum);
 
 	}
@@ -50,16 +51,18 @@ public class CacheEffectTest {
 		boolean returnsFullResults = joinType.returnsFullResults();
 		for (int i = 0; i < TIMES; i++) {
 			if (returnsFullResults) {
-				execute(joinType.getFullJoin(query, LRDP), reader, joinType, queryNum);
+				execute(joinType.getFullJoin(query, lrdp), reader, joinType,
+						queryNum);
 			} else {
-				execute(joinType.getBooleanJoin(query, LRDP), reader, joinType, queryNum);
+				execute(joinType.getBooleanJoin(query, lrdp), reader, joinType,
+						queryNum);
 			}
 		}
 
 	}
 
-	private void execute(ComputesBooleanResult join,
-			IndexReader r, JoinType joinType, int queryId) throws IOException {
+	private void execute(ComputesBooleanResult join, IndexReader r,
+			JoinType joinType, int queryId) throws IOException {
 		int numResultDocs = 0;
 		int docId = -1;
 		long startTime = System.nanoTime();
@@ -73,8 +76,8 @@ public class CacheEffectTest {
 			docId = join.nextDoc();
 		}
 		long endTime = System.nanoTime();
-		System.out.println(queryId + "," + joinType.getId() + "," + numResultDocs + ","
-				+ (endTime - startTime) / 1000000);
+		System.out.println(queryId + "," + joinType.getId() + ","
+				+ numResultDocs + "," + (endTime - startTime) / 1000000);
 	}
 
 	private void execute(ComputesFullResults join, IndexReader r,
@@ -95,7 +98,8 @@ public class CacheEffectTest {
 			docId = join.nextDoc();
 		}
 		long endTime = System.nanoTime();
-		System.out.println(queryId + "," + joinType.getId() + "," + numResultDocs + ","
-				+ (endTime - startTime) / 1000000 + "," + totalMatches);
+		System.out.println(queryId + "," + joinType.getId() + ","
+				+ numResultDocs + "," + (endTime - startTime) / 1000000 + ","
+				+ totalMatches);
 	}
 }

@@ -9,7 +9,6 @@ import org.junit.Before;
 
 import au.edu.unimelb.csse.IndexTestCase;
 import au.edu.unimelb.csse.Operator;
-import au.edu.unimelb.csse.paypack.BytePacking;
 import au.edu.unimelb.csse.paypack.LRDP;
 
 public abstract class PairJoinTestCase extends IndexTestCase {
@@ -24,8 +23,7 @@ public abstract class PairJoinTestCase extends IndexTestCase {
 	@Before
 	protected void setUp() throws Exception {
 		super.setUp();
-		lrdp = new LogicalNodePositionDecorator(new LRDP(new BytePacking(
-				LRDP.POSITION_LENGTH)));
+		lrdp = new LogicalNodePositionDecorator(new LRDP(LRDP.PhysicalPayloadFormat.BYTE1111));
 		countingOperatorAware = lrdp.getCountingBinaryOperator();
 		result = new NodePairPositions();
 		buffer = new NodePositions();

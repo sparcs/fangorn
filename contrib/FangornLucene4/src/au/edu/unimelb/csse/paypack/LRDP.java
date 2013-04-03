@@ -20,8 +20,8 @@ public class LRDP implements LogicalNodePositionAware {
 	private PhysicalPayloadFormatAware physicalFormat;
 	private OperatorAware binaryOperatorHandler;
 
-	public LRDP(PhysicalPayloadFormatAware physicalFormat) {
-		this.physicalFormat = physicalFormat;
+	public LRDP(PhysicalPayloadFormat ppf) {
+		this.physicalFormat = ppf.getPhysicalPFA();
 		this.binaryOperatorHandler = new LRDPOperators();
 	}
 
@@ -207,6 +207,20 @@ public class LRDP implements LogicalNodePositionAware {
 			return depthDiff;
 		}
 		return pos1[off1 + PARENT] - pos2[off2 + PARENT];
+	}
+	
+	public static enum PhysicalPayloadFormat {
+		BYTE1111(new BytePacking(4)), BYTE2212(new BytePacking2212());
+		
+		private PhysicalPayloadFormatAware ppfa;
+		
+		PhysicalPayloadFormat(PhysicalPayloadFormatAware ppfa) {
+			this.ppfa = ppfa;
+		}
+
+		public PhysicalPayloadFormatAware getPhysicalPFA() {
+			return ppfa;
+		}
 	}
 
 }

@@ -25,7 +25,6 @@ import org.apache.lucene.util.Version;
 import org.junit.Before;
 import org.junit.Test;
 
-import au.edu.unimelb.csse.paypack.BytePacking;
 import au.edu.unimelb.csse.paypack.LRDP;
 
 public class TreeAnalyzerTest extends TestCase {
@@ -36,7 +35,7 @@ public class TreeAnalyzerTest extends TestCase {
 	@Before
 	public void setUp() throws Exception {
 		d = new RAMDirectory();
-		Analyzer a = new TreeAnalyzer(new LRDP(new BytePacking(4)));
+		Analyzer a = new TreeAnalyzer(new LRDP(LRDP.PhysicalPayloadFormat.BYTE1111));
 		IndexWriterConfig c = new IndexWriterConfig(Version.LUCENE_40, a);
 		IndexWriter w = new IndexWriter(d, c);
 		w.addDocument(getDoc("(AA BB)")); // doc 0

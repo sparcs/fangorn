@@ -4,14 +4,13 @@ import org.apache.lucene.index.IndexReader;
 
 import au.edu.unimelb.csse.IndexTestCase;
 import au.edu.unimelb.csse.Operator;
-import au.edu.unimelb.csse.paypack.BytePacking;
 import au.edu.unimelb.csse.paypack.LRDP;
 import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
 
 public class StructuredBooleanPathJoinTest extends IndexTestCase {
 	public void testResults() throws Exception {
 
-		LogicalNodePositionAware lrdp = new LRDP(new BytePacking(4));
+		LogicalNodePositionAware lrdp = new LRDP(LRDP.PhysicalPayloadFormat.BYTE1111);
 
 		HalfPairJoin[] joins = new HalfPairJoin[] { new StaircaseJoin(lrdp),
 				new MPMGModSingleJoin(lrdp) };
