@@ -13,14 +13,15 @@ import org.apache.lucene.store.MMapDirectory;
 import au.edu.unimelb.csse.join.ComputesBooleanResult;
 import au.edu.unimelb.csse.join.ComputesFullResults;
 import au.edu.unimelb.csse.paypack.BytePacking;
+import au.edu.unimelb.csse.paypack.BytePacking2212;
 import au.edu.unimelb.csse.paypack.LRDP;
 import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
 
 public class CacheEffectTest {
 	private static final LogicalNodePositionAware LRDP = new LRDP(
-			new BytePacking(4));
-	private static final String INDEX_DIR = "/opt/wiki-index";
-	private static final int TIMES = 10;
+			new BytePacking2212());
+	private static final String INDEX_DIR = "/opt/wiki-index-all";
+	private static final int TIMES = 6;
 	private IndexReader reader;
 	
 	public CacheEffectTest() throws IOException {
