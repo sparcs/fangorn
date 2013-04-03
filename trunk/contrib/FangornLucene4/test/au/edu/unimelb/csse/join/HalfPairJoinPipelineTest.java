@@ -13,12 +13,11 @@ import au.edu.unimelb.csse.join.HalfPairJoinPipeline.GetRootNodePipe;
 import au.edu.unimelb.csse.join.HalfPairJoinPipeline.MetaPipe;
 import au.edu.unimelb.csse.join.HalfPairJoinPipeline.Pipe;
 import au.edu.unimelb.csse.join.HalfPairJoinPipeline.SimplePipe;
-import au.edu.unimelb.csse.paypack.BytePacking;
 import au.edu.unimelb.csse.paypack.LRDP;
 import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
 
 public class HalfPairJoinPipelineTest extends IndexTestCase {
-	private LogicalNodePositionAware npa = new LRDP(new BytePacking(4));
+	private LogicalNodePositionAware npa = new LRDP(LRDP.PhysicalPayloadFormat.BYTE1111);
 
 	public void testReturnsSingleGetAllPipeForDescendant1stOp()
 			throws Exception {

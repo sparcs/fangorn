@@ -4,7 +4,7 @@ import org.apache.lucene.util.BytesRef;
 
 import au.edu.unimelb.csse.join.NodePositions;
 
-public class BytePacking2212 implements PhysicalPayloadFormatAware {
+class BytePacking2212 implements PhysicalPayloadFormatAware {
 	private static final int _65280 = 0x0000FF00;
 	private static final int _255 = 0x000000FF;
 	private static final int BYTES_PER_POS = 7;

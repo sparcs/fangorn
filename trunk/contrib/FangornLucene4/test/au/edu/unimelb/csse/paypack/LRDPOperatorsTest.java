@@ -11,7 +11,7 @@ import au.edu.unimelb.csse.OperatorAware;
 import au.edu.unimelb.csse.join.NodePositions;
 
 public class LRDPOperatorsTest extends TestCase {
-	private LRDP lrdp = new LRDP(new BytePacking(4));
+	private LRDP lrdp = new LRDP(LRDP.PhysicalPayloadFormat.BYTE1111);
 	private OperatorAware opAware = lrdp.getBinaryOperatorHandler();
 
 	@Test

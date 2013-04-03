@@ -5,11 +5,10 @@ import java.util.Collections;
 import java.util.List;
 
 import au.edu.unimelb.csse.IndexTestCase;
-import au.edu.unimelb.csse.paypack.BytePacking;
 import au.edu.unimelb.csse.paypack.LRDP;
 
 public class NPAPathPositionComparatorTest extends IndexTestCase {
-	LRDP lrdp = new LRDP(new BytePacking(4));
+	LRDP lrdp = new LRDP(LRDP.PhysicalPayloadFormat.BYTE1111);
 
 	public void testSortingEqualPositionsLeavesItUnchanged() throws Exception {
 		NPAPathPositionComparator comparator = new NPAPathPositionComparator(

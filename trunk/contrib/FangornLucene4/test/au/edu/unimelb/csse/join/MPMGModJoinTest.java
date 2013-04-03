@@ -12,9 +12,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 import au.edu.unimelb.csse.Operator;
-import au.edu.unimelb.csse.paypack.BytePacking;
 import au.edu.unimelb.csse.paypack.LRDP;
-import au.edu.unimelb.csse.paypack.PhysicalPayloadFormatAware;
+import au.edu.unimelb.csse.paypack.LRDP.PhysicalPayloadFormat;
 
 public class MPMGModJoinTest extends PairJoinTestCase {
 
@@ -127,8 +126,7 @@ public class MPMGModJoinTest extends PairJoinTestCase {
 		List<NodePositions> nodePositions = setupPositionsList();
 		List<Integer> positions = new ArrayList<Integer>();
 		positions.add(1);// dummy
-		MPMGModJoin join = new MPMGModJoin(new LRDPMockPositions(
-				new BytePacking(4), nodePositions.iterator(),
+		MPMGModJoin join = new MPMGModJoin(new LRDPMockPositions(LRDP.PhysicalPayloadFormat.BYTE1111, nodePositions.iterator(),
 				positions.iterator()));
 		join.match(prev, Operator.CHILD, new DocsAndPositionsEnumStub(25),
 				result, buffer);
@@ -212,10 +210,10 @@ public class MPMGModJoinTest extends PairJoinTestCase {
 		Iterator<NodePositions> nodePositionIterator;
 		Iterator<Integer> positionsIterator;
 
-		public LRDPMockPositions(PhysicalPayloadFormatAware physicalFormat,
+		public LRDPMockPositions(PhysicalPayloadFormat ppf,
 				Iterator<NodePositions> nodePositionIterator,
 				Iterator<Integer> positionsIterator) {
-			super(new LRDP(new BytePacking(LRDP.POSITION_LENGTH)));
+			super(new LRDP(ppf));
 			this.nodePositionIterator = nodePositionIterator;
 			this.positionsIterator = positionsIterator;
 		}

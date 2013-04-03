@@ -6,13 +6,12 @@ import org.apache.lucene.index.IndexReader;
 
 import au.edu.unimelb.csse.IndexTestCase;
 import au.edu.unimelb.csse.Operator;
-import au.edu.unimelb.csse.paypack.BytePacking;
 import au.edu.unimelb.csse.paypack.LRDP;
 import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
 
 public class StructuredFullPathJoinTest extends IndexTestCase {
 	public void testReturnsResults() throws Exception {
-		LogicalNodePositionAware lrdp = new LRDP(new BytePacking(4));
+		LogicalNodePositionAware lrdp = new LRDP(LRDP.PhysicalPayloadFormat.BYTE1111);
 
 		FullPairJoin[] joins = new FullPairJoin[] { new MPMGJoin(lrdp),
 				new MPMGModJoin(lrdp), new StackTreeJoin(lrdp) };
@@ -58,7 +57,7 @@ public class StructuredFullPathJoinTest extends IndexTestCase {
 	}
 
 	public void testReturnsNoResults() throws Exception {
-		LogicalNodePositionAware lrdp = new LRDP(new BytePacking(4));
+		LogicalNodePositionAware lrdp = new LRDP(LRDP.PhysicalPayloadFormat.BYTE1111);
 
 		FullPairJoin[] joins = new FullPairJoin[] { new MPMGJoin(lrdp),
 				new MPMGModJoin(lrdp), new StackTreeJoin(lrdp) };
@@ -84,7 +83,7 @@ public class StructuredFullPathJoinTest extends IndexTestCase {
 	}
 
 	public void testBranchedQuery() throws Exception {
-		LogicalNodePositionAware lrdp = new LRDP(new BytePacking(4));
+		LogicalNodePositionAware lrdp = new LRDP(LRDP.PhysicalPayloadFormat.BYTE1111);
 		StructuredFullPathJoin join = new StructuredFullPathJoin(new String[] {
 				"S", "VP", "PP", "IN", "NP", "VBN" }, new int[] { -1, 0, 1, 2,
 				2, 4 },

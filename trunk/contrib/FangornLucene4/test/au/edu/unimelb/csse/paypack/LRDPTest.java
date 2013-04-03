@@ -3,7 +3,7 @@ package au.edu.unimelb.csse.paypack;
 import junit.framework.TestCase;
 
 public class LRDPTest extends TestCase {
-	LRDP lrdp = new LRDP(new BytePacking(4));
+	LRDP lrdp = new LRDP(LRDP.PhysicalPayloadFormat.BYTE1111);
 
 	public void testCompare() throws Exception {
 		assertEquals(

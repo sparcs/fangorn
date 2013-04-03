@@ -4,7 +4,7 @@ import org.apache.lucene.util.BytesRef;
 
 import au.edu.unimelb.csse.join.NodePositions;
 
-public class BytePacking implements PhysicalPayloadFormatAware {
+class BytePacking implements PhysicalPayloadFormatAware {
 	private final int intsPerPos;
 
 	public BytePacking(int nodePositionLength) {
