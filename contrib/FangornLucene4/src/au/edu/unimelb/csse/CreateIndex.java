@@ -41,7 +41,6 @@ public class CreateIndex {
 	private static final int CPU_CORES = 4;
 	private static final int THREAD_POOL_SIZE = (int) Math
 			.round(CPU_CORES * 1.5);
-	private FieldType docNumField;
 
 	public CreateIndex(String srcDir, String indexDir) throws IOException {
 		this.srcDirName = srcDir;
@@ -54,11 +53,6 @@ public class CreateIndex {
 		c.setRAMBufferSizeMB(1024);
 		writer = new IndexWriter(d, c);
 		ft = createFieldType();
-
-		docNumField = new FieldType();
-		docNumField.setTokenized(false);
-		docNumField.setIndexed(false);
-		docNumField.setStored(true);
 	}
 
 	/**
@@ -117,8 +111,6 @@ public class CreateIndex {
 					String sentence = sm.sentence();
 					Document doc = new Document();
 					doc.add(new Field(Constants.FIELD_NAME, sentence, ft));
-					doc.add(new Field("docnum", f.getName() + "."
-							+ sm.lineOffset(), docNumField));
 					try {
 						writer.addDocument(doc);
 						incrementCount();
