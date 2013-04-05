@@ -18,27 +18,27 @@ import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
 
 public class CacheEffectTest {
 	private final LogicalNodePositionAware lrdp;
-	private static final String INDEX_DIR = "/opt/wiki-index-all";
 	private static final int TIMES = 6;
 	private IndexReader reader;
 
-	public CacheEffectTest(PhysicalPayloadFormat ppf) throws IOException {
+	public CacheEffectTest(String indexDir, PhysicalPayloadFormat ppf) throws IOException {
 		lrdp = new LRDP(ppf);
-		Directory directory = MMapDirectory.open(new File(INDEX_DIR));
+		Directory directory = MMapDirectory.open(new File(indexDir));
 		reader = DirectoryReader.open(directory);
 	}
 
 	public static void main(String[] args) throws IOException {
-		if (args.length != 3) {
+		if (args.length != 4) {
 			throw new IllegalArgumentException(
-					"Program expects two parameters: <jointype> <querynum> <physicalbyteformat>");
+					"Program expects two parameters: <indexdir> <jointype> <querynum> <physicalbyteformat>");
 		}
-		String joinTypeString = args[0];
+		String indexDir = args[0];
+		String joinTypeString = args[1];
 		JoinType joinType = JoinType.valueOf(joinTypeString);
-		int queryNum = Integer.valueOf(args[1]);
+		int queryNum = Integer.valueOf(args[2]);
 		LRDP.PhysicalPayloadFormat ppf = LRDP.PhysicalPayloadFormat
-				.valueOf(args[2]);
-		CacheEffectTest test = new CacheEffectTest(ppf);
+				.valueOf(args[3]);
+		CacheEffectTest test = new CacheEffectTest(indexDir, ppf);
 		test.run(joinType, queryNum);
 
 	}
