@@ -233,8 +233,9 @@ public class HalfPairJoinPipelineTest extends IndexTestCase {
 	}
 
 	public void testSimplePipeExecuteCallsNextAfterItself() throws Exception {
+		StaircaseJoin join = new StaircaseJoin(npa);
 		HalfPairJoinPipeline pipeline = new HalfPairJoinPipeline(npa,
-				new StaircaseJoin(npa));
+				join);
 		IndexReader rdr = setupIndexWithDocs("(S(A(B C))(B(A C)))");
 		DocsAndPositionsEnum aPosEnum = getPosEnum(rdr, 0, new Term("s", "A"));
 		DocsAndPositionsEnum bPosEnum = getPosEnum(rdr, 0, new Term("s", "B"));
@@ -244,21 +245,17 @@ public class HalfPairJoinPipelineTest extends IndexTestCase {
 				Operator.DESCENDANT, a);
 		a.setNext(b);
 		NodePositions prev = new NodePositions();
-		NodePositions firstBuffer = new NodePositions();
-		NodePositions secondBuffer = new NodePositions();
-		NodePositions[] buffers = new NodePositions[] { firstBuffer,
-				secondBuffer };
-		pipeline.setPrevAndBuffers(prev, buffers);
+		
+		pipeline.setPrevAndBuffers(prev);
 		
 		NodePositions out = a.execute();
 		assertPositions(new int[] { 0, 1, 2, 2 }, 0, out);
 
-		assertPositions(new int[] { 0, 1, 2, 2 }, 0, firstBuffer);
+		assertPositions(new int[] { 0, 1, 2, 2 }, 0, join.buffers[0]);
 		assertPositions(new int[] { 0, 1, 1, 5, 1, 2, 2, 4 }, 4, prev);
-		assertFalse(prev == firstBuffer); // prev gets interchanged with
-										// firstBuffer during join
+		assertFalse(prev == join.buffers[0]); // prev and firstBuffer are distinct
 
-		assertPositions(new int[] { 0, 1, 2, 2, 1, 2, 1, 5 }, 8, secondBuffer);
+		assertPositions(new int[] { 0, 1, 2, 2, 1, 2, 1, 5 }, 8, join.buffers[1]);
 	}
 
 	private void assertMetaPipe(Operator expectedMetaOp,

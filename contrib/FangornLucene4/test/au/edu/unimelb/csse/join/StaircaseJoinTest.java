@@ -24,7 +24,7 @@ public class StaircaseJoinTest extends PairJoinTestCase {
 		for (Operator op : ops) {
 			NodePositions prev = new NodePositions();
 			setValues(prev, new int[] { 1, 4, 2, 12 });
-			j.prune(prev, op, null);
+			j.prune(prev, op);
 			assertPositions(new int[] { 1, 4, 2, 12 }, 0, prev);
 		}
 	}
@@ -40,19 +40,18 @@ public class StaircaseJoinTest extends PairJoinTestCase {
 		NodePositions prev = new NodePositions();
 		setValues(prev, new int[] { 1, 4, 2, 12, 2, 3, 3, 4, 5, 9, 2, 28, 7, 9,
 				5, 22 });
-		NodePositions[] buffers = setupBuffers();
-		j.pruneDescendant(prev, buffers); // prune two leave two
+		j.pruneDescendant(prev); // prune two leave two
 		assertPositions(new int[] { 1, 4, 2, 12, 5, 9, 2, 28 }, 0, prev);
 		setValues(prev, new int[] { 1, 4, 2, 12, 4, 5, 2, 21, 5, 9, 2, 28, 9,
 				13, 5, 38 });
-		resetBuffers(buffers);
-		j.pruneDescendant(prev, buffers); // no pruning
+		resetBuffers(j);
+		j.pruneDescendant(prev); // no pruning
 		assertPositions(new int[] { 1, 4, 2, 12, 4, 5, 2, 21, 5, 9, 2, 28, 9,
 				13, 5, 38 }, 0, prev);
 		setValues(prev, new int[] { 1, 17, 2, 65, 4, 5, 3, 21, 5, 9, 4, 28, 9,
 				13, 5, 38 });
-		resetBuffers(buffers);
-		j.pruneDescendant(prev, buffers); // prune all but 1
+		resetBuffers(j);
+		j.pruneDescendant(prev); // prune all but 1
 		assertPositions(new int[] { 1, 17, 2, 65 }, 0, prev);
 	}
 
@@ -61,41 +60,32 @@ public class StaircaseJoinTest extends PairJoinTestCase {
 		NodePositions prev = new NodePositions();
 		setValues(prev, new int[] { 1, 4, 2, 12, 2, 3, 3, 4, 5, 9, 2, 28, 7, 9,
 				5, 22 });
-		NodePositions[] buffers = setupBuffers();
-		j.pruneAncestor(prev, buffers); // prune two leave two
+		j.pruneAncestor(prev); // prune two leave two
 		assertPositions(new int[] { 2, 3, 3, 4, 7, 9, 5, 22 }, 0, prev);
 
-		resetBuffers(buffers);
+		resetBuffers(j);
 		setValues(prev, new int[] { 1, 4, 2, 12, 4, 5, 2, 21, 5, 9, 2, 28, 9,
 				13, 5, 38 });
-		j.pruneAncestor(prev, buffers); // no pruning
+		j.pruneAncestor(prev); // no pruning
 		assertPositions(new int[] { 1, 4, 2, 12, 4, 5, 2, 21, 5, 9, 2, 28, 9,
 				13, 5, 38 }, 0, prev);
 
-		resetBuffers(buffers);
+		resetBuffers(j);
 		setValues(prev, new int[] { 1, 17, 2, 65, 4, 5, 3, 21, 5, 9, 4, 28, 9,
 				13, 5, 38 });
-		j.pruneAncestor(prev, buffers); // prune one
+		j.pruneAncestor(prev); // prune one
 		assertPositions(new int[] { 4, 5, 3, 21, 5, 9, 4, 28, 9, 13, 5, 38 },
 				0, prev);
 
-		resetBuffers(buffers);
+		resetBuffers(j);
 		setValues(prev, new int[] { 1, 17, 2, 65, 4, 5, 3, 21, 4, 5, 4, 20 });
-		j.pruneAncestor(prev, buffers); // retain one (nested pruning)
+		j.pruneAncestor(prev); // retain one (nested pruning)
 		assertPositions(new int[] { 4, 5, 4, 20 }, 0, prev);
 	}
 
-	private NodePositions[] setupBuffers() {
-		NodePositions[] buffers = new NodePositions[3];
-		buffers[0] = new NodePositions();
-		buffers[1] = new NodePositions();
-		buffers[2] = new NodePositions();
-		return buffers;
-	}
-
-	private void resetBuffers(NodePositions[] buffers) {
-		for (int i = 0; i < 3; i++) {
-			buffers[i].reset();
+	private void resetBuffers(StaircaseJoin j) {
+		for (int i = 0; i < j.buffers.length; i++) {
+			j.buffers[i].reset();
 		}
 	}
 
@@ -103,18 +93,17 @@ public class StaircaseJoinTest extends PairJoinTestCase {
 		StaircaseJoin j = (StaircaseJoin) join;
 		NodePositions prev = new NodePositions();
 		setValues(prev, new int[] { 2, 3, 3, 4, 5, 9, 2, 28, 7, 9, 5, 22 });
-		NodePositions[] buffers = setupBuffers();
-		j.pruneFollowing(prev, buffers); // retain first
+		j.pruneFollowing(prev); // retain first
 		assertPositions(new int[] { 2, 3, 3, 4 }, 0, prev);
 		setValues(prev, new int[] { 1, 4, 2, 12, 2, 3, 3, 4, 5, 9, 2, 28, 7, 9,
 				5, 22 });
-		resetBuffers(buffers);
-		j.pruneFollowing(prev, buffers); // find descendant and stop
+		resetBuffers(j);
+		j.pruneFollowing(prev); // find descendant and stop
 		assertPositions(new int[] { 2, 3, 3, 4 }, 0, prev);
 		setValues(prev, new int[] { 1, 17, 2, 65, 4, 7, 3, 28, 4, 6, 4, 20, 4,
 				5, 6, 18 });
-		resetBuffers(buffers);
-		j.pruneFollowing(prev, buffers); // find last descendant
+		resetBuffers(j);
+		j.pruneFollowing(prev); // find last descendant
 		assertPositions(new int[] { 4, 5, 6, 18 }, 0, prev);
 	}
 
@@ -122,13 +111,12 @@ public class StaircaseJoinTest extends PairJoinTestCase {
 		StaircaseJoin j = (StaircaseJoin) join;
 		NodePositions prev = new NodePositions();
 		setValues(prev, new int[] { 2, 3, 3, 4, 5, 9, 2, 28, 7, 9, 5, 22 });
-		NodePositions[] buffers = setupBuffers();
-		j.prunePreceding(prev, buffers); // retain last
+		j.prunePreceding(prev); // retain last
 		assertPositions(new int[] { 7, 9, 5, 22 }, 0, prev);
 		setValues(prev, new int[] { 1, 17, 2, 65, 4, 7, 3, 28, 4, 6, 4, 20, 4,
 				5, 6, 18 });
-		resetBuffers(buffers);
-		j.prunePreceding(prev, buffers);
+		resetBuffers(j);
+		j.prunePreceding(prev);
 		assertPositions(new int[] { 4, 5, 6, 18 }, 0, prev);
 	}
 
@@ -183,7 +171,7 @@ public class StaircaseJoinTest extends PairJoinTestCase {
 		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 28, 0, "AA", "CC");
 		joinAndAssertOutput(16, 54, prev, Operator.CHILD, posEnum);
 		assertPositions(new int[] { 1, 2, 3, 3, 2, 3, 2, 5, 5, 6, 2, 11, 8, 9,
-				2, 20 }, 12, buffer);
+				2, 20 }, 12, bufferResult);
 	}
 
 	public void testAncestorOpWithNestedDescendants() throws Exception {

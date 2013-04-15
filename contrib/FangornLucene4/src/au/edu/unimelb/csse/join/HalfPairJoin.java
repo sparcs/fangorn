@@ -25,10 +25,9 @@ public interface HalfPairJoin extends PairJoin {
 	 * @param buffers
 	 * @throws IOException
 	 */
-	void match(NodePositions prev, Operator op,
-			DocsAndPositionsEnum node, NodePositions... buffers)
-			throws IOException;
+	NodePositions match(NodePositions prev, Operator op,
+			DocsAndPositionsEnum node) throws IOException;
 
-	void match(NodePositions prev, Operator op, NodePositions next,
-			NodePositions... buffers) throws IOException;
+	NodePositions match(NodePositions prev, Operator op, NodePositions next)
+			throws IOException;
 }

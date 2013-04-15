@@ -26,8 +26,7 @@ public class StructuredBooleanPathJoin extends StructuredPathJoin implements
 		if (!success)
 			return false;
 		start = execPipeline.createExecPipeline(root, operators);
-		buffers = getBuffers(execPipeline.getMaxBufferSize());
-		execPipeline.setPrevAndBuffers(prev, buffers);
+		execPipeline.setPrevAndBuffers(prev);
 		return true;
 	}
 

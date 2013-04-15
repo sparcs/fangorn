@@ -10,12 +10,14 @@ import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
 public class StructuredBooleanPathJoinTest extends IndexTestCase {
 	public void testResults() throws Exception {
 
-		LogicalNodePositionAware lrdp = new LRDP(LRDP.PhysicalPayloadFormat.BYTE1111);
+		LogicalNodePositionAware lrdp = new LRDP(
+				LRDP.PhysicalPayloadFormat.BYTE1111);
 
 		HalfPairJoin[] joins = new HalfPairJoin[] { new StaircaseJoin(lrdp),
 				new MPMGModSingleJoin(lrdp) };
 
-		for (HalfPairJoin hpj : joins) {
+		for (int i = 0; i < joins.length; i++) {
+			HalfPairJoin hpj = joins[i];
 			StructuredBooleanPathJoin join = new StructuredBooleanPathJoin(
 					new String[] { "A", "B", "C", "D", "E" }, new int[] { -1,
 							0, 1, 0, 3 }, getDescOp(5), hpj, lrdp);
@@ -25,12 +27,18 @@ public class StructuredBooleanPathJoinTest extends IndexTestCase {
 			join.nextDoc();
 
 			assertTrue(join.match());
-			assertPositions(new int[] { 0, 6, 0, 0, 4, 6, 1, 15 }, 4,
-					join.buffers[0]);
+			if (i == 0) {
+				assertPositions(new int[] { 0, 6, 0, 0, 4, 6, 1, 15 }, 4,
+						((StaircaseJoin) hpj).buffers[0]);
+			} else {
+				assertPositions(new int[] { 0, 6, 0, 0, 4, 6, 1, 15 }, 4,
+						((MPMGModSingleJoin) hpj).buffers[0]);
+
+			}
 		}
 	}
-	
-	//TODO: write more tests
+
+	// TODO: write more tests
 
 	private Operator[] getDescOp(int num) {
 		Operator[] results = new Operator[num];

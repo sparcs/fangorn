@@ -16,7 +16,7 @@ public abstract class PairJoinTestCase extends IndexTestCase {
 	protected LogicalNodePositionDecorator lrdp;
 	private CountingBinaryOperatorAware countingOperatorAware;
 	public NodePairPositions result;
-	protected NodePositions buffer;
+	protected NodePositions bufferResult;
 	protected NodePositions prev;
 
 	@Override
@@ -26,7 +26,7 @@ public abstract class PairJoinTestCase extends IndexTestCase {
 		lrdp = new LogicalNodePositionDecorator(new LRDP(LRDP.PhysicalPayloadFormat.BYTE1111));
 		countingOperatorAware = lrdp.getCountingBinaryOperator();
 		result = new NodePairPositions();
-		buffer = new NodePositions();
+		bufferResult = new NodePositions();
 		prev = new NodePositions();
 	}
 
@@ -37,7 +37,7 @@ public abstract class PairJoinTestCase extends IndexTestCase {
 		int resultSize = 0;
 		final int numBuffers = join.numBuffers(operator);
 		NodePositions[] buffers = new NodePositions[numBuffers];
-		buffers[0] = buffer;
+		buffers[0] = bufferResult;
 		for (int i = 1; i < numBuffers; i++) {
 			buffers[i] = new NodePositions();
 		}
@@ -48,8 +48,8 @@ public abstract class PairJoinTestCase extends IndexTestCase {
 			resultSize = result.size;
 		} else if (join instanceof HalfPairJoin) {
 			HalfPairJoin j = (HalfPairJoin) join;
-			j.match(prev, operator, posEnum, buffers);
-			resultSize = buffer.size;
+			bufferResult = j.match(prev, operator, posEnum);
+			resultSize = bufferResult.size;
 		}
 		assertEquals("Incorrect number of results", expectedNumResults,
 				resultSize);
