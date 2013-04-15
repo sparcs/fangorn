@@ -129,7 +129,7 @@ public class MPMGModJoinTest extends PairJoinTestCase {
 		MPMGModJoin join = new MPMGModJoin(new LRDPMockPositions(LRDP.PhysicalPayloadFormat.BYTE1111, nodePositions.iterator(),
 				positions.iterator()));
 		join.match(prev, Operator.CHILD, new DocsAndPositionsEnumStub(25),
-				result, buffer);
+				result, bufferResult);
 
 	}
 

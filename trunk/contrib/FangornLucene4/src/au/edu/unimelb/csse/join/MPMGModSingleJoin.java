@@ -36,14 +36,15 @@ import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
  * 
  */
 public class MPMGModSingleJoin extends AbstractPairJoin implements HalfPairJoin {
+	NodePositions[] buffers = new NodePositions[] {new NodePositions()};
 
 	public MPMGModSingleJoin(LogicalNodePositionAware nodePositionAware) {
 		super(nodePositionAware);
 	}
 
 	@Override
-	public void match(NodePositions prev, Operator op,
-			DocsAndPositionsEnum node, NodePositions... buffers)
+	public NodePositions match(NodePositions prev, Operator op,
+			DocsAndPositionsEnum node)
 			throws IOException {
 		int freq = node.freq();
 		NodePositions result = buffers[0]; // buffer used as result
@@ -79,6 +80,7 @@ public class MPMGModSingleJoin extends AbstractPairJoin implements HalfPairJoin 
 				result.removeLast(positionLength);
 			}
 		}
+		return result;
 	}
 
 	@Override
@@ -87,8 +89,8 @@ public class MPMGModSingleJoin extends AbstractPairJoin implements HalfPairJoin 
 	}
 
 	@Override
-	public void match(NodePositions prev, Operator op,
-			NodePositions next, NodePositions... buffers) throws IOException {
+	public NodePositions match(NodePositions prev, Operator op,
+			NodePositions next) throws IOException {
 		NodePositions result = buffers[0]; // buffer used as result
 		result.reset();
 		next.offset = 0;
@@ -121,6 +123,7 @@ public class MPMGModSingleJoin extends AbstractPairJoin implements HalfPairJoin 
 			}
 			next.offset += positionLength;
 		}
+		return result;
 	}
 
 	private boolean checkAncParent(NodePositions prev, Operator op,

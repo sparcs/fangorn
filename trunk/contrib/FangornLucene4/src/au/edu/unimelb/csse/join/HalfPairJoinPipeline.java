@@ -15,7 +15,6 @@ class HalfPairJoinPipeline {
 	final HalfPairJoin join;
 	Operator[] operators;
 	NodePositions prevPositions;
-	NodePositions[] buffers;
 
 	public HalfPairJoinPipeline(LogicalNodePositionAware nodePositionAware,
 			HalfPairJoin join) {
@@ -34,9 +33,8 @@ class HalfPairJoinPipeline {
 		return root;
 	}
 	
-	void setPrevAndBuffers(NodePositions prev, NodePositions... buffers) {
+	void setPrevAndBuffers(NodePositions prev) {
 		this.prevPositions = prev;
-		this.buffers = buffers;
 	}
 
 	private void pathFromNode(PostingsAndFreq node, Pipe prevPipe) {
@@ -88,10 +86,6 @@ class HalfPairJoinPipeline {
 		return prev;
 	}
 	
-	int getMaxBufferSize() {
-		return root.maxBufferSize();
-	}
-
 	class GetAllPipe extends AbstractPipe {
 
 		public GetAllPipe(DocsAndPositionsEnum node) {
@@ -100,9 +94,9 @@ class HalfPairJoinPipeline {
 
 		@Override
 		public NodePositions execute() throws IOException {
-			buffers[0].reset();
-			nodePositionAware.getAllPositions(buffers[0], node);
-			return continueExection();
+			prevPositions.reset();
+			nodePositionAware.getAllPositions(prevPositions, node);
+			return continueExection(prevPositions);
 		}
 	}
 
@@ -114,16 +108,15 @@ class HalfPairJoinPipeline {
 
 		@Override
 		public NodePositions execute() throws IOException {
-			final NodePositions b = buffers[0];
-			b.reset();
-			nodePositionAware.getAllPositions(b, node);
-			b.offset = 0;
-			if (nodePositionAware.isTreeRootPosition(b.positions, 0)) {
-				b.size = nodePositionAware.getPositionLength();
-				return continueExection();
+			prevPositions.reset();
+			nodePositionAware.getAllPositions(prevPositions, node);
+			prevPositions.offset = 0;
+			if (nodePositionAware.isTreeRootPosition(prevPositions.positions, 0)) {
+				prevPositions.size = nodePositionAware.getPositionLength();
+				return continueExection(prevPositions);
 			}
-			b.size = 0;
-			return b;
+			prevPositions.reset();
+			return prevPositions;
 		}
 	}
 
@@ -138,11 +131,11 @@ class HalfPairJoinPipeline {
 
 		@Override
 		public NodePositions execute() throws IOException {
-			join.match(prevPositions, op, node, buffers);
-			if (buffers[0].size > 0) {
-				return continueExection();
+			NodePositions result = join.match(prevPositions, op, node);
+			if (result.size > 0) {
+				return continueExection(result);
 			}
-			return buffers[0];
+			return result;
 		}
 		
 		Operator getOp() {
@@ -181,11 +174,11 @@ class HalfPairJoinPipeline {
 				return results;
 			}
 			prevPositions.makeCloneOf(results);
-			join.match(prevPositions, op, metaPrev, buffers);
+			results = join.match(prevPositions, op, metaPrev);
 			if (next == null) {
-				return buffers[0];
+				return results;
 			}
-			prevPositions.makeCloneOf(buffers[0]);
+			prevPositions.makeCloneOf(results);
 			return next.execute();
 		}
 
@@ -205,16 +198,6 @@ class HalfPairJoinPipeline {
 
 		public Pipe getInner() {
 			return inner;
-		}
-
-		@Override
-		public int maxBufferSize() {
-			int thisbs = join.numBuffers(op);
-			int innerbs = inner.maxBufferSize();
-			int max = thisbs > innerbs ? thisbs : innerbs;
-			if (next == null) return max;
-			int nextbs = next.maxBufferSize();
-			return max > nextbs ? max : nextbs;
 		}
 
 		// metapipe can never start a pipeline chain so no need of null check
@@ -238,23 +221,15 @@ class HalfPairJoinPipeline {
 			this.next = pipe;
 		}
 
-		NodePositions continueExection() throws IOException {
-			if (next == null || buffers[0].size == 0)
-				return buffers[0];
-			prevPositions.makeCloneOf(buffers[0]);
+		NodePositions continueExection(NodePositions result) throws IOException {
+			if (next == null || result.size == 0)
+				return result;
+			prevPositions.makeCloneOf(result);
 			return next.execute();
 		}
 		
 		public Pipe getNext() {
 			return next;
-		}
-		
-		@Override
-		public int maxBufferSize() {
-			int thisbs = bufferSize();
-			if (next == null) return thisbs;
-			int nbs = next.maxBufferSize();
-			return thisbs > nbs ? thisbs : nbs ;
 		}
 		
 		int bufferSize() {
@@ -277,6 +252,5 @@ class HalfPairJoinPipeline {
 		
 		Pipe getStart();
 		
-		int maxBufferSize();
 	}
 }

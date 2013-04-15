@@ -20,6 +20,8 @@ import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
  * 
  */
 public class StaircaseJoin extends AbstractPairJoin implements HalfPairJoin {
+	NodePositions[] buffers = new NodePositions[] { new NodePositions(),
+			new NodePositions(), new NodePositions() };
 
 	public StaircaseJoin(LogicalNodePositionAware nodePositionAware) {
 		super(nodePositionAware);
@@ -31,28 +33,27 @@ public class StaircaseJoin extends AbstractPairJoin implements HalfPairJoin {
 	}
 
 	@Override
-	public void match(NodePositions prev, Operator op,
-			DocsAndPositionsEnum node, NodePositions... buffers)
-			throws IOException {
+	public NodePositions match(NodePositions prev, Operator op,
+			DocsAndPositionsEnum node) throws IOException {
 		prev.offset = 0;
-		prune(prev, op, buffers);
+		prune(prev, op);
 		NodePositions next = buffers[1];
 		next.reset();
 		nodePositionAware.getAllPositions(next, node);
-		doJoin(prev, op, next, buffers);
+		doJoin(prev, op, next);
+		return buffers[0];
 	}
 
 	@Override
-	public void match(NodePositions prev, Operator op, NodePositions next,
-			NodePositions... buffers) throws IOException {
+	public NodePositions match(NodePositions prev, Operator op, NodePositions next) throws IOException {
 		prev.offset = 0;
-		prune(prev, op, buffers);
+		prune(prev, op);
 		next.offset = 0;
-		doJoin(prev, op, next, buffers);
+		doJoin(prev, op, next);
+		return buffers[0];
 	}
 
-	private void doJoin(NodePositions prev, Operator op, NodePositions next,
-			NodePositions... buffers) {
+	private void doJoin(NodePositions prev, Operator op, NodePositions next) {
 		NodePositions result = buffers[0];
 		result.reset();
 
@@ -111,8 +112,10 @@ public class StaircaseJoin extends AbstractPairJoin implements HalfPairJoin {
 					if (op.match(prev, next, operatorAware)) {
 						result.push(next, positionLength);
 						break;
-					} else if (operatorAware.preceding(prev.positions, prev.offset, next.positions, next.offset)) {
-						//commenting out this else block will give the same number of results but with fewer no. of comparisons
+					} else if (operatorAware.preceding(prev.positions,
+							prev.offset, next.positions, next.offset)) {
+						// commenting out this else block will give the same
+						// number of results but with fewer no. of comparisons
 						break;
 					}
 					prev.offset += positionLength;
@@ -122,21 +125,21 @@ public class StaircaseJoin extends AbstractPairJoin implements HalfPairJoin {
 		}
 	}
 
-	void prune(NodePositions prev, Operator op, NodePositions[] buffers) {
+	void prune(NodePositions prev, Operator op) {
 		if (prev.size <= 4)
 			return;
 		if (Operator.DESCENDANT.equals(op)) {
-			pruneDescendant(prev, buffers);
+			pruneDescendant(prev);
 		} else if (Operator.ANCESTOR.equals(op)) {
-			pruneAncestor(prev, buffers);
+			pruneAncestor(prev);
 		} else if (Operator.FOLLOWING.equals(op)) {
-			pruneFollowing(prev, buffers);
+			pruneFollowing(prev);
 		} else if (Operator.PRECEDING.equals(op)) {
-			prunePreceding(prev, buffers);
+			prunePreceding(prev);
 		}
 	}
 
-	void pruneAncestor(NodePositions prev, NodePositions[] buffers) {
+	void pruneAncestor(NodePositions prev) {
 		NodePositions stack = buffers[0];
 		NodePositions mark = buffers[1];
 		NodePositions offsetStack = buffers[2];
@@ -179,7 +182,7 @@ public class StaircaseJoin extends AbstractPairJoin implements HalfPairJoin {
 		prev.retain(mark, positionLength);
 	}
 
-	void pruneDescendant(NodePositions prev, NodePositions[] buffers) {
+	void pruneDescendant(NodePositions prev) {
 		NodePositions stack = buffers[0];
 		NodePositions mark = buffers[1];
 		stack.reset();
@@ -198,7 +201,7 @@ public class StaircaseJoin extends AbstractPairJoin implements HalfPairJoin {
 		prev.retain(mark, positionLength);
 	}
 
-	void pruneFollowing(NodePositions prev, NodePositions[] buffers) {
+	void pruneFollowing(NodePositions prev) {
 		int idx = 0;
 		prev.offset = positionLength;
 		while (prev.offset < prev.size
@@ -210,7 +213,7 @@ public class StaircaseJoin extends AbstractPairJoin implements HalfPairJoin {
 		prev.retain(idx, positionLength);
 	}
 
-	void prunePreceding(NodePositions prev, NodePositions[] buffers) {
+	void prunePreceding(NodePositions prev) {
 		prev.retain(prev.size - positionLength, positionLength);
 	}
 
