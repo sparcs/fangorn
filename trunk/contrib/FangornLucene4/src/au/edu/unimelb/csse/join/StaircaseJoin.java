@@ -20,6 +20,7 @@ import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
  * 
  */
 public class StaircaseJoin extends AbstractPairJoin implements HalfPairJoin {
+	//only Ancestor operator uses 3 buffers, rest use 2
 	NodePositions[] buffers = new NodePositions[] { new NodePositions(),
 			new NodePositions(), new NodePositions() };
 
@@ -215,14 +216,6 @@ public class StaircaseJoin extends AbstractPairJoin implements HalfPairJoin {
 
 	void prunePreceding(NodePositions prev) {
 		prev.retain(prev.size - positionLength, positionLength);
-	}
-
-	@Override
-	public int numBuffers(Operator op) {
-		if (Operator.ANCESTOR.equals(op)) {
-			return 3;
-		}
-		return 2;
 	}
 
 }

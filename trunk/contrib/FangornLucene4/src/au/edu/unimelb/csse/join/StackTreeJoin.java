@@ -27,6 +27,7 @@ import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
  */
 public class StackTreeJoin extends AbstractPairJoin implements
 		FullPairJoin {
+	NodePositions[] buffers = new NodePositions[] {new NodePositions(), new NodePositions()};
 
 	public StackTreeJoin(LogicalNodePositionAware nodePositionAware) {
 		super(nodePositionAware);
@@ -34,8 +35,7 @@ public class StackTreeJoin extends AbstractPairJoin implements
 
 	@Override
 	public void match(NodePositions prev, Operator op,
-			DocsAndPositionsEnum node, NodePairPositions result,
-			NodePositions... buffers) throws IOException {
+			DocsAndPositionsEnum node, NodePairPositions result) throws IOException {
 		NodePositions buffer = buffers[0];
 		buffer.reset();
 		NodePositions stack = buffers[1];
@@ -102,10 +102,4 @@ public class StackTreeJoin extends AbstractPairJoin implements
 			buffer.offset += positionLength;
 		}
 	}
-
-	@Override
-	public int numBuffers(Operator op) {
-		return 2;
-	}
-
 }

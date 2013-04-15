@@ -206,8 +206,7 @@ public class FullPairJoinPipelineTest extends IndexTestCase {
 				Operator.DESCENDANT, Operator.DESCENDANT, Operator.DESCENDANT,
 				Operator.DESCENDANT, Operator.DESCENDANT });
 
-		pipeline.setPrevAndBuffers(new NodePositions(), new NodePositions[] {
-				new NodePositions(), new NodePositions() });
+		pipeline.setPrevBuffer(new NodePositions());
 		p.execute();
 		assertEquals(9, pipeline.results.size());
 

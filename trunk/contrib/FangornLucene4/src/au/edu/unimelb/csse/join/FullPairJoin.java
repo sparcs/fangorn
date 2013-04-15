@@ -13,7 +13,7 @@ import au.edu.unimelb.csse.Operator;
  * @author sumukh
  * 
  */
-public interface FullPairJoin extends PairJoin {
+public interface FullPairJoin {
 
 	/**
 	 * Ensure that all params and buffers have their offsets and sizes reset
@@ -26,8 +26,7 @@ public interface FullPairJoin extends PairJoin {
 	 * @param buffers
 	 * @throws IOException
 	 */
-	void match(NodePositions prev, Operator op,
-			DocsAndPositionsEnum node, NodePairPositions result,
-			NodePositions... buffers) throws IOException;
-	
+	void match(NodePositions prev, Operator op, DocsAndPositionsEnum node,
+			NodePairPositions result) throws IOException;
+
 }

@@ -84,11 +84,6 @@ public class MPMGModSingleJoin extends AbstractPairJoin implements HalfPairJoin 
 	}
 
 	@Override
-	public int numBuffers(Operator op) {
-		return 1;
-	}
-
-	@Override
 	public NodePositions match(NodePositions prev, Operator op,
 			NodePositions next) throws IOException {
 		NodePositions result = buffers[0]; // buffer used as result

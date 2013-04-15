@@ -8,6 +8,7 @@ import org.junit.Test;
 import au.edu.unimelb.csse.Operator;
 
 public class MPMGJoinTest extends PairJoinTestCase {
+	MPMGJoin join;
 
 	@Override
 	@Before
@@ -20,7 +21,7 @@ public class MPMGJoinTest extends PairJoinTestCase {
 	public void testTree1Desc() throws Exception {
 		IndexReader r = setupIndexWithDocs("(DD(AA DD)(AA CC)(AA CC))");
 		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 12);
-		joinAndAssertOutput(4, 5, prev, Operator.DESCENDANT, posEnum);
+		joinAndAssertOutput(4, 5, join, prev, Operator.DESCENDANT, posEnum);
 	}
 
 	// next few tests compare the performance of the join for descendant and
@@ -31,7 +32,7 @@ public class MPMGJoinTest extends PairJoinTestCase {
 		IndexReader r = setupIndexWithDocs("(DD(BB AA)(BB AA))");
 		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 8);
 		// 1 comparison at desc opr; 2 others in the elseif block
-		joinAndAssertOutput(0, 2, prev, Operator.DESCENDANT, posEnum);
+		joinAndAssertOutput(0, 2, join, prev, Operator.DESCENDANT, posEnum);
 	}
 
 	@Test
@@ -39,7 +40,7 @@ public class MPMGJoinTest extends PairJoinTestCase {
 		IndexReader r = setupIndexWithDocs("(DD(BB AA)(BB AA))");
 		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 8);
 		// 1 comparison at child opr; 2 others in the elseif block
-		joinAndAssertOutput(0, 2, prev, Operator.CHILD, posEnum);
+		joinAndAssertOutput(0, 2, join, prev, Operator.CHILD, posEnum);
 	}
 
 	@Test
@@ -47,34 +48,34 @@ public class MPMGJoinTest extends PairJoinTestCase {
 		IndexReader r = setupIndexWithDocs("(AA(CC DD)(AA(CC DD)(CC DD))(CC DD))");
 		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 8);
 		// 8 comparisons at desc opr; 3 at others
-		joinAndAssertOutput(24, 10, prev, Operator.DESCENDANT, posEnum);
+		joinAndAssertOutput(24, 10, join, prev, Operator.DESCENDANT, posEnum);
 	}
 
 	@Test
 	public void testTree2Child() throws Exception {
 		IndexReader r = setupIndexWithDocs("(AA(CC DD)(AA(CC DD)(CC DD))(CC DD))");
 		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 8);
-		joinAndAssertOutput(0, 23, prev, Operator.CHILD, posEnum);
+		joinAndAssertOutput(0, 23, join, prev, Operator.CHILD, posEnum);
 	}
 
 	@Test
 	public void testTree3Desc() throws Exception {
 		IndexReader r = setupIndexWithDocs("(AA(AA DD)(AA DD)(AA DD))");
 		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 16);
-		joinAndAssertOutput(24, 14, prev, Operator.DESCENDANT, posEnum);
+		joinAndAssertOutput(24, 14, join, prev, Operator.DESCENDANT, posEnum);
 	}
 
 	@Test
 	public void testTree3Child() throws Exception {
 		IndexReader r = setupIndexWithDocs("(AA(AA DD)(AA DD)(AA DD))");
 		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 16);
-		joinAndAssertOutput(12, 22, prev, Operator.CHILD, posEnum);
+		joinAndAssertOutput(12, 22, join, prev, Operator.CHILD, posEnum);
 	}
 	
 	public void testResultsOrderedBy1stsPositions() throws Exception {
 		IndexReader r = setupIndexWithDocs("(AA(CC DD)(AA(CC DD)(CC DD))(CC DD))");
 		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 8);
-		joinAndAssertOutput(24, 10, prev, Operator.DESCENDANT, posEnum);
+		joinAndAssertOutput(24, 10, join, prev, Operator.DESCENDANT, posEnum);
 		
 		assertNodePairPositions(new int[] { 0, 4, 0, 0 }, new int[] { 0, 1, 2,
 				1 }, 0, lrdp.getPositionLength());
@@ -95,6 +96,6 @@ public class MPMGJoinTest extends PairJoinTestCase {
 		IndexReader r = setupIndexWithDocs(sent);
 		DocsAndPositionsEnum vpPosEnum = initPrevGetNext(r, 28, 0, "NP", "VP");
 		
-		joinAndAssertOutput(0, 20, prev, Operator.DESCENDANT, vpPosEnum);
+		joinAndAssertOutput(0, 20, join, prev, Operator.DESCENDANT, vpPosEnum);
 	}
 }

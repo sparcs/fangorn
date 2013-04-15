@@ -246,7 +246,7 @@ public class HalfPairJoinPipelineTest extends IndexTestCase {
 		a.setNext(b);
 		NodePositions prev = new NodePositions();
 		
-		pipeline.setPrevAndBuffers(prev);
+		pipeline.setPrevBuffer(prev);
 		
 		NodePositions out = a.execute();
 		assertPositions(new int[] { 0, 1, 2, 2 }, 0, out);

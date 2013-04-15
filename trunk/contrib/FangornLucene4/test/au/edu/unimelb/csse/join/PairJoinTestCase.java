@@ -12,7 +12,6 @@ import au.edu.unimelb.csse.Operator;
 import au.edu.unimelb.csse.paypack.LRDP;
 
 public abstract class PairJoinTestCase extends IndexTestCase {
-	protected PairJoin join;
 	protected LogicalNodePositionDecorator lrdp;
 	private CountingBinaryOperatorAware countingOperatorAware;
 	public NodePairPositions result;
@@ -23,7 +22,8 @@ public abstract class PairJoinTestCase extends IndexTestCase {
 	@Before
 	protected void setUp() throws Exception {
 		super.setUp();
-		lrdp = new LogicalNodePositionDecorator(new LRDP(LRDP.PhysicalPayloadFormat.BYTE1111));
+		lrdp = new LogicalNodePositionDecorator(new LRDP(
+				LRDP.PhysicalPayloadFormat.BYTE1111));
 		countingOperatorAware = lrdp.getCountingBinaryOperator();
 		result = new NodePairPositions();
 		bufferResult = new NodePositions();
@@ -31,26 +31,29 @@ public abstract class PairJoinTestCase extends IndexTestCase {
 	}
 
 	protected void joinAndAssertOutput(int expectedNumResults,
-			int expectedComparisons, NodePositions prev, Operator operator,
-			DocsAndPositionsEnum posEnum) throws IOException {
+			int expectedComparisons, FullPairJoin join, NodePositions prev,
+			Operator operator, DocsAndPositionsEnum posEnum) throws IOException {
 		int startCount = countingOperatorAware.getCount();
 		int resultSize = 0;
-		final int numBuffers = join.numBuffers(operator);
-		NodePositions[] buffers = new NodePositions[numBuffers];
-		buffers[0] = bufferResult;
-		for (int i = 1; i < numBuffers; i++) {
-			buffers[i] = new NodePositions();
-		}
-		// Uhh! ugly instanceof check
-		if (join instanceof FullPairJoin) {
-			FullPairJoin j = (FullPairJoin) join;
-			j.match(prev, operator, posEnum, result, buffers);
-			resultSize = result.size;
-		} else if (join instanceof HalfPairJoin) {
-			HalfPairJoin j = (HalfPairJoin) join;
-			bufferResult = j.match(prev, operator, posEnum);
-			resultSize = bufferResult.size;
-		}
+
+		join.match(prev, operator, posEnum, result);
+		resultSize = result.size;
+
+		assertEquals("Incorrect number of results", expectedNumResults,
+				resultSize);
+		int endCount = countingOperatorAware.getCount();
+		assertEquals("Incorrect number of comparisons", expectedComparisons,
+				endCount - startCount);
+	}
+
+	protected void joinAndAssertOutput(int expectedNumResults,
+			int expectedComparisons, HalfPairJoin join, NodePositions prev,
+			Operator operator, DocsAndPositionsEnum posEnum) throws IOException {
+		int startCount = countingOperatorAware.getCount();
+		int resultSize = 0;
+
+		bufferResult = join.match(prev, operator, posEnum);
+		resultSize = bufferResult.size;
 		assertEquals("Incorrect number of results", expectedNumResults,
 				resultSize);
 		int endCount = countingOperatorAware.getCount();
