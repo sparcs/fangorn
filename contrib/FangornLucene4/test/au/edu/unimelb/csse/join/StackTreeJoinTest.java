@@ -8,6 +8,7 @@ import org.junit.Test;
 import au.edu.unimelb.csse.Operator;
 
 public class StackTreeJoinTest extends PairJoinTestCase {
+	StackTreeJoin join;
 
 	@Override
 	@Before
@@ -20,42 +21,42 @@ public class StackTreeJoinTest extends PairJoinTestCase {
 		IndexReader r = setupIndexWithDocs("(SS(AA DD)(AA DD)(NA ND))",
 				"(SS(NA ND)(AA DD)(AA DD))");
 		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 8, 0, "AA", "ND");
-		joinAndAssertOutput(0, 4, prev, Operator.DESCENDANT, posEnum);
+		joinAndAssertOutput(0, 4, join, prev, Operator.DESCENDANT, posEnum);
 		posEnum = initPrevGetNext(r, 8, 1, "AA", "ND");
-		joinAndAssertOutput(0, 1, prev, Operator.DESCENDANT, posEnum);
+		joinAndAssertOutput(0, 1, join, prev, Operator.DESCENDANT, posEnum);
 	}
 
 	public void testNestedTreeDesc() throws Exception {
 		IndexReader r = setupIndexWithDocs("(AA(AA DD)(AA DD)(AA DD))");
 		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 16);
-		joinAndAssertOutput(24, 17, prev, Operator.DESCENDANT, posEnum);
+		joinAndAssertOutput(24, 17, join, prev, Operator.DESCENDANT, posEnum);
 	}
 
 	public void testNestedTreeChild() throws Exception {
 		IndexReader r = setupIndexWithDocs("(AA(AA DD)(AA DD)(AA DD))");
 		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 16);
-		joinAndAssertOutput(12, 17, prev, Operator.CHILD, posEnum);
+		joinAndAssertOutput(12, 17, join, prev, Operator.CHILD, posEnum);
 	}
 
 	@Test
 	public void testTree2Desc() throws Exception {
 		IndexReader r = setupIndexWithDocs("(AA(CC DD)(AA(CC DD)(CC DD))(CC DD))");
 		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 8);
-		joinAndAssertOutput(24, 13, prev, Operator.DESCENDANT, posEnum);
+		joinAndAssertOutput(24, 13, join, prev, Operator.DESCENDANT, posEnum);
 	}
 
 	@Test
 	public void testTree2Child() throws Exception {
 		IndexReader r = setupIndexWithDocs("(AA(CC DD)(AA(CC DD)(CC DD))(CC DD))");
 		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 8);
-		joinAndAssertOutput(0, 13, prev, Operator.CHILD, posEnum);
+		joinAndAssertOutput(0, 13, join, prev, Operator.CHILD, posEnum);
 	}
 
 	@Test
 	public void testResultsOrderedBy1stsPositions() throws Exception {
 		IndexReader r = setupIndexWithDocs("(AA(CC DD)(AA(CC DD)(CC DD))(CC DD))");
 		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 8);
-		joinAndAssertOutput(24, 13, prev, Operator.DESCENDANT, posEnum);
+		joinAndAssertOutput(24, 13, join, prev, Operator.DESCENDANT, posEnum);
 
 		assertNodePairPositions(new int[] { 0, 4, 0, 0 }, new int[] { 0, 1, 2,
 				1 }, 0, lrdp.getPositionLength());

@@ -7,6 +7,7 @@ import org.junit.Before;
 import au.edu.unimelb.csse.Operator;
 
 public class StaircaseJoinTest extends PairJoinTestCase {
+	StaircaseJoin join;
 
 	@Override
 	@Before
@@ -124,43 +125,43 @@ public class StaircaseJoinTest extends PairJoinTestCase {
 
 		IndexReader r = setupIndexWithDocs("(SS(PP(PP WW))(NN(FF WW))(ZZ(FF WW)))");
 		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 8, 0, "PP", "FF");
-		joinAndAssertOutput(8, 3, prev, Operator.FOLLOWING, posEnum);
+		joinAndAssertOutput(8, 3, join, prev, Operator.FOLLOWING, posEnum);
 	}
 
 	public void testFollowingOpWithOnePrecedingIgnored() throws Exception {
 		IndexReader r = setupIndexWithDocs("(SS(AA(FF WW))(PP(PP WW))(NN(FF WW))(ZZ(FF WW)))");
 		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 8, 0, "PP", "FF");
-		joinAndAssertOutput(8, 4, prev, Operator.FOLLOWING, posEnum);
+		joinAndAssertOutput(8, 4, join, prev, Operator.FOLLOWING, posEnum);
 	}
 
 	public void testFollowingOpWithNoneFollowing() throws Exception {
 		IndexReader r = setupIndexWithDocs("(SS(AA(FF WW))(PP(PP WW))(NN(JJ WW))(ZZ(JJ WW)))");
 		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 8, 0, "PP", "FF");
-		joinAndAssertOutput(0, 2, prev, Operator.FOLLOWING, posEnum);
+		joinAndAssertOutput(0, 2, join, prev, Operator.FOLLOWING, posEnum);
 	}
 
 	public void testPrecedingOpSimple() throws Exception {
 		IndexReader r = setupIndexWithDocs("(SS(PP(PP WW))(NN(FF WW))(ZZ(FF WW)))");
 		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 8, 0, "FF", "PP");
-		joinAndAssertOutput(8, 2, prev, Operator.PRECEDING, posEnum);
+		joinAndAssertOutput(8, 2, join, prev, Operator.PRECEDING, posEnum);
 	}
 
 	public void testPrecedingOpWithNonePreceding() throws Exception {
 		IndexReader r = setupIndexWithDocs("(SS(NN(FF WW))(ZZ(FF WW))(PP(PP WW)))");
 		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 8, 0, "FF", "PP");
-		joinAndAssertOutput(0, 2, prev, Operator.PRECEDING, posEnum);
+		joinAndAssertOutput(0, 2, join, prev, Operator.PRECEDING, posEnum);
 	}
 
 	public void testPrecedingOpWithOneIgnored() throws Exception {
 		IndexReader r = setupIndexWithDocs("(SS(PP(PP WW)(FF WW))(ZZ(FF WW))(PP WW))");
 		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 8, 0, "FF", "PP");
-		joinAndAssertOutput(8, 3, prev, Operator.PRECEDING, posEnum);
+		joinAndAssertOutput(8, 3, join, prev, Operator.PRECEDING, posEnum);
 	}
 
 	public void testDescendantOpWithMixedPositions() throws Exception {
 		IndexReader r = setupIndexWithDocs("(SS(AA(PP WW)(AA(DD WW)))(ZZ(DD ww))(AA(FF WW))(AA(DD(AA WW))))");
 		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 20, 0, "AA", "DD");
-		joinAndAssertOutput(8, 12, prev, Operator.DESCENDANT, posEnum);
+		joinAndAssertOutput(8, 12, join, prev, Operator.DESCENDANT, posEnum);
 	}
 
 	public void testChildOpWithMixedPositions() throws Exception {
@@ -169,7 +170,7 @@ public class StaircaseJoinTest extends PairJoinTestCase {
 				+ "(AA(PP WW)(AA(DD(CC WW)))(CC WW))" + "(ZZ(CC WW))"
 				+ "(AA(FF WW))" + "(AA(CC(AA(DD(CC WW))))))");
 		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 28, 0, "AA", "CC");
-		joinAndAssertOutput(16, 54, prev, Operator.CHILD, posEnum);
+		joinAndAssertOutput(16, 54, join, prev, Operator.CHILD, posEnum);
 		assertPositions(new int[] { 1, 2, 3, 3, 2, 3, 2, 5, 5, 6, 2, 11, 8, 9,
 				2, 20 }, 12, bufferResult);
 	}
@@ -177,33 +178,33 @@ public class StaircaseJoinTest extends PairJoinTestCase {
 	public void testAncestorOpWithNestedDescendants() throws Exception {
 		IndexReader r = setupIndexWithDocs("(SS(AA(PP WW)(AA(DD WW)))(ZZ(DD ww))(AA(FF WW))(AA(DD(AA WW))))");
 		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 12, 0, "DD", "AA");
-		joinAndAssertOutput(12, 13, prev, Operator.ANCESTOR, posEnum);
+		joinAndAssertOutput(12, 13, join, prev, Operator.ANCESTOR, posEnum);
 	}
 
 	public void testChildOp() throws Exception {
 		IndexReader r = setupIndexWithDocs("(SS(CC WW)(PP(CC WW)(JJ WW))(PP(QQ(CC WW))(PP(CC WW)(ZZ WW))))");
 		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 12, 0, "PP", "CC");
-		joinAndAssertOutput(8, 14, prev, Operator.CHILD, posEnum);
+		joinAndAssertOutput(8, 14, join, prev, Operator.CHILD, posEnum);
 	}
 
 	public void testParentOp() throws Exception {
 		IndexReader r = setupIndexWithDocs("(SS(CC WW)(PP(CC WW)(JJ WW))(PP(QQ(CC WW))(PP(CC WW)(ZZ WW))))");
 		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 16, 0, "CC", "PP");
-		joinAndAssertOutput(8, 18, prev, Operator.PARENT, posEnum);
+		joinAndAssertOutput(8, 18, join, prev, Operator.PARENT, posEnum);
 	}
 	
 	public void testChildError() throws Exception {
 		String sent = "(S1 (S (PP (IN In) (NP (NP (NNP September)) (, ,) (NP (CD 2008)))) (, ,) (NP (DT the) (NN organization)) (VP (VBD marked) (NP (NP (NP (DT the) (JJ 5th) ('' ') (NN anniversary) ('' ')) (PP (IN of) (NP (NP (NP (DT the) (NNP RIAA) (POS 's)) (NN litigation) (NN campaign)) (PP (IN by) (S (VP (VBG publishing) (NP (DT a) (ADJP (RB highly) (JJ critical)) (, ,) (JJ detailed) (NN report))))) (, ,) (VP (VBN entitled) ('' ') (NP (NNP RIAA)) (PP (IN v.) (NP (NNP The) (NNP People))))))) (: :) (NP (NP (CD Five) (NNS Years)) (RB Later) (POS '))) (, ,) (S (VP (VBG concluding) (SBAR (IN that) (S (NP (DT the) (NN campaign)) (VP (AUX was) (NP (DT a) (NN failure)))))))) (. .)))";
 		IndexReader r = setupIndexWithDocs(sent);
 		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 68, 0, "NP", "VP");
-		joinAndAssertOutput(4, 113, prev, Operator.CHILD, posEnum);
+		joinAndAssertOutput(4, 113, join, prev, Operator.CHILD, posEnum);
 	}
 	
 	public void testParentError() throws Exception {
 		String sent = "(S1 (S (PP (IN In) (NP (NP (NNP September)) (, ,) (NP (CD 2008)))) (, ,) (NP (DT the) (NN organization)) (VP (VBD marked) (NP (NP (NP (DT the) (JJ 5th) ('' ') (NN anniversary) ('' ')) (PP (IN of) (NP (NP (NP (DT the) (NNP RIAA) (POS 's)) (NN litigation) (NN campaign)) (PP (IN by) (S (VP (VBG publishing) (NP (DT a) (ADJP (RB highly) (JJ critical)) (, ,) (JJ detailed) (NN report))))) (, ,) (VP (VBN entitled) ('' ') (NP (NNP RIAA)) (PP (IN v.) (NP (NNP The) (NNP People))))))) (: :) (NP (NP (CD Five) (NNS Years)) (RB Later) (POS '))) (, ,) (S (VP (VBG concluding) (SBAR (IN that) (S (NP (DT the) (NN campaign)) (VP (AUX was) (NP (DT a) (NN failure)))))))) (. .)))";
 		IndexReader r = setupIndexWithDocs(sent);
 		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 20, 0, "VP", "NP");
-		joinAndAssertOutput(4, 99, prev, Operator.PARENT, posEnum);
+		joinAndAssertOutput(4, 99, join, prev, Operator.PARENT, posEnum);
 	}
 
 }

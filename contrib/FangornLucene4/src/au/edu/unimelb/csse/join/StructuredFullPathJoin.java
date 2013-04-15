@@ -16,7 +16,7 @@ public class StructuredFullPathJoin extends StructuredPathJoin implements Comput
 
 	public StructuredFullPathJoin(String[] labels, int[] parentPos,
 			Operator[] operators, FullPairJoin join, LogicalNodePositionAware nodePositionAware) {
-		super(labels, parentPos, operators, join, nodePositionAware);
+		super(labels, parentPos, operators, nodePositionAware);
 		execPipeline = new FullPairJoinPipeline(nodePositionAware, join);
 	}
 	
@@ -26,20 +26,8 @@ public class StructuredFullPathJoin extends StructuredPathJoin implements Comput
 		if (!success)
 			return false;
 		start = execPipeline.createExecPipeline(root, operators);
-		buffers = getBuffers(maxBufferSize(join, operators));
-		execPipeline.setPrevAndBuffers(prev, buffers);
+		execPipeline.setPrevBuffer(prev);
 		return true;
-	}
-	
-	int maxBufferSize(PairJoin join, Operator[] ops) {
-		int max = 0;
-		for (Operator op : ops) {
-			int numBuf = join.numBuffers(op);
-			if (numBuf > max) {
-				max = numBuf;
-			}
-		}
-		return max;
 	}
 
 	@Override

@@ -17,7 +17,6 @@ public class FullPairJoinPipeline {
 	final FullPairJoin join;
 	Operator[] operators;
 	NodePositions prevPositions;
-	NodePositions[] buffers;
 	NodePairPositions nodePairPositions;
 	List<int[]> results;
 	private int length;
@@ -65,9 +64,8 @@ public class FullPairJoinPipeline {
 		return pipe;
 	}
 
-	void setPrevAndBuffers(NodePositions prev, NodePositions[] buffers) {
+	void setPrevBuffer(NodePositions prev) {
 		this.prevPositions = prev;
-		this.buffers = buffers;
 	}
 
 	void setPrevPositionsFromResults(int position, Comparator<int[]> comparator) {
@@ -185,8 +183,7 @@ public class FullPairJoinPipeline {
 		@Override
 		public NodePairPositions execute() throws IOException {
 			setPrevPositionsFromResults(parentPos, comparator);
-			join.match(prevPositions, op, node.postings, nodePairPositions,
-					buffers);
+			join.match(prevPositions, op, node.postings, nodePairPositions);
 			if (nodePairPositions.size == 0) {
 				results.clear();
 				return nodePairPositions;

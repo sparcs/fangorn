@@ -9,12 +9,10 @@ abstract class StructuredPathJoin extends AbstractJoin {
 	NodePositions[] buffers;
 	NodePositions prev;
 	LogicalNodePositionAware nodePositionAware;
-	PairJoin join;
 
 	StructuredPathJoin(String[] labels, int[] parentPos,
-			Operator[] operators, PairJoin join, LogicalNodePositionAware nodePositionAware) {
+			Operator[] operators, LogicalNodePositionAware nodePositionAware) {
 		super(labels, parentPos, operators);
-		this.join = join;
 		this.nodePositionAware = nodePositionAware;
 		prev = new NodePositions();
 	}

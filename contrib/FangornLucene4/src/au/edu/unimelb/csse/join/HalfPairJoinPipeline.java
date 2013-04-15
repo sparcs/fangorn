@@ -33,7 +33,7 @@ class HalfPairJoinPipeline {
 		return root;
 	}
 	
-	void setPrevAndBuffers(NodePositions prev) {
+	void setPrevBuffer(NodePositions prev) {
 		this.prevPositions = prev;
 	}
 
@@ -140,11 +140,6 @@ class HalfPairJoinPipeline {
 		
 		Operator getOp() {
 			return op;
-		}
-		
-		@Override
-		int bufferSize() {
-			return join.numBuffers(op);
 		}
 	}
 

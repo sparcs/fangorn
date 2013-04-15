@@ -16,7 +16,7 @@ public class StructuredBooleanPathJoin extends StructuredPathJoin implements
 	public StructuredBooleanPathJoin(String[] labels, int[] parentPos,
 			Operator[] operators, HalfPairJoin join,
 			LogicalNodePositionAware nodePositionAware) {
-		super(labels, parentPos, operators, join, nodePositionAware);
+		super(labels, parentPos, operators, nodePositionAware);
 		execPipeline = new HalfPairJoinPipeline(nodePositionAware, join);
 	}
 
@@ -26,7 +26,7 @@ public class StructuredBooleanPathJoin extends StructuredPathJoin implements
 		if (!success)
 			return false;
 		start = execPipeline.createExecPipeline(root, operators);
-		execPipeline.setPrevAndBuffers(prev);
+		execPipeline.setPrevBuffer(prev);
 		return true;
 	}
 

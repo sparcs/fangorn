@@ -13,7 +13,7 @@ import au.edu.unimelb.csse.Operator;
  * @author sumukh
  * 
  */
-public interface HalfPairJoin extends PairJoin {
+public interface HalfPairJoin {
 
 	/**
 	 * Ensure that all params and buffers have their offsets and sizes set
