@@ -5,19 +5,19 @@ import java.io.IOException;
 import org.apache.lucene.index.IndexReader;
 
 import au.edu.unimelb.csse.Operator;
-import au.edu.unimelb.csse.join.HalfPairJoinPipeline.Pipe;
+import au.edu.unimelb.csse.join.BooleanJoinPipeline.Pipe;
 import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
 
 public class StructuredBooleanPathJoin extends StructuredPathJoin implements
 		ComputesBooleanResult {
-	HalfPairJoinPipeline execPipeline;
+	BooleanJoinPipeline execPipeline;
 	Pipe start;
 
 	public StructuredBooleanPathJoin(String[] labels, int[] parentPos,
-			Operator[] operators, HalfPairJoin join,
+			Operator[] operators, BooleanJoinPipeline execPipeline,
 			LogicalNodePositionAware nodePositionAware) {
 		super(labels, parentPos, operators, nodePositionAware);
-		execPipeline = new HalfPairJoinPipeline(nodePositionAware, join);
+		this.execPipeline = execPipeline;
 	}
 
 	@Override

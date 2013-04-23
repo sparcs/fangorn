@@ -113,4 +113,10 @@ public class CountingBinaryOperatorAware implements OperatorAware {
 		return inner.startsAfter(prev, poff, next, noff);
 	}
 
+	@Override
+	public int relativeDepth(int[] prev, int poff, int[] next, int noff) {
+		count++;
+		return inner.relativeDepth(prev, poff, next, noff);
+	}
+
 }

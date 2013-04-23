@@ -17,4 +17,5 @@ public interface OperatorAware {
 	boolean startsBefore(int[] prev, int poff, int[] next, int noff);
 	// equivalent to following || descendant
 	boolean startsAfter(int[] prev, int poff, int[] next, int noff);
+	int relativeDepth(int[] prev, int poff, int[] next, int noff);
 }

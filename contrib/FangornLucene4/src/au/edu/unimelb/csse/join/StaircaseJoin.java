@@ -20,9 +20,9 @@ import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
  * 
  */
 public class StaircaseJoin extends AbstractPairJoin implements HalfPairJoin {
-	//only Ancestor operator uses 3 buffers, rest use 2
-	NodePositions[] buffers = new NodePositions[] { new NodePositions(),
-			new NodePositions(), new NodePositions() };
+	NodePositions result = new NodePositions();
+	NodePositions next = new NodePositions();
+	NodePositions buffer = new NodePositions();
 
 	public StaircaseJoin(LogicalNodePositionAware nodePositionAware) {
 		super(nodePositionAware);
@@ -38,24 +38,23 @@ public class StaircaseJoin extends AbstractPairJoin implements HalfPairJoin {
 			DocsAndPositionsEnum node) throws IOException {
 		prev.offset = 0;
 		prune(prev, op);
-		NodePositions next = buffers[1];
 		next.reset();
 		nodePositionAware.getAllPositions(next, node);
 		doJoin(prev, op, next);
-		return buffers[0];
+		return result;
 	}
 
 	@Override
-	public NodePositions match(NodePositions prev, Operator op, NodePositions next) throws IOException {
+	public NodePositions match(NodePositions prev, Operator op,
+			NodePositions next) throws IOException {
 		prev.offset = 0;
 		prune(prev, op);
 		next.offset = 0;
 		doJoin(prev, op, next);
-		return buffers[0];
+		return result;
 	}
 
-	private void doJoin(NodePositions prev, Operator op, NodePositions next) {
-		NodePositions result = buffers[0];
+	void doJoin(NodePositions prev, Operator op, NodePositions next) {
 		result.reset();
 
 		if (Operator.FOLLOWING.equals(op) || Operator.PRECEDING.equals(op)) {
@@ -123,9 +122,119 @@ public class StaircaseJoin extends AbstractPairJoin implements HalfPairJoin {
 				}
 				next.offset += positionLength;
 			}
+		} else if (Operator.FOLLOWING_SIBLING.equals(op)
+				|| Operator.IMMEDIATE_FOLLOWING_SIBLING.equals(op)) {
+			int start = prev.size - positionLength;
+			for (int i = next.size - positionLength; i >= 0; i -= positionLength) {
+				for (int j = start; j >= 0; j -= positionLength) {
+					while (j >= 0
+							&& operatorAware.startsBefore(prev.positions, j,
+									next.positions, i)) {
+						j -= positionLength;
+						start = j;
+					}
+					if (j < 0)
+						break;
+					if (op.match(prev.positions, j, next.positions, i,
+							operatorAware)) {
+						next.offset = i;
+						result.insert(next, 0, positionLength);
+						break;
+					} else if (operatorAware.following(prev.positions, j,
+							next.positions, i)
+							&& operatorAware.relativeDepth(prev.positions, j,
+									next.positions, i) > 0) {
+						continue;
+					}
+					break;
+				}
+			}
+		} else if (Operator.PRECEDING_SIBLING.equals(op)
+				|| Operator.IMMEDIATE_PRECEDING_SIBLING.equals(op)) {
+			int start = 0;
+			for (int i = 0; i < next.size; i += positionLength) {
+				for (int j = start; j < prev.size; j += positionLength) {
+					while (j < prev.size
+							&& operatorAware.startsAfter(prev.positions, j,
+									next.positions, i)) {
+						j += positionLength;
+						start = j;
+					}
+					if (j >= prev.size) {
+						break;
+					}
+					if (op.match(prev.positions, j, next.positions, i,
+							operatorAware)) {
+						next.offset = i;
+						result.push(next, positionLength);
+						break;
+					} else if (operatorAware.descendant(prev.positions, j,
+							next.positions, i)
+							|| operatorAware.relativeDepth(prev.positions, j,
+									next.positions, i) > 0) {
+						continue;
+					}
+					break;
+				}
+			}
+		} else if (Operator.IMMEDIATE_FOLLOWING.equals(op)) {
+			int start = prev.size - positionLength;
+			for (int i = next.size - positionLength; i >= 0; i -= positionLength) {
+				for (int j = start; j >= 0; j -= positionLength) {
+					while (j >= 0
+							&& operatorAware.startsBefore(prev.positions, j,
+									next.positions, i)) {
+						j -= positionLength;
+						start = j;
+					}
+					if (j < 0)
+						break;
+					if (operatorAware.immediateFollowing(prev.positions, j,
+							next.positions, i)) {
+						next.offset = i;
+						result.insert(next, 0, positionLength);
+						break;
+					}
+					if (operatorAware.ancestor(prev.positions, j,
+							next.positions, i)) {
+						break;
+					}
+				}
+			}
+		} else if (Operator.IMMEDIATE_PRECEDING.equals(op)) {
+			int start = 0;
+			for (int i = 0; i < next.size; i += positionLength) {
+				for (int j = start; j < prev.size; j += positionLength) {
+					while (j < prev.size
+							&& operatorAware.startsAfter(prev.positions, j,
+									next.positions, i)) {
+						j += positionLength;
+						start = j;
+					}
+					if (j >= prev.size) {
+						break;
+					}
+					if (operatorAware.immediatePreceding(prev.positions, j, next.positions, i)) {
+						next.offset = i;
+						result.push(next, positionLength);
+						break;
+					}
+					if (operatorAware.descendant(prev.positions, j,
+							next.positions, i)) {
+						break;
+					}
+				}
+			}
 		}
 	}
 
+	/**
+	 * Prunes the prev list Makes use of result, next, and buffer variables as
+	 * buffers
+	 * 
+	 * @param prev
+	 * @param op
+	 */
 	void prune(NodePositions prev, Operator op) {
 		if (prev.size <= 4)
 			return;
@@ -141,9 +250,9 @@ public class StaircaseJoin extends AbstractPairJoin implements HalfPairJoin {
 	}
 
 	void pruneAncestor(NodePositions prev) {
-		NodePositions stack = buffers[0];
-		NodePositions mark = buffers[1];
-		NodePositions offsetStack = buffers[2];
+		NodePositions stack = result;
+		NodePositions mark = next;
+		NodePositions offsetStack = buffer;
 		stack.reset();
 		mark.reset();
 		offsetStack.reset();
@@ -184,8 +293,8 @@ public class StaircaseJoin extends AbstractPairJoin implements HalfPairJoin {
 	}
 
 	void pruneDescendant(NodePositions prev) {
-		NodePositions stack = buffers[0];
-		NodePositions mark = buffers[1];
+		NodePositions stack = result;
+		NodePositions mark = next;
 		stack.reset();
 		mark.reset();
 		stack.push(prev, positionLength);

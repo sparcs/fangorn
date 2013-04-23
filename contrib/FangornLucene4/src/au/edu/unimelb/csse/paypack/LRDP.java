@@ -175,6 +175,11 @@ public class LRDP implements LogicalNodePositionAware {
 							+ DEPTH] < next[noff + DEPTH]);
 		}
 
+		@Override
+		public int relativeDepth(int[] prev, int poff, int[] next, int noff) {
+			return prev[poff + DEPTH] - next[noff + DEPTH];
+		}
+
 	}
 
 	@Override

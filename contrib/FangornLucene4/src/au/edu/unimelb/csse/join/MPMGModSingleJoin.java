@@ -36,7 +36,7 @@ import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
  * 
  */
 public class MPMGModSingleJoin extends AbstractPairJoin implements HalfPairJoin {
-	NodePositions[] buffers = new NodePositions[] {new NodePositions()};
+	NodePositions result = new NodePositions();
 
 	public MPMGModSingleJoin(LogicalNodePositionAware nodePositionAware) {
 		super(nodePositionAware);
@@ -47,7 +47,6 @@ public class MPMGModSingleJoin extends AbstractPairJoin implements HalfPairJoin 
 			DocsAndPositionsEnum node)
 			throws IOException {
 		int freq = node.freq();
-		NodePositions result = buffers[0]; // buffer used as result
 		result.reset();
 		int numNextRead = 0;
 		int pmark = 0;
@@ -86,7 +85,6 @@ public class MPMGModSingleJoin extends AbstractPairJoin implements HalfPairJoin 
 	@Override
 	public NodePositions match(NodePositions prev, Operator op,
 			NodePositions next) throws IOException {
-		NodePositions result = buffers[0]; // buffer used as result
 		result.reset();
 		next.offset = 0;
 		int pmark = 0;

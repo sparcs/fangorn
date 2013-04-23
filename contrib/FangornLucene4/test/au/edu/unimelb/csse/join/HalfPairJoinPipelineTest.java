@@ -4,19 +4,18 @@ import org.apache.lucene.index.DocsAndPositionsEnum;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.Term;
 
-import au.edu.unimelb.csse.IndexTestCase;
 import au.edu.unimelb.csse.Operator;
 import au.edu.unimelb.csse.join.AbstractJoin.PostingsAndFreq;
+import au.edu.unimelb.csse.join.BooleanJoinPipeline.Pipe;
 import au.edu.unimelb.csse.join.HalfPairJoinPipeline.AbstractPipe;
 import au.edu.unimelb.csse.join.HalfPairJoinPipeline.GetAllPipe;
 import au.edu.unimelb.csse.join.HalfPairJoinPipeline.GetRootNodePipe;
 import au.edu.unimelb.csse.join.HalfPairJoinPipeline.MetaPipe;
-import au.edu.unimelb.csse.join.HalfPairJoinPipeline.Pipe;
 import au.edu.unimelb.csse.join.HalfPairJoinPipeline.SimplePipe;
 import au.edu.unimelb.csse.paypack.LRDP;
 import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
 
-public class HalfPairJoinPipelineTest extends IndexTestCase {
+public class HalfPairJoinPipelineTest extends PipelineTestCase {
 	private LogicalNodePositionAware npa = new LRDP(LRDP.PhysicalPayloadFormat.BYTE1111);
 
 	public void testReturnsSingleGetAllPipeForDescendant1stOp()
@@ -87,12 +86,12 @@ public class HalfPairJoinPipelineTest extends IndexTestCase {
 		assertTrue(a instanceof GetAllPipe);
 		assertEquals(aPosEnum, ((AbstractPipe) a).node);
 		Pipe c = a.getNext();
-		assertMetaPipe(Operator.ANCESTOR, true, c);
+		assertMetaPipe(Operator.ANCESTOR, true, true, c);
 		Pipe ci = ((MetaPipe) c).getInner();
 		assertGetAllPipe(cPosEnum, false, ci);
 
 		Pipe e = c.getNext();
-		assertMetaPipe(Operator.ANCESTOR, false, e);
+		assertMetaPipe(Operator.ANCESTOR, false, true, e);
 		Pipe ei = ((MetaPipe) e).getInner();
 		assertGetAllPipe(ePosEnum, false, ei);
 	}
@@ -172,7 +171,7 @@ public class HalfPairJoinPipelineTest extends IndexTestCase {
 		assertSimplePipe(bPosEnum, Operator.DESCENDANT, b, true);
 
 		Pipe bm = b.getNext();
-		assertMetaPipe(Operator.PARENT, true, bm);
+		assertMetaPipe(Operator.PARENT, true, true, bm);
 
 		Pipe d = ((MetaPipe) bm).getInner();
 		assertGetAllPipe(dPosEnum, true, d);
@@ -181,7 +180,7 @@ public class HalfPairJoinPipelineTest extends IndexTestCase {
 		assertSimplePipe(cPosEnum, Operator.PRECEDING, c, false);
 
 		Pipe bmm = bm.getNext();
-		assertMetaPipe(Operator.IMMEDIATE_PRECEDING, false, bmm);
+		assertMetaPipe(Operator.IMMEDIATE_PRECEDING, false, true, bmm);
 
 		Pipe h = ((MetaPipe) bmm).getInner();
 		assertGetAllPipe(hPosEnum, true, h);
@@ -193,7 +192,7 @@ public class HalfPairJoinPipelineTest extends IndexTestCase {
 		assertSimplePipe(fPosEnum, Operator.DESCENDANT, f, true);
 
 		Pipe fm = f.getNext();
-		assertMetaPipe(Operator.IMMEDIATE_PRECEDING_SIBLING, true, fm);
+		assertMetaPipe(Operator.IMMEDIATE_PRECEDING_SIBLING, true, true, fm);
 
 		Pipe j = ((MetaPipe) fm).getInner();
 		assertGetAllPipe(jPosEnum, true, j);
@@ -205,7 +204,7 @@ public class HalfPairJoinPipelineTest extends IndexTestCase {
 		assertSimplePipe(ePosEnum, Operator.ANCESTOR, e, true);
 
 		Pipe em = e.getNext();
-		assertMetaPipe(Operator.CHILD, true, em);
+		assertMetaPipe(Operator.CHILD, true, true, em);
 
 		Pipe n = ((MetaPipe) em).getInner();
 		assertGetAllPipe(nPosEnum, true, n);
@@ -220,10 +219,10 @@ public class HalfPairJoinPipelineTest extends IndexTestCase {
 		assertSimplePipe(kPosEnum, Operator.FOLLOWING_SIBLING, k, true);
 
 		Pipe km = k.getNext();
-		assertMetaPipe(Operator.IMMEDIATE_FOLLOWING_SIBLING, false, km);
+		assertMetaPipe(Operator.IMMEDIATE_FOLLOWING_SIBLING, false, true, km);
 
 		Pipe emm = em.getNext();
-		assertMetaPipe(Operator.PARENT, false, emm);
+		assertMetaPipe(Operator.PARENT, false, true, emm);
 
 		Pipe r = ((MetaPipe) emm).getInner();
 		assertGetAllPipe(rPosEnum, true, r);
@@ -251,59 +250,12 @@ public class HalfPairJoinPipelineTest extends IndexTestCase {
 		NodePositions out = a.execute();
 		assertPositions(new int[] { 0, 1, 2, 2 }, 0, out);
 
-		assertPositions(new int[] { 0, 1, 2, 2 }, 0, join.buffers[0]);
+		assertPositions(new int[] { 0, 1, 2, 2 }, 0, join.result);
 		assertPositions(new int[] { 0, 1, 1, 5, 1, 2, 2, 4 }, 4, prev);
-		assertFalse(prev == join.buffers[0]); // prev and firstBuffer are distinct
+		assertFalse(prev == join.result); // prev and firstBuffer are distinct
 
-		assertPositions(new int[] { 0, 1, 2, 2, 1, 2, 1, 5 }, 8, join.buffers[1]);
+		assertPositions(new int[] { 0, 1, 2, 2, 1, 2, 1, 5 }, 8, join.next);
 	}
 
-	private void assertMetaPipe(Operator expectedMetaOp,
-			boolean metaHasNext, Pipe p) {
-		assertNotNull(p);
-		assertTrue(p instanceof MetaPipe);
-		assertEquals(expectedMetaOp, ((MetaPipe) p).getOp());
-		Pipe ip = ((MetaPipe) p).getInner();
-		assertTrue("Expected inner pipe to be an instance of GetAllPipe",
-				ip instanceof GetAllPipe);
-		if (metaHasNext) {
-			assertNotNull(p.getNext());
-		} else {
-			assertNull(p.getNext());
-		}
-	}
 
-	private void assertGetAllPipe(DocsAndPositionsEnum expectedPosEnum,
-			boolean hasNext, Pipe p) {
-		assertTrue(p instanceof GetAllPipe);
-		assertEquals(expectedPosEnum, ((GetAllPipe) p).node);
-		if (hasNext) {
-			assertNotNull(p.getNext());
-		} else {
-			assertNull(p.getNext());
-		}
-	}
-
-	private void assertSimplePipe(DocsAndPositionsEnum expectedPosEnum,
-			Operator expectedOp, Pipe p, boolean hasNext) {
-		assertNotNull(p);
-		assertTrue(p instanceof SimplePipe);
-		assertEquals(expectedOp, ((SimplePipe) p).getOp());
-		assertEquals(expectedPosEnum, ((SimplePipe) p).node);
-		if (hasNext) {
-			assertNotNull(p.getNext());
-		} else {
-			assertNull(p.getNext());
-		}
-	}
-
-	private PostingsAndFreq getPf(DocsAndPositionsEnum aPosEnum, int pos,
-			PostingsAndFreq... children) {
-		PostingsAndFreq pf = new PostingsAndFreq(aPosEnum, 1, pos, null);
-		pf.children = new PostingsAndFreq[children.length];
-		for (int i = 0; i < children.length; i++) {
-			pf.children[i] = children[i];
-		}
-		return pf;
-	}
 }

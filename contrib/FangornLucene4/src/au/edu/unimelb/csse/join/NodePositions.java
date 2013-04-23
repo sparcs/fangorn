@@ -59,6 +59,20 @@ public class NodePositions {
 		return false;
 	}
 	
+	public void insert(NodePositions value, int position, int length) {
+		if (size == position) {
+			push(value, length);
+			return;
+		}
+		while (size + length >= positions.length) {
+			expand();
+		}
+		System.arraycopy(positions, position, positions, position + length, length);
+		System.arraycopy(value.positions, value.offset, positions, position, length);
+		size += length;
+		offset = size - length;
+	}
+	
 	public void push(NodePositions value, int length) {
 		while (size + length >= positions.length) {
 			expand();
