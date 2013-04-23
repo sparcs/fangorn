@@ -18,9 +18,10 @@ public class StructuredBooleanPathJoinTest extends IndexTestCase {
 
 		for (int i = 0; i < joins.length; i++) {
 			HalfPairJoin hpj = joins[i];
+			HalfPairJoinPipeline pipeline = new HalfPairJoinPipeline(lrdp, hpj);
 			StructuredBooleanPathJoin join = new StructuredBooleanPathJoin(
 					new String[] { "A", "B", "C", "D", "E" }, new int[] { -1,
-							0, 1, 0, 3 }, getDescOp(5), hpj, lrdp);
+							0, 1, 0, 3 }, getDescOp(5), pipeline, lrdp);
 
 			IndexReader r = setupIndexWithDocs("(A(A(E J)(B D))(A(B(C E)(E D)))(A(D(B(A(C J)))(E(D E)))))");
 			join.setup(r);
@@ -29,10 +30,10 @@ public class StructuredBooleanPathJoinTest extends IndexTestCase {
 			assertTrue(join.match());
 			if (i == 0) {
 				assertPositions(new int[] { 0, 6, 0, 0, 4, 6, 1, 15 }, 4,
-						((StaircaseJoin) hpj).buffers[0]);
+						((StaircaseJoin) hpj).result);
 			} else {
 				assertPositions(new int[] { 0, 6, 0, 0, 4, 6, 1, 15 }, 4,
-						((MPMGModSingleJoin) hpj).buffers[0]);
+						((MPMGModSingleJoin) hpj).result);
 
 			}
 		}

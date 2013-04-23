@@ -60,6 +60,21 @@ public abstract class PairJoinTestCase extends IndexTestCase {
 		assertEquals("Incorrect number of comparisons", expectedComparisons,
 				endCount - startCount);
 	}
+	
+	protected void lookaheadJoinAndAssertOutput(int expectedNumResults,
+			int expectedComparisons, LookaheadTermEarlyJoin join, NodePositions prev,
+			Operator op, Operator nextOp, DocsAndPositionsEnum posEnum, int i) throws IOException {
+		int startCount = countingOperatorAware.getCount();
+		int resultSize = 0;
+
+		bufferResult = join.matchWithLookahead(prev, op, posEnum, nextOp);
+		resultSize = bufferResult.size;
+		assertEquals("Incorrect number of results at pos " + i, expectedNumResults,
+				resultSize);
+		int endCount = countingOperatorAware.getCount();
+		assertEquals("Incorrect number of comparisons at pos " + i, expectedComparisons,
+				endCount - startCount);
+	}
 
 	protected DocsAndPositionsEnum initPrevGetNext(IndexReader r,
 			final int expectedPrevLength) throws IOException {

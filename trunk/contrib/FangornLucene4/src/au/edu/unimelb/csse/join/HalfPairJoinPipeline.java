@@ -9,7 +9,7 @@ import au.edu.unimelb.csse.OperatorInverse;
 import au.edu.unimelb.csse.join.AbstractJoin.PostingsAndFreq;
 import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
 
-class HalfPairJoinPipeline {
+public class HalfPairJoinPipeline implements BooleanJoinPipeline {
 	Pipe root;
 	final LogicalNodePositionAware nodePositionAware;
 	final HalfPairJoin join;
@@ -22,7 +22,7 @@ class HalfPairJoinPipeline {
 		this.join = join;
 	}
 
-	Pipe createExecPipeline(PostingsAndFreq pfRoot, Operator[] operators) {
+	public Pipe createExecPipeline(PostingsAndFreq pfRoot, Operator[] operators) {
 		this.operators = operators;
 		if (Operator.CHILD.equals(operators[pfRoot.position])) {
 			root = new GetRootNodePipe(pfRoot.postings);
@@ -32,8 +32,8 @@ class HalfPairJoinPipeline {
 		pathFromNode(pfRoot, root);
 		return root;
 	}
-	
-	void setPrevBuffer(NodePositions prev) {
+
+	public void setPrevBuffer(NodePositions prev) {
 		this.prevPositions = prev;
 	}
 
@@ -64,7 +64,8 @@ class HalfPairJoinPipeline {
 		} else if (node.children.length == 1) {
 			Pipe prev = addInReverse(node.children[0]);
 			Pipe current = new SimplePipe(node.postings,
-					OperatorInverse.get(operators[node.children[0].position]), prev);
+					OperatorInverse.get(operators[node.children[0].position]),
+					prev);
 			prev.setNext(current);
 			return current;
 		}
@@ -85,7 +86,7 @@ class HalfPairJoinPipeline {
 		}
 		return prev;
 	}
-	
+
 	class GetAllPipe extends AbstractPipe {
 
 		public GetAllPipe(DocsAndPositionsEnum node) {
@@ -111,7 +112,8 @@ class HalfPairJoinPipeline {
 			prevPositions.reset();
 			nodePositionAware.getAllPositions(prevPositions, node);
 			prevPositions.offset = 0;
-			if (nodePositionAware.isTreeRootPosition(prevPositions.positions, 0)) {
+			if (nodePositionAware
+					.isTreeRootPosition(prevPositions.positions, 0)) {
 				prevPositions.size = nodePositionAware.getPositionLength();
 				return continueExection(prevPositions);
 			}
@@ -124,9 +126,8 @@ class HalfPairJoinPipeline {
 		private Operator op;
 
 		public SimplePipe(DocsAndPositionsEnum node, Operator op, Pipe prev) {
-			super(node);
+			super(node, prev);
 			this.op = op;
-			this.prev = prev;
 		}
 
 		@Override
@@ -137,7 +138,7 @@ class HalfPairJoinPipeline {
 			}
 			return result;
 		}
-		
+
 		Operator getOp() {
 			return op;
 		}
@@ -181,12 +182,12 @@ class HalfPairJoinPipeline {
 		public void setNext(Pipe pipe) {
 			this.next = pipe;
 		}
-		
+
 		@Override
 		public Pipe getNext() {
 			return next;
 		}
-		
+
 		Operator getOp() {
 			return op;
 		}
@@ -203,13 +204,18 @@ class HalfPairJoinPipeline {
 	}
 
 	abstract class AbstractPipe implements Pipe {
-		
+
 		Pipe next;
 		Pipe prev;
 		DocsAndPositionsEnum node;
 
 		public AbstractPipe(DocsAndPositionsEnum node) {
 			this.node = node;
+		}
+
+		public AbstractPipe(DocsAndPositionsEnum node, Pipe prev) {
+			this(node);
+			this.prev = prev;
 		}
 
 		public void setNext(Pipe pipe) {
@@ -222,30 +228,15 @@ class HalfPairJoinPipeline {
 			prevPositions.makeCloneOf(result);
 			return next.execute();
 		}
-		
+
 		public Pipe getNext() {
 			return next;
 		}
-		
-		int bufferSize() {
-			return 1;
-		}
-		
+
 		@Override
 		public Pipe getStart() {
 			return prev == null ? this : prev.getStart();
 		}
 	}
 
-	interface Pipe {
-
-		NodePositions execute() throws IOException;
-
-		void setNext(Pipe pipe);
-		
-		Pipe getNext();
-		
-		Pipe getStart();
-		
-	}
 }

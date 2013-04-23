@@ -27,7 +27,7 @@ import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
  * 
  */
 public class MPMGJoin extends AbstractPairJoin implements FullPairJoin {
-	NodePositions[] buffers = new NodePositions[] {new NodePositions()};
+	NodePositions buffer = new NodePositions();
 
 	public MPMGJoin(LogicalNodePositionAware nodePositionAware) {
 		super(nodePositionAware);
@@ -36,7 +36,6 @@ public class MPMGJoin extends AbstractPairJoin implements FullPairJoin {
 	@Override
 	public void match(NodePositions prev, Operator op,
 			DocsAndPositionsEnum node, NodePairPositions result) throws IOException {
-		NodePositions buffer = buffers[0];
 		buffer.reset();
 		result.reset();
 		prev.offset = 0;

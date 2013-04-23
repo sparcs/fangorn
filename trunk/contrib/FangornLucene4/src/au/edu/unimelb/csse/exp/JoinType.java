@@ -1,7 +1,12 @@
 package au.edu.unimelb.csse.exp;
 
+import au.edu.unimelb.csse.join.BooleanJoinPipeline;
 import au.edu.unimelb.csse.join.ComputesBooleanResult;
 import au.edu.unimelb.csse.join.ComputesFullResults;
+import au.edu.unimelb.csse.join.HalfPairJoin;
+import au.edu.unimelb.csse.join.HalfPairJoinPipeline;
+import au.edu.unimelb.csse.join.LookaheadTermEarlyJoin;
+import au.edu.unimelb.csse.join.LookaheadTermEarlyPipeline;
 import au.edu.unimelb.csse.join.MPMGJoin;
 import au.edu.unimelb.csse.join.MPMGModJoin;
 import au.edu.unimelb.csse.join.MPMGModSingleJoin;
@@ -45,21 +50,40 @@ public enum JoinType {
 		@Override
 		public ComputesBooleanResult getBooleanJoin(TreeQuery query,
 				LogicalNodePositionAware nodePositionAware) {
+			HalfPairJoin join = new MPMGModSingleJoin(nodePositionAware);
+			HalfPairJoinPipeline pipeline = new HalfPairJoinPipeline(
+					nodePositionAware, join);
 			return new StructuredBooleanPathJoin(query.labels(),
-					query.parents(), query.operators(), new MPMGModSingleJoin(
-							nodePositionAware), nodePositionAware);
+					query.parents(), query.operators(), pipeline,
+					nodePositionAware);
 		}
 	},
 	STAIRCASE(4, false, true) {
 		@Override
 		public ComputesBooleanResult getBooleanJoin(TreeQuery query,
 				LogicalNodePositionAware nodePositionAware) {
+			HalfPairJoin join = new StaircaseJoin(nodePositionAware);
+			HalfPairJoinPipeline pipeline = new HalfPairJoinPipeline(
+					nodePositionAware, join);
 			return new StructuredBooleanPathJoin(query.labels(),
-					query.parents(), query.operators(), new StaircaseJoin(
-							nodePositionAware), nodePositionAware);
+					query.parents(), query.operators(), pipeline,
+					nodePositionAware);
 		}
 	},
-	TWIGSTACK(5, true, true) {
+	LATE(5, false, true) {
+		@Override
+		public ComputesBooleanResult getBooleanJoin(TreeQuery query,
+				LogicalNodePositionAware nodePositionAware) {
+			LookaheadTermEarlyJoin join = new LookaheadTermEarlyJoin(
+					nodePositionAware);
+			BooleanJoinPipeline pipeline = new LookaheadTermEarlyPipeline(
+					nodePositionAware, join);
+			return new StructuredBooleanPathJoin(query.labels(),
+					query.parents(), query.operators(), pipeline,
+					nodePositionAware);
+		}
+	},
+	TWIGSTACK(6, true, true) {
 		@Override
 		public ComputesFullResults getFullJoin(TreeQuery query,
 				LogicalNodePositionAware nodePositionAware) {
@@ -67,7 +91,7 @@ public enum JoinType {
 					query.operators(), nodePositionAware);
 		}
 	},
-	PATHSTACK(6, true, false) {
+	PATHSTACK(7, true, false) {
 		@Override
 		public ComputesFullResults getFullJoin(TreeQuery query,
 				LogicalNodePositionAware nodePositionAware) {
@@ -93,7 +117,7 @@ public enum JoinType {
 	public boolean returnsFullResults() {
 		return fullResults;
 	}
-	
+
 	public int getId() {
 		return id;
 	}
