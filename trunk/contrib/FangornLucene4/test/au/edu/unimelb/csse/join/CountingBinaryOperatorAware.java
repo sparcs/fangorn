@@ -1,5 +1,6 @@
 package au.edu.unimelb.csse.join;
 
+import au.edu.unimelb.csse.Operator;
 import au.edu.unimelb.csse.OperatorAware;
 
 public class CountingBinaryOperatorAware implements OperatorAware {
@@ -117,6 +118,19 @@ public class CountingBinaryOperatorAware implements OperatorAware {
 	public int relativeDepth(int[] prev, int poff, int[] next, int noff) {
 		count++;
 		return inner.relativeDepth(prev, poff, next, noff);
+	}
+
+	@Override
+	public Operator mostRelevantRelation(int[] prev, int poff, int[] next,
+			int noff) {
+		count++;
+		return inner.mostRelevantRelation(prev, poff, next, noff);
+	}
+
+	@Override
+	public boolean same(int[] prev, int poff, int[] next, int noff) {
+		count ++;
+		return inner.same(prev, poff, next, noff);
 	}
 
 }
