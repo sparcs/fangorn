@@ -8,7 +8,7 @@ import au.edu.unimelb.csse.Operator;
 import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
 
 public class LookaheadTermEarlyJoin extends AbstractPairJoin implements
-		HalfPairJoin {
+		HalfPairLATEJoin {
 	private StaircaseJoin join;
 	NodePositions next;
 	NodePositions buffer;

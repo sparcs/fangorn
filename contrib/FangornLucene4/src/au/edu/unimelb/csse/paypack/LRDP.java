@@ -5,6 +5,7 @@ import java.io.IOException;
 import org.apache.lucene.index.DocsAndPositionsEnum;
 import org.apache.lucene.util.BytesRef;
 
+import au.edu.unimelb.csse.Operator;
 import au.edu.unimelb.csse.OperatorAware;
 import au.edu.unimelb.csse.join.NodePositions;
 
@@ -22,7 +23,7 @@ public class LRDP implements LogicalNodePositionAware {
 
 	public LRDP(PhysicalPayloadFormat ppf) {
 		this.physicalFormat = ppf.getPhysicalPFA();
-		this.binaryOperatorHandler = new LRDPOperators();
+		this.binaryOperatorHandler = new LRDPTreeOperators();
 	}
 
 	public OperatorAware getBinaryOperatorHandler() {
@@ -81,7 +82,7 @@ public class LRDP implements LogicalNodePositionAware {
 		return POSITION_LENGTH;
 	}
 
-	public class LRDPOperators implements OperatorAware {
+	public class LRDPTreeOperators implements OperatorAware {
 
 		@Override
 		public boolean descendant(int[] prev, int poff, int[] next, int noff) {
@@ -155,6 +156,13 @@ public class LRDP implements LogicalNodePositionAware {
 			return immediateFollowingSibling(next, noff, prev, poff);
 		}
 
+		@Override
+		public boolean same(int[] prev, int poff, int[] next, int noff) {
+			return prev[poff + LEFT] == next[noff + LEFT]
+					&& prev[poff + RIGHT] == next[noff + RIGHT]
+					&& prev[poff + DEPTH] == next[noff + DEPTH];
+		}
+
 		/**
 		 * Equivalent to PRECEDING || ANCESTOR
 		 */
@@ -180,6 +188,66 @@ public class LRDP implements LogicalNodePositionAware {
 			return prev[poff + DEPTH] - next[noff + DEPTH];
 		}
 
+		@Override
+		public Operator mostRelevantRelation(int[] prev, int poff, int[] next,
+				int noff) {
+			int leftDiff = prev[poff + LEFT] - next[noff + LEFT]; 
+			int rightDiff = prev[poff + RIGHT] - next[noff + RIGHT];
+			if (leftDiff <= 0) {
+				if (rightDiff >= 0) {
+					int depthDiff = prev[poff + DEPTH] - next[noff + DEPTH];
+					if (depthDiff < 0) {
+						if (depthDiff == -1) {
+							return Operator.CHILD;
+						}
+						return Operator.DESCENDANT;
+					} else if (depthDiff > 0) {
+						if (depthDiff == 1) {
+							return Operator.PARENT;
+						}
+						return Operator.ANCESTOR;
+					}
+					return Operator.SAME;
+				} else if (leftDiff == 0 && rightDiff < 0) {
+					int depthDiff = prev[poff + DEPTH] - next[noff + DEPTH];
+					if (depthDiff == 1) {
+						return Operator.PARENT;
+					}
+					return Operator.ANCESTOR;
+				}
+				int rightLeftDiff = prev[poff + RIGHT] - next[noff + LEFT];
+				int parentDiff = prev[poff + PARENT] - next[noff + PARENT];
+				if (rightLeftDiff == 0) {
+					if (parentDiff == 0) {
+						return Operator.IMMEDIATE_FOLLOWING_SIBLING;
+					}
+					return Operator.IMMEDIATE_FOLLOWING;
+				}
+				if (parentDiff == 0) {
+					return Operator.FOLLOWING_SIBLING;
+				}
+				return Operator.FOLLOWING;
+			}
+			if (rightDiff <= 0) {
+				int depthDiff = prev[poff + DEPTH] - next[noff + DEPTH];
+				if (depthDiff == 1) {
+					return Operator.PARENT;
+				}
+				return Operator.ANCESTOR;
+			}
+			int leftRightDiff = prev[poff + LEFT] - next[noff + RIGHT];
+			int parentDiff = prev[poff + PARENT] - next[noff + PARENT];
+			if (leftRightDiff == 0) {
+				if (parentDiff == 0) {
+					return Operator.IMMEDIATE_PRECEDING_SIBLING;
+				}
+				return Operator.IMMEDIATE_PRECEDING;
+			}
+			if (parentDiff == 0) {
+				return Operator.PRECEDING_SIBLING;
+			}
+			return Operator.PRECEDING;
+		}
 	}
 
 	@Override
@@ -213,12 +281,12 @@ public class LRDP implements LogicalNodePositionAware {
 		}
 		return pos1[off1 + PARENT] - pos2[off2 + PARENT];
 	}
-	
+
 	public static enum PhysicalPayloadFormat {
 		BYTE1111(new BytePacking(4)), BYTE2212(new BytePacking2212());
-		
+
 		private PhysicalPayloadFormatAware ppfa;
-		
+
 		PhysicalPayloadFormat(PhysicalPayloadFormatAware ppfa) {
 			this.ppfa = ppfa;
 		}

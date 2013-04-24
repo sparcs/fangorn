@@ -10,7 +10,7 @@ import au.edu.unimelb.csse.Operator;
 import au.edu.unimelb.csse.OperatorAware;
 import au.edu.unimelb.csse.join.NodePositions;
 
-public class LRDPOperatorsTest extends TestCase {
+public class LRDPTreeOperatorsTest extends TestCase {
 	private LRDP lrdp = new LRDP(LRDP.PhysicalPayloadFormat.BYTE1111);
 	private OperatorAware opAware = lrdp.getBinaryOperatorHandler();
 

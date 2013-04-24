@@ -12,14 +12,13 @@ import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
 
 public class LookaheadTermEarlyPipeline extends HalfPairJoinPipeline implements
 		BooleanJoinPipeline {
-	LookaheadTermEarlyJoin lateJoin;
+	HalfPairLATEJoin lateJoin;
 	NodePositions buffer;
 	int positionLength;
 	OperatorAware operatorAware;
 
 	public LookaheadTermEarlyPipeline(
-			LogicalNodePositionAware nodePositionAware,
-			LookaheadTermEarlyJoin join) {
+			LogicalNodePositionAware nodePositionAware, HalfPairLATEJoin join) {
 		super(nodePositionAware, join);
 		lateJoin = join;
 		buffer = new NodePositions();
@@ -131,8 +130,7 @@ public class LookaheadTermEarlyPipeline extends HalfPairJoinPipeline implements
 
 	private Pipe addInReverseFirstNode(PostingsAndFreq node, Operator nextOp) {
 		Pipe prev = addInReverse(node.children[0]);
-		Operator op = OperatorInverse
-				.get(operators[node.children[0].position]);
+		Operator op = OperatorInverse.get(operators[node.children[0].position]);
 		Pipe current;
 		if (isLookaheadOp(nextOp)) {
 			current = new LookaheadPipe(node.postings, op, nextOp, prev);
