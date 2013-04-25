@@ -8,8 +8,8 @@ import org.junit.Before;
 
 import au.edu.unimelb.csse.Operator;
 
-public class LookaheadTermEarlyJoinTest extends PairJoinTestCase {
-	LookaheadTermEarlyJoin join;
+public class LookaheadTermEarlyMRRJoinTest extends PairJoinTestCase {
+	LookaheadTermEarlyMRRJoin join;
 	Operator[] lookaheadOps = new Operator[] { Operator.DESCENDANT,
 			Operator.ANCESTOR, Operator.FOLLOWING, Operator.PRECEDING };
 
@@ -17,7 +17,7 @@ public class LookaheadTermEarlyJoinTest extends PairJoinTestCase {
 	@Before
 	protected void setUp() throws Exception {
 		super.setUp();
-		join = new LookaheadTermEarlyJoin(lrdp);
+		join = new LookaheadTermEarlyMRRJoin(lrdp);
 	}
 
 	public void testFollowingOpWithSimpleFollows() throws Exception {
@@ -46,7 +46,7 @@ public class LookaheadTermEarlyJoinTest extends PairJoinTestCase {
 				new int[] { 2, 3, 2, 6, 3, 4, 2, 8 },
 				new int[] { 2, 3, 2, 6, 3, 4, 2, 8 }, new int[] { 2, 3, 2, 6 },
 				new int[] { 3, 4, 2, 8 } };
-		int[] expectedNumComparisons = new int[] { 5, 5, 5, 4 };
+		int[] expectedNumComparisons = new int[] { 4, 4, 4, 3 };
 
 		String sent = "(SS(AA(FF WW))(PP(PP WW))(NN(FF WW))(ZZ(FF WW)))";
 		String term1 = "PP";
@@ -57,10 +57,10 @@ public class LookaheadTermEarlyJoinTest extends PairJoinTestCase {
 				expectedNumComparisons);
 
 		assertTermEarlyJoin(sent, term1, op, term2, 8,
-				new int[] { 2, 3, 2, 6 }, 3);
+				new int[] { 2, 3, 2, 6 }, 2);
 
 		assertRegularJoin(sent, term1, op, term2, 8, new int[] { 2, 3, 2, 6, 3,
-				4, 2, 8 }, 4);
+				4, 2, 8 }, 3);
 	}
 
 	public void testFollowingOpWithNoneFollowing() throws Exception {
@@ -72,13 +72,13 @@ public class LookaheadTermEarlyJoinTest extends PairJoinTestCase {
 			IndexReader r = setupIndexWithDocs(sent);
 			DocsAndPositionsEnum posEnum = initPrevGetNext(r, 8, 0, term1,
 					term2);
-			lookaheadJoinAndAssertOutput(0, 2, join, prev, op, nextOp, posEnum,
+			lookaheadJoinAndAssertOutput(0, 1, join, prev, op, nextOp, posEnum,
 					0);
 		}
 
-		assertTermEarlyJoin(sent, term1, op, term2, 8, new int[] {}, 2);
+		assertTermEarlyJoin(sent, term1, op, term2, 8, new int[] {}, 1);
 
-		assertRegularJoin(sent, term1, op, term2, 8, new int[] {}, 2);
+		assertRegularJoin(sent, term1, op, term2, 8, new int[] {}, 1);
 	}
 
 	public void testPrecedingOpSimple() throws Exception {
@@ -110,13 +110,13 @@ public class LookaheadTermEarlyJoinTest extends PairJoinTestCase {
 			IndexReader r = setupIndexWithDocs(sent);
 			DocsAndPositionsEnum posEnum = initPrevGetNext(r, 8, 0, term1,
 					term2);
-			lookaheadJoinAndAssertOutput(0, 4, join, prev, op, nextOp, posEnum,
+			lookaheadJoinAndAssertOutput(0, 2, join, prev, op, nextOp, posEnum,
 					0);
 		}
 
-		assertTermEarlyJoin(sent, term1, op, term2, 8, new int[] {}, 4);
+		assertTermEarlyJoin(sent, term1, op, term2, 8, new int[] {}, 2);
 
-		assertRegularJoin(sent, term1, op, term2, 8, new int[] {}, 4);
+		assertRegularJoin(sent, term1, op, term2, 8, new int[] {}, 2);
 	}
 
 	public void testPrecedingOpWithOneIgnored() throws Exception {
@@ -126,17 +126,17 @@ public class LookaheadTermEarlyJoinTest extends PairJoinTestCase {
 		int[][] expectedResults = new int[][] { new int[] { 0, 2, 1, 7 },
 				new int[] { 0, 1, 2, 3 }, new int[] { 0, 1, 2, 3 },
 				new int[] { 0, 1, 2, 3 } };
-		int[] expectedNumComparisons = new int[] { 7, 7, 7, 6 };
+		int[] expectedNumComparisons = new int[] { 5, 5, 5, 4 };
 		Operator op = Operator.PRECEDING;
 
 		assertJoinWithLookaheads(sent, term1, op, term2, 8, expectedResults,
 				expectedNumComparisons);
 
 		assertTermEarlyJoin(sent, term1, op, term2, 8,
-				new int[] { 0, 2, 1, 7 }, 3);
+				new int[] { 0, 2, 1, 7 }, 2);
 
 		assertRegularJoin(sent, term1, op, term2, 8, new int[] { 0, 2, 1, 7, 0,
-				1, 2, 3 }, 6);
+				1, 2, 3 }, 4);
 	}
 
 	public void testDescendantOpWithMixedPositions() throws Exception {
@@ -147,7 +147,7 @@ public class LookaheadTermEarlyJoinTest extends PairJoinTestCase {
 				new int[] { 1, 2, 3, 3, 4, 5, 2, 11 },
 				new int[] { 1, 2, 3, 3, 4, 5, 2, 11 },
 				new int[] { 1, 2, 3, 3 }, new int[] { 4, 5, 2, 11 } };
-		int[] expectedNumComparisons = new int[] { 11, 11, 11, 10 };
+		int[] expectedNumComparisons = new int[] { 7, 7, 7, 6 };
 		Operator op = Operator.DESCENDANT;
 
 		assertJoinWithLookaheads(sent, term1, op, term2, 20, expectedResults,
@@ -157,7 +157,7 @@ public class LookaheadTermEarlyJoinTest extends PairJoinTestCase {
 				new int[] { 1, 2, 3, 3 }, 1);
 
 		assertRegularJoin(sent, term1, op, term2, 20, new int[] { 1, 2, 3, 3,
-				4, 5, 2, 11 }, 10);
+				4, 5, 2, 11 }, 6);
 	}
 
 	public void testChildOpWithMixedPositions() throws Exception {
@@ -170,17 +170,17 @@ public class LookaheadTermEarlyJoinTest extends PairJoinTestCase {
 				new int[] { 1, 2, 3, 3, 2, 3, 2, 5, 5, 6, 2, 11, 8, 9, 2, 20 },
 				new int[] { 1, 2, 3, 3, 2, 3, 2, 5, 5, 6, 2, 11, 8, 9, 2, 20 },
 				new int[] { 1, 2, 3, 3 }, new int[] { 8, 9, 2, 20 } };
-		int[] expectedNumComparisons = new int[] { 57, 57, 5, 54 };
+		int[] expectedNumComparisons = new int[] { 32, 32, 4, 29 };
 		Operator op = Operator.CHILD;
 
 		assertJoinWithLookaheads(sent, term1, op, term2, 28, expectedResults,
 				expectedNumComparisons);
 
 		assertTermEarlyJoin(sent, term1, op, term2, 28,
-				new int[] { 1, 2, 3, 3 }, 3);
+				new int[] { 1, 2, 3, 3 }, 2);
 
 		assertRegularJoin(sent, term1, op, term2, 28, new int[] { 1, 2, 3, 3,
-				2, 3, 2, 5, 5, 6, 2, 11, 8, 9, 2, 20 }, 54);
+				2, 3, 2, 5, 5, 6, 2, 11, 8, 9, 2, 20 }, 29);
 	}
 
 	/**
@@ -198,7 +198,7 @@ public class LookaheadTermEarlyJoinTest extends PairJoinTestCase {
 				new int[] { 0, 2, 1, 12, 4, 5, 1, 12 },
 				new int[] { 1, 2, 2, 4, 4, 5, 1, 12 },
 				new int[] { 1, 2, 2, 4 }, new int[] { 4, 5, 1, 12 } };
-		int[] expectedNumComparisons = new int[] { 13, 13, 11, 11 };
+		int[] expectedNumComparisons = new int[] { 9, 9, 8, 7 };
 		Operator op = Operator.ANCESTOR;
 
 		assertJoinWithLookaheads(sent, term1, op, term2, 12, expectedResults,
@@ -208,7 +208,7 @@ public class LookaheadTermEarlyJoinTest extends PairJoinTestCase {
 				new int[] { 0, 2, 1, 12 }, 1);
 
 		assertRegularJoin(sent, term1, op, term2, 12, new int[] { 0, 2, 1, 12,
-				1, 2, 2, 4, 4, 5, 1, 12 }, 11);
+				1, 2, 2, 4, 4, 5, 1, 12 }, 7);
 	}
 
 	public void testChildOp() throws Exception {
@@ -219,17 +219,17 @@ public class LookaheadTermEarlyJoinTest extends PairJoinTestCase {
 				new int[] { 1, 2, 2, 4, 4, 5, 3, 9 },
 				new int[] { 1, 2, 2, 4, 4, 5, 3, 9 }, new int[] { 1, 2, 2, 4 },
 				new int[] { 4, 5, 3, 9 } };
-		int[] expectedNumComparisons = new int[] { 15, 15, 15, 14 };
+		int[] expectedNumComparisons = new int[] { 9, 9, 9, 8 };
 		Operator op = Operator.CHILD;
 
 		assertJoinWithLookaheads(sent, term1, op, term2, 12, expectedResults,
 				expectedNumComparisons);
 
 		assertTermEarlyJoin(sent, term1, op, term2, 12,
-				new int[] { 1, 2, 2, 4 }, 3);
+				new int[] { 1, 2, 2, 4 }, 2);
 
 		assertRegularJoin(sent, term1, op, term2, 12, new int[] { 1, 2, 2, 4,
-				4, 5, 3, 9 }, 14);
+				4, 5, 3, 9 }, 8);
 	}
 
 	public void testParentOp() throws Exception {
@@ -240,17 +240,17 @@ public class LookaheadTermEarlyJoinTest extends PairJoinTestCase {
 				new int[] { 1, 3, 1, 11, 4, 6, 2, 10 },
 				new int[] { 1, 3, 1, 11, 4, 6, 2, 10 },
 				new int[] { 1, 3, 1, 11 }, new int[] { 4, 6, 2, 10 } };
-		int[] expectedNumComparisons = new int[] { 19, 19, 19, 18 };
+		int[] expectedNumComparisons = new int[] { 11, 11, 11, 10 };
 		Operator op = Operator.PARENT;
 
 		assertJoinWithLookaheads(sent, term1, op, term2, 16, expectedResults,
 				expectedNumComparisons);
 
 		assertTermEarlyJoin(sent, term1, op, term2, 16,
-				new int[] { 1, 3, 1, 11 }, 3);
+				new int[] { 1, 3, 1, 11 }, 2);
 
 		assertRegularJoin(sent, term1, op, term2, 16, new int[] { 1, 3, 1, 11,
-				4, 6, 2, 10 }, 18);
+				4, 6, 2, 10 }, 10);
 	}
 
 	public void testFixChildBug() throws Exception {
@@ -260,17 +260,17 @@ public class LookaheadTermEarlyJoinTest extends PairJoinTestCase {
 		int[][] expectedResults = new int[][] { new int[] { 28, 34, 7, 52 },
 				new int[] { 28, 34, 7, 52 }, new int[] { 28, 34, 7, 52 },
 				new int[] { 28, 34, 7, 52 } };
-		int[] expectedNumComparisons = new int[] { 113, 113, 113, 113 };
+		int[] expectedNumComparisons = new int[] { 57, 57, 57, 57 };
 		Operator op = Operator.CHILD;
 
 		assertJoinWithLookaheads(sent, term1, op, term2, 68, expectedResults,
 				expectedNumComparisons);
 
 		assertTermEarlyJoin(sent, term1, op, term2, 68, new int[] { 28, 34, 7,
-				52 }, 47);
+				52 }, 24);
 
 		assertRegularJoin(sent, term1, op, term2, 68,
-				new int[] { 28, 34, 7, 52 }, 113);
+				new int[] { 28, 34, 7, 52 }, 57);
 	}
 
 	public void testFixParentBug() throws Exception {
@@ -280,17 +280,17 @@ public class LookaheadTermEarlyJoinTest extends PairJoinTestCase {
 		int[][] expectedResults = new int[][] { new int[] { 14, 34, 6, 53 },
 				new int[] { 14, 34, 6, 53 }, new int[] { 14, 34, 6, 53 },
 				new int[] { 14, 34, 6, 53 } };
-		int[] expectedNumComparisons = new int[] { 99, 99, 99, 99 };
+		int[] expectedNumComparisons = new int[] { 50, 50, 50, 50 };
 		Operator op = Operator.PARENT;
 
 		assertJoinWithLookaheads(sent, term1, op, term2, 20, expectedResults,
 				expectedNumComparisons);
 
 		assertTermEarlyJoin(sent, term1, op, term2, 20, new int[] { 14, 34, 6,
-				53 }, 33);
+				53 }, 17);
 
 		assertRegularJoin(sent, term1, op, term2, 20,
-				new int[] { 14, 34, 6, 53 }, 99);
+				new int[] { 14, 34, 6, 53 }, 50);
 	}
 
 	public void testFollowingSibling() throws Exception {
@@ -301,17 +301,17 @@ public class LookaheadTermEarlyJoinTest extends PairJoinTestCase {
 				new int[] { 3, 4, 4, 8, 6, 7, 2, 11 },
 				new int[] { 3, 4, 4, 8, 6, 7, 2, 11 },
 				new int[] { 3, 4, 4, 8 }, new int[] { 6, 7, 2, 11 } };
-		int[] expectedNumComparisons = new int[] { 37, 37, 37, 36 };
+		int[] expectedNumComparisons = new int[] { 20, 20, 20, 19 };
 		Operator op = Operator.FOLLOWING_SIBLING;
 
 		assertJoinWithLookaheads(sent, term1, op, term2, 28, expectedResults,
 				expectedNumComparisons);
 
 		assertTermEarlyJoin(sent, term1, op, term2, 28,
-				new int[] { 3, 4, 4, 8 }, 19);
+				new int[] { 3, 4, 4, 8 }, 10);
 
 		assertRegularJoin(sent, term1, op, term2, 28, new int[] { 3, 4, 4, 8,
-				6, 7, 2, 11 }, 41);
+				6, 7, 2, 11 }, 23);
 	}
 
 	public void testImmediateFollowingSibling() throws Exception {
@@ -322,17 +322,17 @@ public class LookaheadTermEarlyJoinTest extends PairJoinTestCase {
 				new int[] { 3, 4, 4, 8, 6, 7, 2, 11 },
 				new int[] { 3, 4, 4, 8, 6, 7, 2, 11 },
 				new int[] { 3, 4, 4, 8 }, new int[] { 6, 7, 2, 11 } };
-		int[] expectedNumComparisons = new int[] { 43, 43, 43, 42 };
+		int[] expectedNumComparisons = new int[] { 23, 23, 23, 22 };
 		Operator op = Operator.IMMEDIATE_FOLLOWING_SIBLING;
 
 		assertJoinWithLookaheads(sent, term1, op, term2, 32, expectedResults,
 				expectedNumComparisons);
 
 		assertTermEarlyJoin(sent, term1, op, term2, 32,
-				new int[] { 3, 4, 4, 8 }, 23);
+				new int[] { 3, 4, 4, 8 }, 12);
 
 		assertRegularJoin(sent, term1, op, term2, 32, new int[] { 3, 4, 4, 8,
-				6, 7, 2, 11 }, 42);
+				6, 7, 2, 11 }, 24);
 	}
 
 	public void testPrecedingSibling() throws Exception {
@@ -342,17 +342,17 @@ public class LookaheadTermEarlyJoinTest extends PairJoinTestCase {
 		int[][] expectedResults = new int[][] { new int[] { 0, 6, 2, 11 },
 				new int[] { 0, 2, 4, 8, 2, 3, 4, 8 }, new int[] { 0, 2, 4, 8 },
 				new int[] { 2, 3, 4, 8 } };
-		int[] expectedNumComparisons = new int[] { 76, 76, 62, 74 };
+		int[] expectedNumComparisons = new int[] { 41, 41, 33, 39 };
 		Operator op = Operator.PRECEDING_SIBLING;
 
 		assertJoinWithLookaheads(sent, term1, op, term2, 20, expectedResults,
 				expectedNumComparisons);
 
 		assertTermEarlyJoin(sent, term1, op, term2, 20,
-				new int[] { 0, 6, 2, 11 }, 31);
+				new int[] { 0, 6, 2, 11 }, 16);
 
 		assertRegularJoin(sent, term1, op, term2, 20, new int[] { 0, 6, 2, 11,
-				0, 2, 4, 8, 2, 3, 4, 8 }, 74);
+				0, 2, 4, 8, 2, 3, 4, 8 }, 39);
 	}
 
 	public void testImmediatePrecedingSibling() throws Exception {
@@ -362,17 +362,17 @@ public class LookaheadTermEarlyJoinTest extends PairJoinTestCase {
 		int[][] expectedResults = new int[][] { new int[] { 0, 6, 2, 11 },
 				new int[] { 2, 3, 4, 8 }, new int[] { 2, 3, 4, 8 },
 				new int[] { 2, 3, 4, 8 } };
-		int[] expectedNumComparisons = new int[] { 77, 77, 77, 76 };
+		int[] expectedNumComparisons = new int[] { 41, 41, 41, 40 };
 		Operator op = Operator.IMMEDIATE_PRECEDING_SIBLING;
 
 		assertJoinWithLookaheads(sent, term1, op, term2, 20, expectedResults,
 				expectedNumComparisons);
 
 		assertTermEarlyJoin(sent, term1, op, term2, 20,
-				new int[] { 0, 6, 2, 11 }, 31);
+				new int[] { 0, 6, 2, 11 }, 16);
 
 		assertRegularJoin(sent, term1, op, term2, 20, new int[] { 0, 6, 2, 11,
-				2, 3, 4, 8 }, 76);
+				2, 3, 4, 8 }, 40);
 	}
 
 	public void testImmediateFollowing() throws Exception {
@@ -383,17 +383,17 @@ public class LookaheadTermEarlyJoinTest extends PairJoinTestCase {
 				new int[] { 3, 4, 4, 8, 6, 7, 2, 11 },
 				new int[] { 3, 4, 4, 8, 6, 7, 2, 11 },
 				new int[] { 3, 4, 4, 8 }, new int[] { 6, 7, 2, 11 } };
-		int[] expectedNumComparisons = new int[] { 43, 43, 43, 42 };
+		int[] expectedNumComparisons = new int[] { 23, 23, 23, 22 };
 		Operator op = Operator.IMMEDIATE_FOLLOWING;
 
 		assertJoinWithLookaheads(sent, term1, op, term2, 32, expectedResults,
 				expectedNumComparisons);
 
 		assertTermEarlyJoin(sent, term1, op, term2, 32,
-				new int[] { 3, 4, 4, 8 }, 23);
+				new int[] { 3, 4, 4, 8 }, 12);
 
 		assertRegularJoin(sent, term1, op, term2, 32, new int[] { 3, 4, 4, 8,
-				6, 7, 2, 11 }, 34);
+				6, 7, 2, 11 }, 21);
 	}
 
 	public void testImmediatePreceding() throws Exception {
@@ -403,17 +403,17 @@ public class LookaheadTermEarlyJoinTest extends PairJoinTestCase {
 		int[][] expectedResults = new int[][] { new int[] { 0, 6, 2, 11 },
 				new int[] { 2, 3, 4, 8, 5, 6, 4, 8 }, new int[] { 2, 3, 4, 8 },
 				new int[] { 5, 6, 4, 8 } };
-		int[] expectedNumComparisons = new int[] { 72, 72, 72, 69 };
+		int[] expectedNumComparisons = new int[] { 30, 30, 30, 27 };
 		Operator op = Operator.IMMEDIATE_PRECEDING;
 
 		assertJoinWithLookaheads(sent, term1, op, term2, 20, expectedResults,
 				expectedNumComparisons);
 
 		assertTermEarlyJoin(sent, term1, op, term2, 20,
-				new int[] { 0, 6, 2, 11 }, 24);
+				new int[] { 0, 6, 2, 11 }, 9);
 
 		assertRegularJoin(sent, term1, op, term2, 20, new int[] { 0, 6, 2, 11,
-				0, 6, 3, 9, 2, 3, 4, 8, 5, 6, 4, 8 }, 69);
+				0, 6, 3, 9, 2, 3, 4, 8, 5, 6, 4, 8 }, 23);
 	}
 
 	private void assertJoinWithLookaheads(String sent, String term1,

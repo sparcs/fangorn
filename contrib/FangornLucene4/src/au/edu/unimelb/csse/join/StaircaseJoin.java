@@ -195,10 +195,10 @@ public class StaircaseJoin extends AbstractPairJoin implements HalfPairJoin {
 						result.insert(next, 0, positionLength);
 						break;
 					}
-					if (operatorAware.ancestor(prev.positions, j,
-							next.positions, i)) {
-						break;
-					}
+//					if (operatorAware.ancestor(prev.positions, j,
+//							next.positions, i)) {
+//						break;
+//					}
 				}
 			}
 		} else if (Operator.IMMEDIATE_PRECEDING.equals(op)) {

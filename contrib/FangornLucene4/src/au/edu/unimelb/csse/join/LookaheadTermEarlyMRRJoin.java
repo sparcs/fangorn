@@ -5,15 +5,17 @@ import java.io.IOException;
 import org.apache.lucene.index.DocsAndPositionsEnum;
 
 import au.edu.unimelb.csse.Operator;
+import au.edu.unimelb.csse.Position;
 import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
 
-public class LookaheadTermEarlyJoin extends AbstractPairJoin implements
+public class LookaheadTermEarlyMRRJoin extends AbstractPairJoin implements
 		HalfPairLATEJoin {
+
 	NodePositions next;
 	NodePositions buffer;
 	NodePositions result;
 
-	public LookaheadTermEarlyJoin(LogicalNodePositionAware nodePositionAware) {
+	LookaheadTermEarlyMRRJoin(LogicalNodePositionAware nodePositionAware) {
 		super(nodePositionAware);
 		next = new NodePositions();
 		buffer = new NodePositions();
@@ -36,17 +38,20 @@ public class LookaheadTermEarlyJoin extends AbstractPairJoin implements
 		doJoin(prev, op, next);
 		return result;
 	}
-	
+
 	void doJoin(NodePositions prev, Operator op, NodePositions next) {
 		result.reset();
 
 		if (Operator.DESCENDANT.equals(op)) {
 			while (next.offset < next.size && prev.offset < prev.size) {
-				if (op.match(prev, next, operatorAware)) {
+				Operator relation = operatorAware.mostRelevantRelation(
+						prev.positions, prev.offset, next.positions,
+						next.offset);
+				Position position = relation.getPosition();
+				if (Position.BELOW.equals(position)) {
 					result.push(next, positionLength);
 					next.offset += positionLength;
-				} else if (operatorAware.following(prev.positions, prev.offset,
-						next.positions, next.offset)) {
+				} else if (Position.AFTER.equals(position)) {
 					prev.offset += positionLength;
 				} else {
 					next.offset += positionLength;
@@ -54,11 +59,15 @@ public class LookaheadTermEarlyJoin extends AbstractPairJoin implements
 			}
 		} else if (Operator.ANCESTOR.equals(op)) {
 			while (next.offset < next.size && prev.offset < prev.size) {
-				if (op.match(prev, next, operatorAware)) {
+				Operator relation = operatorAware.mostRelevantRelation(
+						prev.positions, prev.offset, next.positions,
+						next.offset);
+				Position position = relation.getPosition();
+				if (Position.ABOVE.equals(position)) {
 					result.push(next, positionLength);
 					next.offset += positionLength;
-				} else if (operatorAware.startsAfter(prev.positions,
-						prev.offset, next.positions, next.offset)) {
+				} else if (Position.BELOW.equals(position)
+						|| Position.AFTER.equals(position)) {
 					prev.offset += positionLength;
 				} else {
 					next.offset += positionLength;
@@ -69,11 +78,15 @@ public class LookaheadTermEarlyJoin extends AbstractPairJoin implements
 			while (next.offset < next.size) {
 				prev.offset = 0;
 				while (prev.offset < prev.size) {
-					if (op.match(prev, next, operatorAware)) {
+					Operator relation = operatorAware.mostRelevantRelation(
+							prev.positions, prev.offset, next.positions,
+							next.offset);
+					Position position = relation.getPosition();
+					if (Operator.CHILD.equals(relation)) {
 						result.push(next, positionLength);
 						break;
-					} else if (operatorAware.startsAfter(prev.positions,
-							prev.offset, next.positions, next.offset)) {
+					} else if (Position.BELOW.equals(position)
+							|| Position.AFTER.equals(position)) {
 						prev.offset += positionLength;
 					} else { // N is preceding or ancestor
 						break;
@@ -86,13 +99,14 @@ public class LookaheadTermEarlyJoin extends AbstractPairJoin implements
 			while (next.offset < next.size) {
 				prev.offset = 0;
 				while (prev.offset < prev.size) {
-					if (op.match(prev, next, operatorAware)) {
+					Operator relation = operatorAware.mostRelevantRelation(
+							prev.positions, prev.offset, next.positions,
+							next.offset);
+					Position position = relation.getPosition();
+					if (Operator.PARENT.equals(relation)) {
 						result.push(next, positionLength);
 						break;
-					} else if (operatorAware.preceding(prev.positions,
-							prev.offset, next.positions, next.offset)) {
-						// commenting out this else block will give the same
-						// number of results but with fewer no. of comparisons
+					} else if (Position.BEFORE.equals(position)) {
 						break;
 					}
 					prev.offset += positionLength;
@@ -102,10 +116,15 @@ public class LookaheadTermEarlyJoin extends AbstractPairJoin implements
 		} else if (Operator.FOLLOWING.equals(op)) {
 			for (next.offset = 0; next.offset < next.size; next.offset += positionLength) {
 				for (prev.offset = 0; prev.offset < prev.size; prev.offset += positionLength) {
-					if (op.match(prev, next, operatorAware)) {
+					Operator relation = operatorAware.mostRelevantRelation(
+							prev.positions, prev.offset, next.positions,
+							next.offset);
+					Position position = relation.getPosition();
+					if (Position.AFTER.equals(position)) {
 						result.push(next, positionLength);
 						break;
-					} else if (operatorAware.startsBefore(prev.positions, prev.offset, next.positions, next.offset)) {
+					} else if (Position.ABOVE.equals(position)
+							|| Position.BEFORE.equals(position)) {
 						break;
 					}
 				}
@@ -113,12 +132,18 @@ public class LookaheadTermEarlyJoin extends AbstractPairJoin implements
 		} else if (Operator.PRECEDING.equals(op)) {
 			int pmark = 0;
 			for (next.offset = 0; next.offset < next.size; next.offset += positionLength) {
-				if (pmark == prev.size) break;
+				if (pmark == prev.size)
+					break;
 				for (prev.offset = pmark; prev.offset < prev.size; prev.offset += positionLength) {
-					if (op.match(prev, next, operatorAware)) {
+					Operator relation = operatorAware.mostRelevantRelation(
+							prev.positions, prev.offset, next.positions,
+							next.offset);
+					Position position = relation.getPosition();
+					if (Position.BEFORE.equals(position)) {
 						result.push(next, positionLength);
 						break;
-					} else if (operatorAware.startsAfter(prev.positions, prev.offset, next.positions, next.offset)) {
+					} else if (Position.BELOW.equals(position)
+							|| Position.AFTER.equals(position)) {
 						pmark = prev.offset + positionLength;
 						break;
 					}
@@ -129,21 +154,29 @@ public class LookaheadTermEarlyJoin extends AbstractPairJoin implements
 			int start = prev.size - positionLength;
 			for (int i = next.size - positionLength; i >= 0; i -= positionLength) {
 				for (int j = start; j >= 0; j -= positionLength) {
+					Operator relation = operatorAware.mostRelevantRelation(
+							prev.positions, j, next.positions, i);
+					Position position = relation.getPosition();
 					while (j >= 0
-							&& operatorAware.startsBefore(prev.positions, j,
-									next.positions, i)) {
+							&& (Position.ABOVE.equals(position) || Position.BEFORE
+									.equals(position))) {
 						j -= positionLength;
 						start = j;
+						if (j >= 0) {
+							relation = operatorAware.mostRelevantRelation(
+									prev.positions, j, next.positions, i);
+							position = relation.getPosition();
+						}
 					}
 					if (j < 0)
 						break;
-					if (op.match(prev.positions, j, next.positions, i,
-							operatorAware)) {
+					if (op.equals(relation)
+							|| (Operator.FOLLOWING_SIBLING.equals(op) && Operator.IMMEDIATE_FOLLOWING_SIBLING
+									.equals(relation))) {
 						next.offset = i;
 						result.insert(next, 0, positionLength);
 						break;
-					} else if (operatorAware.following(prev.positions, j,
-							next.positions, i)
+					} else if (Position.AFTER.equals(position)
 							&& operatorAware.relativeDepth(prev.positions, j,
 									next.positions, i) > 0) {
 						continue;
@@ -156,22 +189,30 @@ public class LookaheadTermEarlyJoin extends AbstractPairJoin implements
 			int start = 0;
 			for (int i = 0; i < next.size; i += positionLength) {
 				for (int j = start; j < prev.size; j += positionLength) {
+					Operator relation = operatorAware.mostRelevantRelation(
+							prev.positions, j, next.positions, i);
+					Position position = relation.getPosition();
 					while (j < prev.size
-							&& operatorAware.startsAfter(prev.positions, j,
-									next.positions, i)) {
+							&& (Position.BELOW.equals(position) || Position.AFTER
+									.equals(position))) {
 						j += positionLength;
 						start = j;
+						if (j < prev.size) {
+							relation = operatorAware.mostRelevantRelation(
+									prev.positions, j, next.positions, i);
+							position = relation.getPosition();
+						}
 					}
 					if (j >= prev.size) {
 						break;
 					}
-					if (op.match(prev.positions, j, next.positions, i,
-							operatorAware)) {
+					if (op.equals(relation)
+							|| (Operator.PRECEDING_SIBLING.equals(op) && Operator.IMMEDIATE_PRECEDING_SIBLING
+									.equals(relation))) {
 						next.offset = i;
 						result.push(next, positionLength);
 						break;
-					} else if (operatorAware.descendant(prev.positions, j,
-							next.positions, i)
+					} else if (Position.BELOW.equals(position)
 							|| operatorAware.relativeDepth(prev.positions, j,
 									next.positions, i) > 0) {
 						continue;
@@ -183,46 +224,63 @@ public class LookaheadTermEarlyJoin extends AbstractPairJoin implements
 			int start = prev.size - positionLength;
 			for (int i = next.size - positionLength; i >= 0; i -= positionLength) {
 				for (int j = start; j >= 0; j -= positionLength) {
+					Operator relation = operatorAware.mostRelevantRelation(
+							prev.positions, j, next.positions, i);
+					Position position = relation.getPosition();
 					while (j >= 0
-							&& operatorAware.startsBefore(prev.positions, j,
-									next.positions, i)) {
+							&& (Position.ABOVE.equals(position) || Position.BEFORE
+									.equals(position))) {
 						j -= positionLength;
 						start = j;
+						if (j >= 0) {
+							relation = operatorAware.mostRelevantRelation(
+									prev.positions, j, next.positions, i);
+							position = relation.getPosition();
+						}
 					}
 					if (j < 0)
 						break;
-					if (operatorAware.immediateFollowing(prev.positions, j,
-							next.positions, i)) {
+					if (Operator.IMMEDIATE_FOLLOWING.equals(relation)
+							|| Operator.IMMEDIATE_FOLLOWING_SIBLING
+									.equals(relation)) {
 						next.offset = i;
 						result.insert(next, 0, positionLength);
 						break;
 					}
-//					if (operatorAware.ancestor(prev.positions, j,
-//							next.positions, i)) {
-//						break;
-//					}
+					// if (Position.ABOVE.equals(position)) {
+					// break;
+					// }
 				}
 			}
 		} else if (Operator.IMMEDIATE_PRECEDING.equals(op)) {
 			int start = 0;
 			for (int i = 0; i < next.size; i += positionLength) {
 				for (int j = start; j < prev.size; j += positionLength) {
+					Operator relation = operatorAware.mostRelevantRelation(
+							prev.positions, j, next.positions, i);
+					Position position = relation.getPosition();
 					while (j < prev.size
-							&& operatorAware.startsAfter(prev.positions, j,
-									next.positions, i)) {
+							&& (Position.BELOW.equals(position) || Position.AFTER
+									.equals(position))) {
 						j += positionLength;
 						start = j;
+						if (j < prev.size) {
+							relation = operatorAware.mostRelevantRelation(
+									prev.positions, j, next.positions, i);
+							position = relation.getPosition();
+						}
 					}
 					if (j >= prev.size) {
 						break;
 					}
-					if (operatorAware.immediatePreceding(prev.positions, j, next.positions, i)) {
+					if (op.equals(relation)
+							|| Operator.IMMEDIATE_PRECEDING_SIBLING
+									.equals(relation)) {
 						next.offset = i;
 						result.push(next, positionLength);
 						break;
 					}
-					if (operatorAware.descendant(prev.positions, j,
-							next.positions, i)) {
+					if (Position.BEFORE.equals(position)) {
 						break;
 					}
 				}
@@ -234,18 +292,22 @@ public class LookaheadTermEarlyJoin extends AbstractPairJoin implements
 			DocsAndPositionsEnum node, Operator nextOp) throws IOException {
 		result.reset();
 		nodePositionAware.getAllPositions(next, node);
+		prev.offset = 0;
 		next.offset = 0;
 		boolean shouldContinue = true;
 		if (Operator.DESCENDANT.equals(op)) {
 			while (next.offset < next.size && prev.offset < prev.size) {
-				if (op.match(prev, next, operatorAware)) {
+				Operator relation = operatorAware.mostRelevantRelation(
+						prev.positions, prev.offset, next.positions,
+						next.offset);
+				Position position = relation.getPosition();
+				if (Position.BELOW.equals(position)) {
 					shouldContinue = addToResultAndContinue(next, nextOp);
 					if (!shouldContinue) {
 						break;
 					}
 					next.offset += positionLength;
-				} else if (operatorAware.following(prev.positions, prev.offset,
-						next.positions, next.offset)) {
+				} else if (Position.AFTER.equals(position)) {
 					prev.offset += positionLength;
 				} else {
 					next.offset += positionLength;
@@ -253,14 +315,18 @@ public class LookaheadTermEarlyJoin extends AbstractPairJoin implements
 			}
 		} else if (Operator.ANCESTOR.equals(op)) {
 			while (next.offset < next.size && prev.offset < prev.size) {
-				if (op.match(prev, next, operatorAware)) {
+				Operator relation = operatorAware.mostRelevantRelation(
+						prev.positions, prev.offset, next.positions,
+						next.offset);
+				Position position = relation.getPosition();
+				if (Position.ABOVE.equals(position)) {
 					shouldContinue = addToResultAndContinue(next, nextOp);
 					if (!shouldContinue) {
 						break;
 					}
 					next.offset += positionLength;
-				} else if (operatorAware.startsAfter(prev.positions,
-						prev.offset, next.positions, next.offset)) {
+				} else if (Position.BELOW.equals(position)
+						|| Position.AFTER.equals(position)) {
 					prev.offset += positionLength;
 				} else {
 					next.offset += positionLength;
@@ -271,11 +337,15 @@ public class LookaheadTermEarlyJoin extends AbstractPairJoin implements
 			while (next.offset < next.size) {
 				prev.offset = 0;
 				while (prev.offset < prev.size) {
-					if (op.match(prev, next, operatorAware)) {
+					Operator relation = operatorAware.mostRelevantRelation(
+							prev.positions, prev.offset, next.positions,
+							next.offset);
+					Position position = relation.getPosition();
+					if (Operator.CHILD.equals(relation)) {
 						shouldContinue = addToResultAndContinue(next, nextOp);
 						break;
-					} else if (operatorAware.startsAfter(prev.positions,
-							prev.offset, next.positions, next.offset)) {
+					} else if (Position.BELOW.equals(position)
+							|| Position.AFTER.equals(position)) {
 						prev.offset += positionLength;
 					} else { // N is preceding or ancestor
 						break;
@@ -291,13 +361,14 @@ public class LookaheadTermEarlyJoin extends AbstractPairJoin implements
 			while (next.offset < next.size) {
 				prev.offset = 0;
 				while (prev.offset < prev.size) {
-					if (op.match(prev, next, operatorAware)) {
+					Operator relation = operatorAware.mostRelevantRelation(
+							prev.positions, prev.offset, next.positions,
+							next.offset);
+					Position position = relation.getPosition();
+					if (Operator.PARENT.equals(relation)) {
 						shouldContinue = addToResultAndContinue(next, nextOp);
 						break;
-					} else if (operatorAware.preceding(prev.positions,
-							prev.offset, next.positions, next.offset)) {
-						// commenting out this else block will give the same
-						// number of results but with fewer no. of comparisons
+					} else if (Position.BEFORE.equals(position)) {
 						break;
 					}
 					prev.offset += positionLength;
@@ -309,10 +380,15 @@ public class LookaheadTermEarlyJoin extends AbstractPairJoin implements
 		} else if (Operator.FOLLOWING.equals(op)) {
 			for (next.offset = 0; next.offset < next.size; next.offset += positionLength) {
 				for (prev.offset = 0; prev.offset < prev.size; prev.offset += positionLength) {
-					if (op.match(prev, next, operatorAware)) {
+					Operator relation = operatorAware.mostRelevantRelation(
+							prev.positions, prev.offset, next.positions,
+							next.offset);
+					Position position = relation.getPosition();
+					if (Position.AFTER.equals(position)) {
 						shouldContinue = addToResultAndContinue(next, nextOp);
 						break;
-					} else if (operatorAware.startsBefore(prev.positions, prev.offset, next.positions, next.offset)) {
+					} else if (Position.ABOVE.equals(position)
+							|| Position.BEFORE.equals(position)) {
 						break;
 					}
 				}
@@ -323,12 +399,18 @@ public class LookaheadTermEarlyJoin extends AbstractPairJoin implements
 		} else if (Operator.PRECEDING.equals(op)) {
 			int pmark = 0;
 			for (next.offset = 0; next.offset < next.size; next.offset += positionLength) {
-				if (pmark == prev.size) break;
+				if (pmark == prev.size)
+					break;
 				for (prev.offset = pmark; prev.offset < prev.size; prev.offset += positionLength) {
-					if (op.match(prev, next, operatorAware)) {
+					Operator relation = operatorAware.mostRelevantRelation(
+							prev.positions, prev.offset, next.positions,
+							next.offset);
+					Position position = relation.getPosition();
+					if (Position.BEFORE.equals(position)) {
 						shouldContinue = addToResultAndContinue(next, nextOp);
 						break;
-					} else if (operatorAware.startsAfter(prev.positions, prev.offset, next.positions, next.offset)) {
+					} else if (Position.BELOW.equals(position)
+							|| Position.AFTER.equals(position)) {
 						pmark = prev.offset + positionLength;
 						break;
 					}
@@ -342,12 +424,19 @@ public class LookaheadTermEarlyJoin extends AbstractPairJoin implements
 				|| Operator.IMMEDIATE_FOLLOWING.equals(op)) {
 			for (int i = 0; i < next.size; i += positionLength) {
 				for (int j = 0; j < prev.size; j += positionLength) {
-					if (op.match(prev.positions, j, next.positions, i,
-							operatorAware)) {
+					Operator relation = operatorAware.mostRelevantRelation(
+							prev.positions, j, next.positions, i);
+					Position position = relation.getPosition();
+					if (op.equals(relation)
+							|| (Operator.FOLLOWING_SIBLING.equals(op) && Operator.IMMEDIATE_FOLLOWING_SIBLING
+									.equals(relation))
+							|| (Operator.IMMEDIATE_FOLLOWING.equals(op) && Operator.IMMEDIATE_FOLLOWING_SIBLING
+									.equals(relation))) {
 						next.offset = i;
 						shouldContinue = addToResultAndContinue(next, nextOp);
 						break;
-					} else if (operatorAware.startsBefore(prev.positions, j, next.positions, i)) {
+					} else if (Position.ABOVE.equals(position)
+							|| Position.BEFORE.equals(position)) {
 						break;
 					}
 				}
@@ -359,22 +448,30 @@ public class LookaheadTermEarlyJoin extends AbstractPairJoin implements
 			int start = 0;
 			for (int i = 0; i < next.size; i += positionLength) {
 				for (int j = start; j < prev.size; j += positionLength) {
+					Operator relation = operatorAware.mostRelevantRelation(
+							prev.positions, j, next.positions, i);
+					Position position = relation.getPosition();
 					while (j < prev.size
-							&& operatorAware.startsAfter(prev.positions, j,
-									next.positions, i)) {
+							&& (Position.BELOW.equals(position) || Position.AFTER
+									.equals(position))) {
 						j += positionLength;
 						start = j;
+						if (j < prev.size) {
+							relation = operatorAware.mostRelevantRelation(
+									prev.positions, j, next.positions, i);
+							position = relation.getPosition();
+						}
 					}
 					if (j >= prev.size) {
 						break;
 					}
-					if (op.match(prev.positions, j, next.positions, i,
-							operatorAware)) {
+					if (op.equals(relation)
+							|| (Operator.PRECEDING_SIBLING.equals(op) && Operator.IMMEDIATE_PRECEDING_SIBLING
+									.equals(relation))) {
 						next.offset = i;
 						shouldContinue = addToResultAndContinue(next, nextOp);
 						break;
-					} else if (operatorAware.descendant(prev.positions, j,
-							next.positions, i)
+					} else if (Position.BELOW.equals(position)
 							|| operatorAware.relativeDepth(prev.positions, j,
 									next.positions, i) > 0) {
 						continue;
@@ -388,23 +485,31 @@ public class LookaheadTermEarlyJoin extends AbstractPairJoin implements
 			int start = 0;
 			for (int i = 0; i < next.size; i += positionLength) {
 				for (int j = start; j < prev.size; j += positionLength) {
+					Operator relation = operatorAware.mostRelevantRelation(
+							prev.positions, j, next.positions, i);
+					Position position = relation.getPosition();
 					while (j < prev.size
-							&& operatorAware.startsAfter(prev.positions, j,
-									next.positions, i)) {
+							&& (Position.BELOW.equals(position) || Position.AFTER
+									.equals(position))) {
 						j += positionLength;
 						start = j;
+						if (j < prev.size) {
+							relation = operatorAware.mostRelevantRelation(
+									prev.positions, j, next.positions, i);
+							position = relation.getPosition();
+						}
 					}
 					if (j >= prev.size) {
 						break;
 					}
-					if (operatorAware.immediatePreceding(prev.positions, j,
-							next.positions, i)) {
+					if (op.equals(relation)
+							|| Operator.IMMEDIATE_PRECEDING_SIBLING
+									.equals(relation)) {
 						next.offset = i;
 						shouldContinue = addToResultAndContinue(next, nextOp);
 						break;
 					}
-					if (operatorAware.descendant(prev.positions, j,
-							next.positions, i)) {
+					if (Position.BELOW.equals(position)) {
 						break;
 					}
 				}
@@ -419,15 +524,19 @@ public class LookaheadTermEarlyJoin extends AbstractPairJoin implements
 			DocsAndPositionsEnum node) throws IOException {
 		result.reset();
 		nodePositionAware.getAllPositions(next, node);
+		prev.offset = 0;
 		next.offset = 0;
 		boolean shouldContinue = true;
 		if (Operator.DESCENDANT.equals(op)) {
 			while (next.offset < next.size && prev.offset < prev.size) {
-				if (op.match(prev, next, operatorAware)) {
+				Operator relation = operatorAware.mostRelevantRelation(
+						prev.positions, prev.offset, next.positions,
+						next.offset);
+				Position position = relation.getPosition();
+				if (Position.BELOW.equals(position)) {
 					result.push(next, positionLength);
 					break;
-				} else if (operatorAware.following(prev.positions, prev.offset,
-						next.positions, next.offset)) {
+				} else if (Position.AFTER.equals(position)) {
 					prev.offset += positionLength;
 				} else {
 					next.offset += positionLength;
@@ -435,7 +544,11 @@ public class LookaheadTermEarlyJoin extends AbstractPairJoin implements
 			}
 		} else if (Operator.ANCESTOR.equals(op)) {
 			while (next.offset < next.size && prev.offset < prev.size) {
-				if (op.match(prev, next, operatorAware)) {
+				Operator relation = operatorAware.mostRelevantRelation(
+						prev.positions, prev.offset, next.positions,
+						next.offset);
+				Position position = relation.getPosition();
+				if (Position.ABOVE.equals(position)) {
 					result.push(next, positionLength);
 					break;
 				} else if (operatorAware.startsAfter(prev.positions,
@@ -450,12 +563,16 @@ public class LookaheadTermEarlyJoin extends AbstractPairJoin implements
 			while (next.offset < next.size) {
 				prev.offset = 0;
 				while (prev.offset < prev.size) {
-					if (op.match(prev, next, operatorAware)) {
+					Operator relation = operatorAware.mostRelevantRelation(
+							prev.positions, prev.offset, next.positions,
+							next.offset);
+					Position position = relation.getPosition();
+					if (op.equals(relation)) {
 						result.push(next, positionLength);
 						shouldContinue = false;
 						break;
-					} else if (operatorAware.startsAfter(prev.positions,
-							prev.offset, next.positions, next.offset)) {
+					} else if (Position.BELOW.equals(position)
+							|| Position.AFTER.equals(position)) {
 						prev.offset += positionLength;
 					} else { // N is preceding or ancestor
 						break;
@@ -471,14 +588,15 @@ public class LookaheadTermEarlyJoin extends AbstractPairJoin implements
 			while (next.offset < next.size) {
 				prev.offset = 0;
 				while (prev.offset < prev.size) {
-					if (op.match(prev, next, operatorAware)) {
+					Operator relation = operatorAware.mostRelevantRelation(
+							prev.positions, prev.offset, next.positions,
+							next.offset);
+					Position position = relation.getPosition();
+					if (op.equals(relation)) {
 						result.push(next, positionLength);
 						shouldContinue = false;
 						break;
-					} else if (operatorAware.preceding(prev.positions,
-							prev.offset, next.positions, next.offset)) {
-						// commenting out this else block will give the same
-						// number of results but with fewer no. of comparisons
+					} else if (Position.BEFORE.equals(position)) {
 						break;
 					}
 					prev.offset += positionLength;
@@ -490,11 +608,16 @@ public class LookaheadTermEarlyJoin extends AbstractPairJoin implements
 		} else if (Operator.FOLLOWING.equals(op)) {
 			for (next.offset = 0; next.offset < next.size; next.offset += positionLength) {
 				for (prev.offset = 0; prev.offset < prev.size; prev.offset += positionLength) {
-					if (op.match(prev, next, operatorAware)) {
+					Operator relation = operatorAware.mostRelevantRelation(
+							prev.positions, prev.offset, next.positions,
+							next.offset);
+					Position position = relation.getPosition();
+					if (Position.AFTER.equals(position)) {
 						result.push(next, positionLength);
 						shouldContinue = false;
 						break;
-					} else if (operatorAware.startsBefore(prev.positions, prev.offset, next.positions, next.offset)) {
+					} else if (Position.ABOVE.equals(position)
+							|| Position.BEFORE.equals(position)) {
 						break;
 					}
 				}
@@ -505,13 +628,19 @@ public class LookaheadTermEarlyJoin extends AbstractPairJoin implements
 		} else if (Operator.PRECEDING.equals(op)) {
 			int pmark = 0;
 			for (next.offset = 0; next.offset < next.size; next.offset += positionLength) {
-				if (pmark == prev.size) break;
+				if (pmark == prev.size)
+					break;
 				for (prev.offset = pmark; prev.offset < prev.size; prev.offset += positionLength) {
-					if (op.match(prev, next, operatorAware)) {
+					Operator relation = operatorAware.mostRelevantRelation(
+							prev.positions, prev.offset, next.positions,
+							next.offset);
+					Position position = relation.getPosition();
+					if (Position.BEFORE.equals(position)) {
 						result.push(next, positionLength);
 						shouldContinue = false;
 						break;
-					} else if (operatorAware.startsAfter(prev.positions, prev.offset, next.positions, next.offset)) {
+					} else if (Position.BELOW.equals(position)
+							|| Position.AFTER.equals(position)) {
 						pmark = prev.offset + positionLength;
 						break;
 					}
@@ -520,19 +649,26 @@ public class LookaheadTermEarlyJoin extends AbstractPairJoin implements
 					break;
 				}
 			}
-			
+
 		} else if (Operator.FOLLOWING_SIBLING.equals(op)
 				|| Operator.IMMEDIATE_FOLLOWING_SIBLING.equals(op)
 				|| Operator.IMMEDIATE_FOLLOWING.equals(op)) {
 			for (int i = 0; i < next.size; i += positionLength) {
 				for (int j = 0; j < prev.size; j += positionLength) {
-					if (op.match(prev.positions, j, next.positions, i,
-							operatorAware)) {
+					Operator relation = operatorAware.mostRelevantRelation(
+							prev.positions, j, next.positions, i);
+					Position position = relation.getPosition();
+					if (op.equals(relation)
+							|| (Operator.FOLLOWING_SIBLING.equals(op) && Operator.IMMEDIATE_FOLLOWING_SIBLING
+									.equals(relation))
+							|| (Operator.IMMEDIATE_FOLLOWING.equals(op) && Operator.IMMEDIATE_FOLLOWING_SIBLING
+									.equals(relation))) {
 						next.offset = i;
 						result.push(next, positionLength);
 						shouldContinue = false;
 						break;
-					} else if (operatorAware.startsBefore(prev.positions, j, next.positions, i)) {
+					} else if (Position.ABOVE.equals(position)
+							|| Position.BEFORE.equals(position)) {
 						break;
 					}
 				}
@@ -544,23 +680,31 @@ public class LookaheadTermEarlyJoin extends AbstractPairJoin implements
 			int start = 0;
 			for (int i = 0; i < next.size; i += positionLength) {
 				for (int j = start; j < prev.size; j += positionLength) {
+					Operator relation = operatorAware.mostRelevantRelation(
+							prev.positions, j, next.positions, i);
+					Position position = relation.getPosition();
 					while (j < prev.size
-							&& operatorAware.startsAfter(prev.positions, j,
-									next.positions, i)) {
+							&& (Position.BELOW.equals(position) || Position.AFTER
+									.equals(position))) {
 						j += positionLength;
 						start = j;
+						if (j < prev.size) {
+							relation = operatorAware.mostRelevantRelation(
+									prev.positions, j, next.positions, i);
+							position = relation.getPosition();
+						}
 					}
 					if (j >= prev.size) {
 						break;
 					}
-					if (op.match(prev.positions, j, next.positions, i,
-							operatorAware)) {
+					if (op.equals(relation)
+							|| (Operator.PRECEDING_SIBLING.equals(op) && Operator.IMMEDIATE_PRECEDING_SIBLING
+									.equals(relation))) {
 						next.offset = i;
 						result.push(next, positionLength);
 						shouldContinue = false;
 						break;
-					} else if (operatorAware.descendant(prev.positions, j,
-							next.positions, i)
+					} else if (Position.BELOW.equals(position)
 							|| operatorAware.relativeDepth(prev.positions, j,
 									next.positions, i) > 0) {
 						continue;
@@ -574,24 +718,32 @@ public class LookaheadTermEarlyJoin extends AbstractPairJoin implements
 			int start = 0;
 			for (int i = 0; i < next.size; i += positionLength) {
 				for (int j = start; j < prev.size; j += positionLength) {
+					Operator relation = operatorAware.mostRelevantRelation(
+							prev.positions, j, next.positions, i);
+					Position position = relation.getPosition();
 					while (j < prev.size
-							&& operatorAware.startsAfter(prev.positions, j,
-									next.positions, i)) {
+							&& (Position.BELOW.equals(position) || Position.AFTER
+									.equals(position))) {
 						j += positionLength;
 						start = j;
+						if (j < prev.size) {
+							relation = operatorAware.mostRelevantRelation(
+									prev.positions, j, next.positions, i);
+							position = relation.getPosition();
+						}
 					}
 					if (j >= prev.size) {
 						break;
 					}
-					if (operatorAware.immediatePreceding(prev.positions, j,
-							next.positions, i)) {
+					if (op.equals(position)
+							|| Operator.IMMEDIATE_PRECEDING_SIBLING
+									.equals(relation)) {
 						next.offset = i;
 						result.push(next, positionLength);
 						shouldContinue = false;
 						break;
 					}
-					if (operatorAware.descendant(prev.positions, j,
-							next.positions, i)) {
+					if (Position.BELOW.equals(position)) {
 						break;
 					}
 				}
@@ -614,7 +766,7 @@ public class LookaheadTermEarlyJoin extends AbstractPairJoin implements
 			if (operatorAware.descendant(result.positions, result.offset,
 					from.positions, from.offset)) {
 				result.removeLast(positionLength);
-			} 
+			}
 			result.push(from, positionLength);
 		} else if (Operator.FOLLOWING.equals(nextOp)) {
 			if (operatorAware.descendant(result.positions, result.offset,

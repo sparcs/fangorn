@@ -280,7 +280,7 @@ public class StaircaseJoinTest extends PairJoinTestCase {
 		String sent = "(N(P(P(P(P(N A)(P B))(P C)(N D)(P N)(P E)))(N F)))";
 		IndexReader r = setupIndexWithDocs(sent);
 		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 32, 0, "P", "N");
-		joinAndAssertOutput(8, 45, join, prev, Operator.IMMEDIATE_FOLLOWING,
+		joinAndAssertOutput(8, 34, join, prev, Operator.IMMEDIATE_FOLLOWING,
 				posEnum);
 		assertPositions(new int[] { 3, 4, 4, 8, 6, 7, 2, 11 }, 4, bufferResult);
 	}
