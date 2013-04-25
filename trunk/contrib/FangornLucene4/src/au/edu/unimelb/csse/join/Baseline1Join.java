@@ -18,6 +18,7 @@ public class Baseline1Join extends AbstractPairJoin implements FullPairJoin {
 	public void match(NodePositions prev, Operator op,
 			DocsAndPositionsEnum node, NodePairPositions result)
 			throws IOException {
+		result.reset();
 		nodePositionAware.getAllPositions(buffer, node);
 		for (prev.offset = 0; prev.offset < prev.size; prev.offset += positionLength) {
 			for (buffer.offset = 0; buffer.offset < buffer.size; buffer.offset += positionLength) {

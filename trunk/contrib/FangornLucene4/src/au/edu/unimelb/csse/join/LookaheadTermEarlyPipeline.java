@@ -155,7 +155,11 @@ public class LookaheadTermEarlyPipeline extends HalfPairJoinPipeline implements
 
 		@Override
 		public NodePositions execute() throws IOException {
-			return lateJoin.matchWithLookahead(prevPositions, op, node, nextOp);
+			NodePositions results = lateJoin.matchWithLookahead(prevPositions, op, node, nextOp);
+			if (results.size > 0) {
+				return continueExection(results);
+			}
+			return results;
 		}
 
 	}
@@ -170,7 +174,11 @@ public class LookaheadTermEarlyPipeline extends HalfPairJoinPipeline implements
 
 		@Override
 		public NodePositions execute() throws IOException {
-			return lateJoin.matchTerminateEarly(prevPositions, op, node);
+			NodePositions results = lateJoin.matchTerminateEarly(prevPositions, op, node);
+			if (results.size > 0) {
+				return continueExection(results);
+			}
+			return results;
 		}
 
 	}
@@ -188,6 +196,7 @@ public class LookaheadTermEarlyPipeline extends HalfPairJoinPipeline implements
 			nodePositionAware.getAllPositions(buffer, node);
 			prevPositions.reset();
 			prevPositions.push(buffer, positionLength);
+			buffer.offset += positionLength;
 			if (Operator.PRECEDING.equals(nextOp)) {
 				buffer.offset = buffer.size - positionLength;
 				prevPositions.push(buffer, positionLength);
@@ -217,6 +226,10 @@ public class LookaheadTermEarlyPipeline extends HalfPairJoinPipeline implements
 						break;
 					}
 				}
+				buffer.offset += positionLength;
+			}
+			if (prevPositions.size > 0 && next != null) {
+				return next.execute();
 			}
 			return prevPositions;
 		}

@@ -233,6 +233,7 @@ public class LookaheadTermEarlyJoin extends AbstractPairJoin implements
 	public NodePositions matchWithLookahead(NodePositions prev, Operator op,
 			DocsAndPositionsEnum node, Operator nextOp) throws IOException {
 		result.reset();
+		prev.offset = 0;
 		nodePositionAware.getAllPositions(next, node);
 		next.offset = 0;
 		boolean shouldContinue = true;
@@ -418,6 +419,7 @@ public class LookaheadTermEarlyJoin extends AbstractPairJoin implements
 	public NodePositions matchTerminateEarly(NodePositions prev, Operator op,
 			DocsAndPositionsEnum node) throws IOException {
 		result.reset();
+		prev.offset = 0;
 		nodePositionAware.getAllPositions(next, node);
 		next.offset = 0;
 		boolean shouldContinue = true;

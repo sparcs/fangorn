@@ -12,11 +12,14 @@ import au.edu.unimelb.csse.join.DocPosIter;
 import au.edu.unimelb.csse.paypack.LRDP;
 
 public class DocPosIterPerformanceTest {
+	private static final String COMMA = ",";
 	private static final int TIMES = 6;
 	private LRDP lrdp;
 	private DirectoryReader reader;
+	private int numDocs = 0;
 
-	public DocPosIterPerformanceTest(String indexDir, LRDP lrdp) throws IOException {
+	public DocPosIterPerformanceTest(String indexDir, LRDP lrdp)
+			throws IOException {
 		this.lrdp = lrdp;
 		Directory directory = MMapDirectory.open(new File(indexDir));
 		reader = DirectoryReader.open(directory);
@@ -30,17 +33,31 @@ public class DocPosIterPerformanceTest {
 		String indexDir = args[0];
 		LRDP lrdp = new LRDP(LRDP.PhysicalPayloadFormat.valueOf(args[1]));
 		int queryNum = Integer.valueOf(args[2]);
-		DocPosIterPerformanceTest test = new DocPosIterPerformanceTest(indexDir, lrdp);
+		DocPosIterPerformanceTest test = new DocPosIterPerformanceTest(
+				indexDir, lrdp);
 		TreeQuery query = new Queries().getQuery(queryNum);
-		for (int i = 0; i < TIMES; i++) {
-			test.run(query, queryNum);
-		}
-
+		test.runQuery(queryNum, query);
 	}
 
-	private void run(TreeQuery query, int queryNum) throws IOException {
+	private void runQuery(int queryNum, TreeQuery query) throws IOException {
+		long[] times = new long[TIMES];
+		for (int i = 0; i < TIMES; i++) {
+			times[i] = runOnce(query);
+		}
+		StringBuilder sb = new StringBuilder();
+		sb.append(queryNum);
+		sb.append(COMMA);
+		sb.append(numDocs);
+		for (int i = 0; i < TIMES; i++) {
+			sb.append(COMMA);
+			sb.append(times[i]);
+		}
+		System.out.println(sb.toString());
+	}
+
+	private long runOnce(TreeQuery query) throws IOException {
 		DocPosIter docPosIter = new DocPosIter(query.labels(), lrdp);
-		int numDocs = 0;
+		numDocs = 0;
 		long startTime = System.nanoTime();
 		docPosIter.setup(reader);
 		while (docPosIter.nextDoc() != DocIdSetIterator.NO_MORE_DOCS) {
@@ -48,7 +65,6 @@ public class DocPosIterPerformanceTest {
 			numDocs++;
 		}
 		long endTime = System.nanoTime();
-		System.out.println(queryNum + "," + numDocs + ","
-				+ (endTime - startTime) / 1000000);
+		return (endTime - startTime) / 1000000;
 	}
 }
