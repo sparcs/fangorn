@@ -128,6 +128,23 @@ public class LookaheadTermEarlyPipelineTest extends PipelineTestCase {
 		
 		assertNull(pipe.getNext());
 	}
+	
+	public void testPipelineExecution() throws Exception {
+		LookaheadTermEarlyJoin join = new LookaheadTermEarlyJoin(npa);
+		LookaheadTermEarlyPipeline pipeline = new LookaheadTermEarlyPipeline(
+				npa, join);
+		
+		String sent = "(S1 (S (NP (DT The) (NN road)) (VP (VBZ runs) (ADVP (RB mostly) (JJ parallel) (PP (TO to) (NP (DT the) (NNP Gatineau) (NNP River)))) (PP (IN on) (NP (NP (DT the) (JJ eastern) (NN side)) (PP (IN of) (NP (PRP it)))))) (. .)))";
+		IndexReader r = setupIndexWithDocs(sent);
+		DocsAndPositionsEnum npPosEnum = getPosEnum(r, 0, new Term("s", "NP"));
+		DocsAndPositionsEnum vpPosEnum = getPosEnum(r, 0, new Term("s", "VP"));
+		PostingsAndFreq vpf = getPf(vpPosEnum, 1);
+		PostingsAndFreq npf = getPf(npPosEnum, 0, vpf);
+		Pipe pipe = pipeline.createExecPipeline(npf, new Operator[] {Operator.DESCENDANT, Operator.DESCENDANT});
+		pipeline.setPrevBuffer(new NodePositions());
+		NodePositions results = pipe.execute();
+		assertEquals(0, results.size);
+	}
 
 	private void assertLookaheadPipe(DocsAndPositionsEnum posEnum, Operator op,
 			Operator nextOp, boolean hasNext, Pipe pipe) {

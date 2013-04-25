@@ -97,7 +97,10 @@ public class HalfPairJoinPipeline implements BooleanJoinPipeline {
 		public NodePositions execute() throws IOException {
 			prevPositions.reset();
 			nodePositionAware.getAllPositions(prevPositions, node);
-			return continueExection(prevPositions);
+			if (prevPositions.size > 0 && next != null) {
+				return next.execute();
+			}
+			return prevPositions;
 		}
 	}
 
