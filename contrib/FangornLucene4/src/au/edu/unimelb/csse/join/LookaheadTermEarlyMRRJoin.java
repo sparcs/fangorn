@@ -15,7 +15,7 @@ public class LookaheadTermEarlyMRRJoin extends AbstractPairJoin implements
 	NodePositions buffer;
 	NodePositions result;
 
-	LookaheadTermEarlyMRRJoin(LogicalNodePositionAware nodePositionAware) {
+	public LookaheadTermEarlyMRRJoin(LogicalNodePositionAware nodePositionAware) {
 		super(nodePositionAware);
 		next = new NodePositions();
 		buffer = new NodePositions();
