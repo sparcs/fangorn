@@ -51,7 +51,7 @@ abstract class AbstractHolisticJoin extends AbstractJoin implements
 		this.nodePositionAware = nodePositionAware;
 		this.positionLength = nodePositionAware.getPositionLength();
 		this.stackLength = positionLength + 1;
-		this.operatorAware = nodePositionAware.getBinaryOperatorHandler();
+		this.operatorAware = nodePositionAware.getOperatorHandler();
 		freqs = new int[postingsFreqs.length];
 		positions = new int[postingsFreqs.length * positionLength];
 		preorderPos = new int[postingsFreqs.length];

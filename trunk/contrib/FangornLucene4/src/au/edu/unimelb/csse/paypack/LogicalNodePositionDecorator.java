@@ -1,29 +1,29 @@
-package au.edu.unimelb.csse.join;
+package au.edu.unimelb.csse.paypack;
 
 import java.io.IOException;
 
 import org.apache.lucene.index.DocsAndPositionsEnum;
 import org.apache.lucene.util.BytesRef;
 
+import au.edu.unimelb.csse.CountingOperatorAware;
 import au.edu.unimelb.csse.OperatorAware;
-import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
-import au.edu.unimelb.csse.paypack.PayloadFormatException;
+import au.edu.unimelb.csse.join.NodePositions;
 
 public class LogicalNodePositionDecorator implements LogicalNodePositionAware{
 	private LogicalNodePositionAware inner;
-	private CountingBinaryOperatorAware countingOperatorAware;
+	private CountingOperatorAware countingOperatorAware;
 	
 	public LogicalNodePositionDecorator(LogicalNodePositionAware inner) {
 		this.inner = inner;
-		this.countingOperatorAware = new CountingBinaryOperatorAware(inner.getBinaryOperatorHandler());
+		this.countingOperatorAware = new CountingOperatorAware(inner.getOperatorHandler());
 	}
 	
-	CountingBinaryOperatorAware getCountingBinaryOperator() {
+	public CountingOperatorAware getCountingOperatorAware() {
 		return countingOperatorAware;
 	}
 
 	@Override
-	public OperatorAware getBinaryOperatorHandler() {
+	public OperatorAware getOperatorHandler() {
 		return countingOperatorAware;
 	}
 

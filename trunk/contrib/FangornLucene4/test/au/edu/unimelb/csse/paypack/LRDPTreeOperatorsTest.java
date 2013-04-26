@@ -12,7 +12,7 @@ import au.edu.unimelb.csse.join.NodePositions;
 
 public class LRDPTreeOperatorsTest extends TestCase {
 	private LRDP lrdp = new LRDP(LRDP.PhysicalPayloadFormat.BYTE1111);
-	private OperatorAware opAware = lrdp.getBinaryOperatorHandler();
+	private OperatorAware opAware = lrdp.getOperatorHandler();
 
 	@Test
 	public void testChild() {

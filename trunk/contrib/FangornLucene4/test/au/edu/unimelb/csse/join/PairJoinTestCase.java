@@ -7,13 +7,15 @@ import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.Term;
 import org.junit.Before;
 
+import au.edu.unimelb.csse.CountingOperatorAware;
 import au.edu.unimelb.csse.IndexTestCase;
 import au.edu.unimelb.csse.Operator;
 import au.edu.unimelb.csse.paypack.LRDP;
+import au.edu.unimelb.csse.paypack.LogicalNodePositionDecorator;
 
 public abstract class PairJoinTestCase extends IndexTestCase {
 	protected LogicalNodePositionDecorator lrdp;
-	private CountingBinaryOperatorAware countingOperatorAware;
+	private CountingOperatorAware countingOperatorAware;
 	public NodePairPositions result;
 	protected NodePositions bufferResult;
 	protected NodePositions prev;
@@ -24,7 +26,7 @@ public abstract class PairJoinTestCase extends IndexTestCase {
 		super.setUp();
 		lrdp = new LogicalNodePositionDecorator(new LRDP(
 				LRDP.PhysicalPayloadFormat.BYTE1111));
-		countingOperatorAware = lrdp.getCountingBinaryOperator();
+		countingOperatorAware = lrdp.getCountingOperatorAware();
 		result = new NodePairPositions();
 		bufferResult = new NodePositions();
 		prev = new NodePositions();

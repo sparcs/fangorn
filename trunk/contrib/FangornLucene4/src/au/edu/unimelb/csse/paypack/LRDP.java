@@ -26,7 +26,7 @@ public class LRDP implements LogicalNodePositionAware {
 		this.binaryOperatorHandler = new LRDPTreeOperators();
 	}
 
-	public OperatorAware getBinaryOperatorHandler() {
+	public OperatorAware getOperatorHandler() {
 		return binaryOperatorHandler;
 	}
 
