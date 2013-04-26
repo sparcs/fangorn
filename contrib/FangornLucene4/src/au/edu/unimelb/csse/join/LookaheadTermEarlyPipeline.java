@@ -32,7 +32,7 @@ public class LookaheadTermEarlyPipeline extends HalfPairJoinPipeline implements
 				|| Operator.PRECEDING.equals(op);
 	}
 
-	Operator getCommonLookaheadOp(PostingsAndFreq pf) {
+	Operator getCommonChildrenOp(PostingsAndFreq pf) {
 		if (pf.children.length == 0)
 			return null;
 		Operator op = operators[pf.children[0].position];
@@ -50,7 +50,7 @@ public class LookaheadTermEarlyPipeline extends HalfPairJoinPipeline implements
 		if (Operator.CHILD.equals(operators[pfRoot.position])) {
 			root = new GetRootNodePipe(pfRoot.postings);
 		} else {
-			Operator op = getCommonLookaheadOp(pfRoot);
+			Operator op = getCommonChildrenOp(pfRoot);
 			if (op != null && isLookaheadOp(op)) {
 				root = new GetAllLookaheadPipe(pfRoot.postings, op);
 			} else {
@@ -82,7 +82,7 @@ public class LookaheadTermEarlyPipeline extends HalfPairJoinPipeline implements
 				prevPipe.setNext(next);
 				pathFromNode(child, next);
 			} else {
-				Operator nextOp = getCommonLookaheadOp(child);
+				Operator nextOp = getCommonChildrenOp(child);
 				Pipe next;
 				if (nextOp != null && isLookaheadOp(nextOp)) {
 					next = new LookaheadPipe(child.postings, op, nextOp,
@@ -97,7 +97,13 @@ public class LookaheadTermEarlyPipeline extends HalfPairJoinPipeline implements
 		}
 		for (int i = 0; i < node.children.length; i++) {
 			Operator op = operators[node.children[i].position];
-			MetaPipe meta = new MetaPipe(OperatorInverse.get(op), prevPipe);
+			MetaPipe meta;
+			if (i == node.children.length - 1) {
+				meta = new MetaTerminateEarlyPipe(OperatorInverse.get(op),
+						prevPipe);
+			} else {
+				meta = new MetaPipe(OperatorInverse.get(op), prevPipe);
+			}
 			Pipe last = addInReverse(node.children[i]);
 			meta.setInner(last.getStart());
 			prevPipe.setNext(meta);
@@ -113,9 +119,9 @@ public class LookaheadTermEarlyPipeline extends HalfPairJoinPipeline implements
 			}
 			return new GetAllPipe(node.postings);
 		} else if (node.children.length == 1) {
-			return addInReverseFirstNode(node, nextOp);
+			return addInReverseFirstNode(node, nextOp, true);
 		}
-		Pipe prev = addInReverseFirstNode(node, nextOp);
+		Pipe prev = addInReverseFirstNode(node, nextOp, false);
 		for (int i = 1; i < node.children.length; i++) {
 			PostingsAndFreq child = node.children[i];
 			MetaPipe meta = new MetaPipe(
@@ -128,11 +134,11 @@ public class LookaheadTermEarlyPipeline extends HalfPairJoinPipeline implements
 		return prev;
 	}
 
-	private Pipe addInReverseFirstNode(PostingsAndFreq node, Operator nextOp) {
+	private Pipe addInReverseFirstNode(PostingsAndFreq node, Operator nextOp, boolean canUseLookahead) {
 		Pipe prev = addInReverse(node.children[0]);
 		Operator op = OperatorInverse.get(operators[node.children[0].position]);
 		Pipe current;
-		if (isLookaheadOp(nextOp)) {
+		if (canUseLookahead && isLookaheadOp(nextOp)) {
 			current = new LookaheadPipe(node.postings, op, nextOp, prev);
 		} else {
 			current = new SimplePipe(node.postings, op, prev);
@@ -155,7 +161,8 @@ public class LookaheadTermEarlyPipeline extends HalfPairJoinPipeline implements
 
 		@Override
 		public NodePositions execute() throws IOException {
-			NodePositions results = lateJoin.matchWithLookahead(prevPositions, op, node, nextOp);
+			NodePositions results = lateJoin.matchWithLookahead(prevPositions,
+					op, node, nextOp);
 			if (results.size > 0) {
 				return continueExection(results);
 			}
@@ -174,7 +181,8 @@ public class LookaheadTermEarlyPipeline extends HalfPairJoinPipeline implements
 
 		@Override
 		public NodePositions execute() throws IOException {
-			NodePositions results = lateJoin.matchTerminateEarly(prevPositions, op, node);
+			NodePositions results = lateJoin.matchTerminateEarly(prevPositions,
+					op, node);
 			if (results.size > 0) {
 				return continueExection(results);
 			}
@@ -235,4 +243,51 @@ public class LookaheadTermEarlyPipeline extends HalfPairJoinPipeline implements
 		}
 
 	}
+
+	class MetaTerminateEarlyPipe extends MetaPipe implements Pipe {
+
+		public MetaTerminateEarlyPipe(Operator op, Pipe prev) {
+			super(op, prev);
+		}
+
+		@Override
+		public NodePositions execute() throws IOException {
+			metaPrev.makeCloneOf(prevPositions);
+			prevPositions.reset();
+			NodePositions results = inner.execute();
+			if (results.size == 0) {
+				return results;
+			}
+			prevPositions.makeCloneOf(results);
+			return lateJoin.matchTerminateEarly(prevPositions, op, metaPrev);
+		}
+	}
+
+	/*class MetaLookaheadPipe extends MetaPipe implements Pipe {
+
+		private Operator nextOp;
+
+		public MetaLookaheadPipe(Operator op, Operator nextOp, Pipe prev) {
+			super(op, prev);
+			this.nextOp = nextOp;
+		}
+
+		@Override
+		public NodePositions execute() throws IOException {
+			metaPrev.makeCloneOf(prevPositions);
+			prevPositions.reset();
+			NodePositions results = inner.execute();
+			if (results.size == 0) {
+				return results;
+			}
+			prevPositions.makeCloneOf(results);
+			results = lateJoin.matchWithLookahead(prevPositions, op, metaPrev,
+					nextOp);
+			if (next == null) {
+				return results;
+			}
+			prevPositions.makeCloneOf(results);
+			return next.execute();
+		}
+	}*/
 }

@@ -148,10 +148,10 @@ public class HalfPairJoinPipeline implements BooleanJoinPipeline {
 	}
 
 	class MetaPipe implements Pipe {
-		private Pipe inner;
-		private Pipe next;
-		private Operator op;
-		private NodePositions metaPrev;
+		protected Pipe inner;
+		protected Pipe next;
+		protected Operator op;
+		protected NodePositions metaPrev;
 		private Pipe prev;
 
 		public MetaPipe(Operator op, Pipe prev) {
