@@ -30,6 +30,7 @@ public class Baseline2Join extends AbstractPairJoin implements HalfPairJoin {
 			for (next.offset = 0; next.offset < next.size; next.offset += positionLength) {
 				if (op.match(prev, next, operatorAware)) {
 					result.push(next, positionLength);
+					break;
 				}
 			}
 		}
