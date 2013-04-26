@@ -1,13 +1,11 @@
-package au.edu.unimelb.csse.join;
+package au.edu.unimelb.csse;
 
-import au.edu.unimelb.csse.Operator;
-import au.edu.unimelb.csse.OperatorAware;
 
-public class CountingBinaryOperatorAware implements OperatorAware {
+public class CountingOperatorAware implements OperatorAware {
 	private OperatorAware inner;
 	private int count;
 
-	public CountingBinaryOperatorAware(OperatorAware inner) {
+	public CountingOperatorAware(OperatorAware inner) {
 		this.inner = inner;
 		count = 0;
 	}
@@ -131,6 +129,10 @@ public class CountingBinaryOperatorAware implements OperatorAware {
 	public boolean same(int[] prev, int poff, int[] next, int noff) {
 		count ++;
 		return inner.same(prev, poff, next, noff);
+	}
+	
+	public void resetCount() {
+		count = 0;
 	}
 
 }

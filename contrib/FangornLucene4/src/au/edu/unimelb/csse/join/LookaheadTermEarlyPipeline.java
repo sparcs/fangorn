@@ -23,7 +23,7 @@ public class LookaheadTermEarlyPipeline extends HalfPairJoinPipeline implements
 		lateJoin = join;
 		buffer = new NodePositions();
 		positionLength = nodePositionAware.getPositionLength();
-		operatorAware = nodePositionAware.getBinaryOperatorHandler();
+		operatorAware = nodePositionAware.getOperatorHandler();
 	}
 
 	boolean isLookaheadOp(Operator op) {

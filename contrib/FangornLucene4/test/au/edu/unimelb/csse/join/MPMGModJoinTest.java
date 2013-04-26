@@ -13,6 +13,7 @@ import org.junit.Test;
 
 import au.edu.unimelb.csse.Operator;
 import au.edu.unimelb.csse.paypack.LRDP;
+import au.edu.unimelb.csse.paypack.LogicalNodePositionDecorator;
 import au.edu.unimelb.csse.paypack.LRDP.PhysicalPayloadFormat;
 
 public class MPMGModJoinTest extends PairJoinTestCase {

@@ -16,11 +16,11 @@ import org.apache.lucene.store.MMapDirectory;
 import au.edu.unimelb.csse.join.ComputesBooleanResult;
 import au.edu.unimelb.csse.join.ComputesFullResults;
 import au.edu.unimelb.csse.paypack.LRDP;
-import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
+import au.edu.unimelb.csse.paypack.LogicalNodePositionDecorator;
 
 public class CorrectnessTest {
-	private static final LogicalNodePositionAware lrdp = new LRDP(
-			LRDP.PhysicalPayloadFormat.BYTE1111);
+	private static final LogicalNodePositionDecorator countingNPA = new LogicalNodePositionDecorator(
+			new LRDP(LRDP.PhysicalPayloadFormat.BYTE1111));
 	private static final String INDEX_DIR = "/opt/wiki-index";
 	private IndexReader reader;
 
@@ -40,20 +40,23 @@ public class CorrectnessTest {
 			TreeQuery query = queries.getQuery(i);
 			Map<Integer, List<JoinType>> numDocsJoinType = new HashMap<Integer, List<JoinType>>();
 			Map<Integer, List<JoinType>> numMatchesJoinType = new HashMap<Integer, List<JoinType>>();
+
 			for (JoinType joinType : JoinType.values()) {
+				countingNPA.getCountingOperatorAware().resetCount();
 				if (query.hasBranches() && !joinType.allowsBranches()) {
 					continue;
 				}
 				if (joinType.returnsFullResults()) {
-					execute(joinType.getFullJoin(query, lrdp), reader,
+					execute(joinType.getFullJoin(query, countingNPA), reader,
 							joinType, i, numDocsJoinType, numMatchesJoinType);
 				} else {
-					execute(joinType.getBooleanJoin(query, lrdp), reader,
-							joinType, i, numDocsJoinType);
+					execute(joinType.getBooleanJoin(query, countingNPA),
+							reader, joinType, i, numDocsJoinType);
 				}
 			}
 			if (numDocsJoinType.keySet().size() != 1) {
-				System.err.println("Error in number of result docs for query " + i);
+				System.err.println("Error in number of result docs for query "
+						+ i);
 				System.err.println(numDocsJoinType.toString());
 			}
 			if (numMatchesJoinType.keySet().size() != 1) {
@@ -63,8 +66,9 @@ public class CorrectnessTest {
 		}
 	}
 
-	private void execute(ComputesBooleanResult join, IndexReader r, JoinType joinType,
-			int queryId, Map<Integer, List<JoinType>> numDocsJoinType) throws IOException {
+	private void execute(ComputesBooleanResult join, IndexReader r,
+			JoinType joinType, int queryId,
+			Map<Integer, List<JoinType>> numDocsJoinType) throws IOException {
 		int numResultDocs = 0;
 		int docId = -1;
 		long startTime = System.nanoTime();
@@ -78,7 +82,9 @@ public class CorrectnessTest {
 			docId = join.nextDoc();
 		}
 		long endTime = System.nanoTime();
-		System.out.println(queryId + "," + joinType.getId() + "," + numResultDocs + ","
+		System.out.println(queryId + "," + joinType.getId() + ","
+				+ numResultDocs + ","
+				+ countingNPA.getCountingOperatorAware().getCount() + ","
 				+ (endTime - startTime) / 1000000);
 		if (!numDocsJoinType.containsKey(numResultDocs)) {
 			numDocsJoinType.put(numResultDocs, new ArrayList<JoinType>());
@@ -87,7 +93,8 @@ public class CorrectnessTest {
 	}
 
 	void execute(ComputesFullResults join, IndexReader r, JoinType joinType,
-			int queryId, Map<Integer, List<JoinType>> numDocsJoinType, Map<Integer, List<JoinType>> numMatchesJoinType) throws IOException {
+			int queryId, Map<Integer, List<JoinType>> numDocsJoinType,
+			Map<Integer, List<JoinType>> numMatchesJoinType) throws IOException {
 		int numResultDocs = 0;
 		int totalMatches = 0;
 		int docId = -1;
@@ -104,7 +111,9 @@ public class CorrectnessTest {
 			docId = join.nextDoc();
 		}
 		long endTime = System.nanoTime();
-		System.out.println(queryId + "," + joinType.getId() + "," + numResultDocs + ","
+		System.out.println(queryId + "," + joinType.getId() + ","
+				+ numResultDocs + ","
+				+ countingNPA.getCountingOperatorAware().getCount() + ","
 				+ (endTime - startTime) / 1000000 + "," + totalMatches);
 		if (!numDocsJoinType.containsKey(numResultDocs)) {
 			numDocsJoinType.put(numResultDocs, new ArrayList<JoinType>());

@@ -9,7 +9,7 @@ import au.edu.unimelb.csse.OperatorAware;
 import au.edu.unimelb.csse.join.NodePositions;
 
 public interface LogicalNodePositionAware {
-	OperatorAware getBinaryOperatorHandler();
+	OperatorAware getOperatorHandler();
 
 	void getAllPositions(NodePositions buffer, DocsAndPositionsEnum node)
 			throws IOException;

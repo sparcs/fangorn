@@ -14,7 +14,7 @@ abstract class AbstractPairJoin implements OperatorCompatibilityAware {
 	AbstractPairJoin(LogicalNodePositionAware nodePositionAware) {
 		this.nodePositionAware = nodePositionAware;
 		this.positionLength = nodePositionAware.getPositionLength();
-		this.operatorAware = nodePositionAware.getBinaryOperatorHandler();
+		this.operatorAware = nodePositionAware.getOperatorHandler();
 	}
 	
 	@Override
