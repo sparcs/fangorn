@@ -13,4 +13,10 @@ public interface HalfPairLATEJoin extends HalfPairJoin {
 
 	NodePositions matchTerminateEarly(NodePositions prev, Operator op,
 			DocsAndPositionsEnum node) throws IOException;
+	
+	NodePositions matchWithLookahead(NodePositions prevPositions, Operator op,
+			NodePositions metaPrev, Operator nextOp);
+
+	NodePositions matchTerminateEarly(NodePositions prev, Operator op,
+			NodePositions next);
 }

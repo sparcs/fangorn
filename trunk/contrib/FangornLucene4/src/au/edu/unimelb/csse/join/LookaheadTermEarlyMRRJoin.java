@@ -24,22 +24,14 @@ public class LookaheadTermEarlyMRRJoin extends AbstractPairJoin implements
 
 	public NodePositions match(NodePositions prev, Operator op,
 			DocsAndPositionsEnum node) throws IOException {
-		prev.offset = 0;
 		nodePositionAware.getAllPositions(next, node);
-		next.offset = 0;
-		doJoin(prev, op, next);
-		return result;
+		return match(prev, op, next);
 	}
 
 	public NodePositions match(NodePositions prev, Operator op,
 			NodePositions next) throws IOException {
 		prev.offset = 0;
 		next.offset = 0;
-		doJoin(prev, op, next);
-		return result;
-	}
-
-	void doJoin(NodePositions prev, Operator op, NodePositions next) {
 		result.reset();
 
 		if (Operator.DESCENDANT.equals(op)) {
@@ -286,14 +278,59 @@ public class LookaheadTermEarlyMRRJoin extends AbstractPairJoin implements
 				}
 			}
 		}
+		return result;
 	}
 
 	public NodePositions matchWithLookahead(NodePositions prev, Operator op,
 			DocsAndPositionsEnum node, Operator nextOp) throws IOException {
-		result.reset();
 		nodePositionAware.getAllPositions(next, node);
+		return matchWithLookahead(prev, op, next, nextOp);
+	}
+
+	public NodePositions matchTerminateEarly(NodePositions prev, Operator op,
+			DocsAndPositionsEnum node) throws IOException {
+		nodePositionAware.getAllPositions(next, node);
+		return matchTerminateEarly(prev, op, next);
+	}
+
+	private boolean addToResultAndContinue(NodePositions from, Operator nextOp) {
+		if (result.size == 0) {
+			result.push(from, positionLength);
+		} else if (Operator.DESCENDANT.equals(nextOp)) {
+			if (!operatorAware.descendant(result.positions, result.offset,
+					from.positions, from.offset)) {
+				result.push(from, positionLength);
+			}
+		} else if (Operator.ANCESTOR.equals(nextOp)) {
+			if (operatorAware.descendant(result.positions, result.offset,
+					from.positions, from.offset)) {
+				result.removeLast(positionLength);
+			}
+			result.push(from, positionLength);
+		} else if (Operator.FOLLOWING.equals(nextOp)) {
+			if (operatorAware.descendant(result.positions, result.offset,
+					from.positions, from.offset)) {
+				result.removeLast(positionLength);
+				result.push(from, positionLength);
+				return true;
+			} else {
+				return false;
+			}
+		} else if (Operator.PRECEDING.equals(nextOp)) {
+			result.removeLast(positionLength);
+			result.push(from, positionLength);
+		} else {
+			result.push(from, positionLength);
+		}
+		return true;
+	}
+
+	@Override
+	public NodePositions matchWithLookahead(NodePositions prev, Operator op,
+			NodePositions next, Operator nextOp) {
 		prev.offset = 0;
 		next.offset = 0;
+		result.reset();
 		boolean shouldContinue = true;
 		if (Operator.DESCENDANT.equals(op)) {
 			while (next.offset < next.size && prev.offset < prev.size) {
@@ -518,14 +555,15 @@ public class LookaheadTermEarlyMRRJoin extends AbstractPairJoin implements
 			}
 		}
 		return result;
+
 	}
 
+	@Override
 	public NodePositions matchTerminateEarly(NodePositions prev, Operator op,
-			DocsAndPositionsEnum node) throws IOException {
-		result.reset();
-		nodePositionAware.getAllPositions(next, node);
+			NodePositions next) {
 		prev.offset = 0;
 		next.offset = 0;
+		result.reset();
 		boolean shouldContinue = true;
 		if (Operator.DESCENDANT.equals(op)) {
 			while (next.offset < next.size && prev.offset < prev.size) {
@@ -752,38 +790,6 @@ public class LookaheadTermEarlyMRRJoin extends AbstractPairJoin implements
 			}
 		}
 		return result;
-	}
-
-	private boolean addToResultAndContinue(NodePositions from, Operator nextOp) {
-		if (result.size == 0) {
-			result.push(from, positionLength);
-		} else if (Operator.DESCENDANT.equals(nextOp)) {
-			if (!operatorAware.descendant(result.positions, result.offset,
-					from.positions, from.offset)) {
-				result.push(from, positionLength);
-			}
-		} else if (Operator.ANCESTOR.equals(nextOp)) {
-			if (operatorAware.descendant(result.positions, result.offset,
-					from.positions, from.offset)) {
-				result.removeLast(positionLength);
-			}
-			result.push(from, positionLength);
-		} else if (Operator.FOLLOWING.equals(nextOp)) {
-			if (operatorAware.descendant(result.positions, result.offset,
-					from.positions, from.offset)) {
-				result.removeLast(positionLength);
-				result.push(from, positionLength);
-				return true;
-			} else {
-				return false;
-			}
-		} else if (Operator.PRECEDING.equals(nextOp)) {
-			result.removeLast(positionLength);
-			result.push(from, positionLength);
-		} else {
-			result.push(from, positionLength);
-		}
-		return true;
 	}
 
 }

@@ -22,10 +22,8 @@ public class LookaheadTermEarlyJoin extends AbstractPairJoin implements
 
 	public NodePositions match(NodePositions prev, Operator op,
 			DocsAndPositionsEnum node) throws IOException {
-		prev.offset = 0;
 		nodePositionAware.getAllPositions(next, node);
-		next.offset = 0;
-		doJoin(prev, op, next);
+		match(prev, op, next);
 		return result;
 	}
 
@@ -33,11 +31,6 @@ public class LookaheadTermEarlyJoin extends AbstractPairJoin implements
 			NodePositions next) throws IOException {
 		prev.offset = 0;
 		next.offset = 0;
-		doJoin(prev, op, next);
-		return result;
-	}
-	
-	void doJoin(NodePositions prev, Operator op, NodePositions next) {
 		result.reset();
 
 		if (Operator.DESCENDANT.equals(op)) {
@@ -105,7 +98,8 @@ public class LookaheadTermEarlyJoin extends AbstractPairJoin implements
 					if (op.match(prev, next, operatorAware)) {
 						result.push(next, positionLength);
 						break;
-					} else if (operatorAware.startsBefore(prev.positions, prev.offset, next.positions, next.offset)) {
+					} else if (operatorAware.startsBefore(prev.positions,
+							prev.offset, next.positions, next.offset)) {
 						break;
 					}
 				}
@@ -113,12 +107,14 @@ public class LookaheadTermEarlyJoin extends AbstractPairJoin implements
 		} else if (Operator.PRECEDING.equals(op)) {
 			int pmark = 0;
 			for (next.offset = 0; next.offset < next.size; next.offset += positionLength) {
-				if (pmark == prev.size) break;
+				if (pmark == prev.size)
+					break;
 				for (prev.offset = pmark; prev.offset < prev.size; prev.offset += positionLength) {
 					if (op.match(prev, next, operatorAware)) {
 						result.push(next, positionLength);
 						break;
-					} else if (operatorAware.startsAfter(prev.positions, prev.offset, next.positions, next.offset)) {
+					} else if (operatorAware.startsAfter(prev.positions,
+							prev.offset, next.positions, next.offset)) {
 						pmark = prev.offset + positionLength;
 						break;
 					}
@@ -197,10 +193,10 @@ public class LookaheadTermEarlyJoin extends AbstractPairJoin implements
 						result.insert(next, 0, positionLength);
 						break;
 					}
-//					if (operatorAware.ancestor(prev.positions, j,
-//							next.positions, i)) {
-//						break;
-//					}
+					// if (operatorAware.ancestor(prev.positions, j,
+					// next.positions, i)) {
+					// break;
+					// }
 				}
 			}
 		} else if (Operator.IMMEDIATE_PRECEDING.equals(op)) {
@@ -216,7 +212,8 @@ public class LookaheadTermEarlyJoin extends AbstractPairJoin implements
 					if (j >= prev.size) {
 						break;
 					}
-					if (operatorAware.immediatePreceding(prev.positions, j, next.positions, i)) {
+					if (operatorAware.immediatePreceding(prev.positions, j,
+							next.positions, i)) {
 						next.offset = i;
 						result.push(next, positionLength);
 						break;
@@ -228,380 +225,19 @@ public class LookaheadTermEarlyJoin extends AbstractPairJoin implements
 				}
 			}
 		}
+		return result;
 	}
 
 	public NodePositions matchWithLookahead(NodePositions prev, Operator op,
 			DocsAndPositionsEnum node, Operator nextOp) throws IOException {
-		result.reset();
-		prev.offset = 0;
 		nodePositionAware.getAllPositions(next, node);
-		next.offset = 0;
-		boolean shouldContinue = true;
-		if (Operator.DESCENDANT.equals(op)) {
-			while (next.offset < next.size && prev.offset < prev.size) {
-				if (op.match(prev, next, operatorAware)) {
-					shouldContinue = addToResultAndContinue(next, nextOp);
-					if (!shouldContinue) {
-						break;
-					}
-					next.offset += positionLength;
-				} else if (operatorAware.following(prev.positions, prev.offset,
-						next.positions, next.offset)) {
-					prev.offset += positionLength;
-				} else {
-					next.offset += positionLength;
-				}
-			}
-		} else if (Operator.ANCESTOR.equals(op)) {
-			while (next.offset < next.size && prev.offset < prev.size) {
-				if (op.match(prev, next, operatorAware)) {
-					shouldContinue = addToResultAndContinue(next, nextOp);
-					if (!shouldContinue) {
-						break;
-					}
-					next.offset += positionLength;
-				} else if (operatorAware.startsAfter(prev.positions,
-						prev.offset, next.positions, next.offset)) {
-					prev.offset += positionLength;
-				} else {
-					next.offset += positionLength;
-				}
-			}
-		} else if (Operator.CHILD.equals(op)) {
-			// similar to MPMG join but the marker is on poff here
-			while (next.offset < next.size) {
-				prev.offset = 0;
-				while (prev.offset < prev.size) {
-					if (op.match(prev, next, operatorAware)) {
-						shouldContinue = addToResultAndContinue(next, nextOp);
-						break;
-					} else if (operatorAware.startsAfter(prev.positions,
-							prev.offset, next.positions, next.offset)) {
-						prev.offset += positionLength;
-					} else { // N is preceding or ancestor
-						break;
-					}
-				}
-				if (!shouldContinue) {
-					break;
-				}
-				next.offset += positionLength;
-			}
-		} else if (Operator.PARENT.equals(op)) {
-			// skip the first few precedings
-			while (next.offset < next.size) {
-				prev.offset = 0;
-				while (prev.offset < prev.size) {
-					if (op.match(prev, next, operatorAware)) {
-						shouldContinue = addToResultAndContinue(next, nextOp);
-						break;
-					} else if (operatorAware.preceding(prev.positions,
-							prev.offset, next.positions, next.offset)) {
-						// commenting out this else block will give the same
-						// number of results but with fewer no. of comparisons
-						break;
-					}
-					prev.offset += positionLength;
-				}
-				if (!shouldContinue)
-					break;
-				next.offset += positionLength;
-			}
-		} else if (Operator.FOLLOWING.equals(op)) {
-			for (next.offset = 0; next.offset < next.size; next.offset += positionLength) {
-				for (prev.offset = 0; prev.offset < prev.size; prev.offset += positionLength) {
-					if (op.match(prev, next, operatorAware)) {
-						shouldContinue = addToResultAndContinue(next, nextOp);
-						break;
-					} else if (operatorAware.startsBefore(prev.positions, prev.offset, next.positions, next.offset)) {
-						break;
-					}
-				}
-				if (!shouldContinue) {
-					break;
-				}
-			}
-		} else if (Operator.PRECEDING.equals(op)) {
-			int pmark = 0;
-			for (next.offset = 0; next.offset < next.size; next.offset += positionLength) {
-				if (pmark == prev.size) break;
-				for (prev.offset = pmark; prev.offset < prev.size; prev.offset += positionLength) {
-					if (op.match(prev, next, operatorAware)) {
-						shouldContinue = addToResultAndContinue(next, nextOp);
-						break;
-					} else if (operatorAware.startsAfter(prev.positions, prev.offset, next.positions, next.offset)) {
-						pmark = prev.offset + positionLength;
-						break;
-					}
-				}
-				if (!shouldContinue) {
-					break;
-				}
-			}
-		} else if (Operator.FOLLOWING_SIBLING.equals(op)
-				|| Operator.IMMEDIATE_FOLLOWING_SIBLING.equals(op)
-				|| Operator.IMMEDIATE_FOLLOWING.equals(op)) {
-			for (int i = 0; i < next.size; i += positionLength) {
-				for (int j = 0; j < prev.size; j += positionLength) {
-					if (op.match(prev.positions, j, next.positions, i,
-							operatorAware)) {
-						next.offset = i;
-						shouldContinue = addToResultAndContinue(next, nextOp);
-						break;
-					} else if (operatorAware.startsBefore(prev.positions, j, next.positions, i)) {
-						break;
-					}
-				}
-				if (!shouldContinue)
-					break;
-			}
-		} else if (Operator.PRECEDING_SIBLING.equals(op)
-				|| Operator.IMMEDIATE_PRECEDING_SIBLING.equals(op)) {
-			int start = 0;
-			for (int i = 0; i < next.size; i += positionLength) {
-				for (int j = start; j < prev.size; j += positionLength) {
-					while (j < prev.size
-							&& operatorAware.startsAfter(prev.positions, j,
-									next.positions, i)) {
-						j += positionLength;
-						start = j;
-					}
-					if (j >= prev.size) {
-						break;
-					}
-					if (op.match(prev.positions, j, next.positions, i,
-							operatorAware)) {
-						next.offset = i;
-						shouldContinue = addToResultAndContinue(next, nextOp);
-						break;
-					} else if (operatorAware.descendant(prev.positions, j,
-							next.positions, i)
-							|| operatorAware.relativeDepth(prev.positions, j,
-									next.positions, i) > 0) {
-						continue;
-					}
-					break;
-				}
-				if (!shouldContinue)
-					break;
-			}
-		} else if (Operator.IMMEDIATE_PRECEDING.equals(op)) {
-			int start = 0;
-			for (int i = 0; i < next.size; i += positionLength) {
-				for (int j = start; j < prev.size; j += positionLength) {
-					while (j < prev.size
-							&& operatorAware.startsAfter(prev.positions, j,
-									next.positions, i)) {
-						j += positionLength;
-						start = j;
-					}
-					if (j >= prev.size) {
-						break;
-					}
-					if (operatorAware.immediatePreceding(prev.positions, j,
-							next.positions, i)) {
-						next.offset = i;
-						shouldContinue = addToResultAndContinue(next, nextOp);
-						break;
-					}
-					if (operatorAware.descendant(prev.positions, j,
-							next.positions, i)) {
-						break;
-					}
-				}
-				if (!shouldContinue)
-					break;
-			}
-		}
-		return result;
+		return matchWithLookahead(prev, op, next, nextOp);
 	}
 
 	public NodePositions matchTerminateEarly(NodePositions prev, Operator op,
 			DocsAndPositionsEnum node) throws IOException {
-		result.reset();
-		prev.offset = 0;
 		nodePositionAware.getAllPositions(next, node);
-		next.offset = 0;
-		boolean shouldContinue = true;
-		if (Operator.DESCENDANT.equals(op)) {
-			while (next.offset < next.size && prev.offset < prev.size) {
-				if (op.match(prev, next, operatorAware)) {
-					result.push(next, positionLength);
-					break;
-				} else if (operatorAware.following(prev.positions, prev.offset,
-						next.positions, next.offset)) {
-					prev.offset += positionLength;
-				} else {
-					next.offset += positionLength;
-				}
-			}
-		} else if (Operator.ANCESTOR.equals(op)) {
-			while (next.offset < next.size && prev.offset < prev.size) {
-				if (op.match(prev, next, operatorAware)) {
-					result.push(next, positionLength);
-					break;
-				} else if (operatorAware.startsAfter(prev.positions,
-						prev.offset, next.positions, next.offset)) {
-					prev.offset += positionLength;
-				} else {
-					next.offset += positionLength;
-				}
-			}
-		} else if (Operator.CHILD.equals(op)) {
-			// similar to MPMG join but the marker is on poff here
-			while (next.offset < next.size) {
-				prev.offset = 0;
-				while (prev.offset < prev.size) {
-					if (op.match(prev, next, operatorAware)) {
-						result.push(next, positionLength);
-						shouldContinue = false;
-						break;
-					} else if (operatorAware.startsAfter(prev.positions,
-							prev.offset, next.positions, next.offset)) {
-						prev.offset += positionLength;
-					} else { // N is preceding or ancestor
-						break;
-					}
-				}
-				if (!shouldContinue) {
-					break;
-				}
-				next.offset += positionLength;
-			}
-		} else if (Operator.PARENT.equals(op)) {
-			// skip the first few precedings
-			while (next.offset < next.size) {
-				prev.offset = 0;
-				while (prev.offset < prev.size) {
-					if (op.match(prev, next, operatorAware)) {
-						result.push(next, positionLength);
-						shouldContinue = false;
-						break;
-					} else if (operatorAware.preceding(prev.positions,
-							prev.offset, next.positions, next.offset)) {
-						// commenting out this else block will give the same
-						// number of results but with fewer no. of comparisons
-						break;
-					}
-					prev.offset += positionLength;
-				}
-				if (!shouldContinue)
-					break;
-				next.offset += positionLength;
-			}
-		} else if (Operator.FOLLOWING.equals(op)) {
-			for (next.offset = 0; next.offset < next.size; next.offset += positionLength) {
-				for (prev.offset = 0; prev.offset < prev.size; prev.offset += positionLength) {
-					if (op.match(prev, next, operatorAware)) {
-						result.push(next, positionLength);
-						shouldContinue = false;
-						break;
-					} else if (operatorAware.startsBefore(prev.positions, prev.offset, next.positions, next.offset)) {
-						break;
-					}
-				}
-				if (!shouldContinue) {
-					break;
-				}
-			}
-		} else if (Operator.PRECEDING.equals(op)) {
-			int pmark = 0;
-			for (next.offset = 0; next.offset < next.size; next.offset += positionLength) {
-				if (pmark == prev.size) break;
-				for (prev.offset = pmark; prev.offset < prev.size; prev.offset += positionLength) {
-					if (op.match(prev, next, operatorAware)) {
-						result.push(next, positionLength);
-						shouldContinue = false;
-						break;
-					} else if (operatorAware.startsAfter(prev.positions, prev.offset, next.positions, next.offset)) {
-						pmark = prev.offset + positionLength;
-						break;
-					}
-				}
-				if (!shouldContinue) {
-					break;
-				}
-			}
-			
-		} else if (Operator.FOLLOWING_SIBLING.equals(op)
-				|| Operator.IMMEDIATE_FOLLOWING_SIBLING.equals(op)
-				|| Operator.IMMEDIATE_FOLLOWING.equals(op)) {
-			for (int i = 0; i < next.size; i += positionLength) {
-				for (int j = 0; j < prev.size; j += positionLength) {
-					if (op.match(prev.positions, j, next.positions, i,
-							operatorAware)) {
-						next.offset = i;
-						result.push(next, positionLength);
-						shouldContinue = false;
-						break;
-					} else if (operatorAware.startsBefore(prev.positions, j, next.positions, i)) {
-						break;
-					}
-				}
-				if (!shouldContinue)
-					break;
-			}
-		} else if (Operator.PRECEDING_SIBLING.equals(op)
-				|| Operator.IMMEDIATE_PRECEDING_SIBLING.equals(op)) {
-			int start = 0;
-			for (int i = 0; i < next.size; i += positionLength) {
-				for (int j = start; j < prev.size; j += positionLength) {
-					while (j < prev.size
-							&& operatorAware.startsAfter(prev.positions, j,
-									next.positions, i)) {
-						j += positionLength;
-						start = j;
-					}
-					if (j >= prev.size) {
-						break;
-					}
-					if (op.match(prev.positions, j, next.positions, i,
-							operatorAware)) {
-						next.offset = i;
-						result.push(next, positionLength);
-						shouldContinue = false;
-						break;
-					} else if (operatorAware.descendant(prev.positions, j,
-							next.positions, i)
-							|| operatorAware.relativeDepth(prev.positions, j,
-									next.positions, i) > 0) {
-						continue;
-					}
-					break;
-				}
-				if (!shouldContinue)
-					break;
-			}
-		} else if (Operator.IMMEDIATE_PRECEDING.equals(op)) {
-			int start = 0;
-			for (int i = 0; i < next.size; i += positionLength) {
-				for (int j = start; j < prev.size; j += positionLength) {
-					while (j < prev.size
-							&& operatorAware.startsAfter(prev.positions, j,
-									next.positions, i)) {
-						j += positionLength;
-						start = j;
-					}
-					if (j >= prev.size) {
-						break;
-					}
-					if (operatorAware.immediatePreceding(prev.positions, j,
-							next.positions, i)) {
-						next.offset = i;
-						result.push(next, positionLength);
-						shouldContinue = false;
-						break;
-					}
-					if (operatorAware.descendant(prev.positions, j,
-							next.positions, i)) {
-						break;
-					}
-				}
-				if (!shouldContinue)
-					break;
-			}
-		}
-		return result;
+		return matchTerminateEarly(prev, op, next);
 	}
 
 	private boolean addToResultAndContinue(NodePositions from, Operator nextOp) {
@@ -616,7 +252,7 @@ public class LookaheadTermEarlyJoin extends AbstractPairJoin implements
 			if (operatorAware.descendant(result.positions, result.offset,
 					from.positions, from.offset)) {
 				result.removeLast(positionLength);
-			} 
+			}
 			result.push(from, positionLength);
 		} else if (Operator.FOLLOWING.equals(nextOp)) {
 			if (operatorAware.descendant(result.positions, result.offset,
@@ -634,6 +270,388 @@ public class LookaheadTermEarlyJoin extends AbstractPairJoin implements
 			result.push(from, positionLength);
 		}
 		return true;
+	}
+
+	@Override
+	public NodePositions matchWithLookahead(NodePositions prev, Operator op,
+			NodePositions next, Operator nextOp) {
+		prev.offset = 0;
+		next.offset = 0;
+		result.reset();
+		boolean shouldContinue = true;
+		if (Operator.DESCENDANT.equals(op)) {
+			while (next.offset < next.size && prev.offset < prev.size) {
+				if (op.match(prev, next, operatorAware)) {
+					shouldContinue = addToResultAndContinue(next, nextOp);
+					if (!shouldContinue) {
+						break;
+					}
+					next.offset += positionLength;
+				} else if (operatorAware.following(prev.positions, prev.offset,
+						next.positions, next.offset)) {
+					prev.offset += positionLength;
+				} else {
+					next.offset += positionLength;
+				}
+			}
+		} else if (Operator.ANCESTOR.equals(op)) {
+			while (next.offset < next.size && prev.offset < prev.size) {
+				if (op.match(prev, next, operatorAware)) {
+					shouldContinue = addToResultAndContinue(next, nextOp);
+					if (!shouldContinue) {
+						break;
+					}
+					next.offset += positionLength;
+				} else if (operatorAware.startsAfter(prev.positions,
+						prev.offset, next.positions, next.offset)) {
+					prev.offset += positionLength;
+				} else {
+					next.offset += positionLength;
+				}
+			}
+		} else if (Operator.CHILD.equals(op)) {
+			// similar to MPMG join but the marker is on poff here
+			while (next.offset < next.size) {
+				prev.offset = 0;
+				while (prev.offset < prev.size) {
+					if (op.match(prev, next, operatorAware)) {
+						shouldContinue = addToResultAndContinue(next, nextOp);
+						break;
+					} else if (operatorAware.startsAfter(prev.positions,
+							prev.offset, next.positions, next.offset)) {
+						prev.offset += positionLength;
+					} else { // N is preceding or ancestor
+						break;
+					}
+				}
+				if (!shouldContinue) {
+					break;
+				}
+				next.offset += positionLength;
+			}
+		} else if (Operator.PARENT.equals(op)) {
+			// skip the first few precedings
+			while (next.offset < next.size) {
+				prev.offset = 0;
+				while (prev.offset < prev.size) {
+					if (op.match(prev, next, operatorAware)) {
+						shouldContinue = addToResultAndContinue(next, nextOp);
+						break;
+					} else if (operatorAware.preceding(prev.positions,
+							prev.offset, next.positions, next.offset)) {
+						// commenting out this else block will give the same
+						// number of results but with fewer no. of comparisons
+						break;
+					}
+					prev.offset += positionLength;
+				}
+				if (!shouldContinue)
+					break;
+				next.offset += positionLength;
+			}
+		} else if (Operator.FOLLOWING.equals(op)) {
+			for (next.offset = 0; next.offset < next.size; next.offset += positionLength) {
+				for (prev.offset = 0; prev.offset < prev.size; prev.offset += positionLength) {
+					if (op.match(prev, next, operatorAware)) {
+						shouldContinue = addToResultAndContinue(next, nextOp);
+						break;
+					} else if (operatorAware.startsBefore(prev.positions,
+							prev.offset, next.positions, next.offset)) {
+						break;
+					}
+				}
+				if (!shouldContinue) {
+					break;
+				}
+			}
+		} else if (Operator.PRECEDING.equals(op)) {
+			int pmark = 0;
+			for (next.offset = 0; next.offset < next.size; next.offset += positionLength) {
+				if (pmark == prev.size)
+					break;
+				for (prev.offset = pmark; prev.offset < prev.size; prev.offset += positionLength) {
+					if (op.match(prev, next, operatorAware)) {
+						shouldContinue = addToResultAndContinue(next, nextOp);
+						break;
+					} else if (operatorAware.startsAfter(prev.positions,
+							prev.offset, next.positions, next.offset)) {
+						pmark = prev.offset + positionLength;
+						break;
+					}
+				}
+				if (!shouldContinue) {
+					break;
+				}
+			}
+		} else if (Operator.FOLLOWING_SIBLING.equals(op)
+				|| Operator.IMMEDIATE_FOLLOWING_SIBLING.equals(op)
+				|| Operator.IMMEDIATE_FOLLOWING.equals(op)) {
+			for (int i = 0; i < next.size; i += positionLength) {
+				for (int j = 0; j < prev.size; j += positionLength) {
+					if (op.match(prev.positions, j, next.positions, i,
+							operatorAware)) {
+						next.offset = i;
+						shouldContinue = addToResultAndContinue(next, nextOp);
+						break;
+					} else if (operatorAware.startsBefore(prev.positions, j,
+							next.positions, i)) {
+						break;
+					}
+				}
+				if (!shouldContinue)
+					break;
+			}
+		} else if (Operator.PRECEDING_SIBLING.equals(op)
+				|| Operator.IMMEDIATE_PRECEDING_SIBLING.equals(op)) {
+			int start = 0;
+			for (int i = 0; i < next.size; i += positionLength) {
+				for (int j = start; j < prev.size; j += positionLength) {
+					while (j < prev.size
+							&& operatorAware.startsAfter(prev.positions, j,
+									next.positions, i)) {
+						j += positionLength;
+						start = j;
+					}
+					if (j >= prev.size) {
+						break;
+					}
+					if (op.match(prev.positions, j, next.positions, i,
+							operatorAware)) {
+						next.offset = i;
+						shouldContinue = addToResultAndContinue(next, nextOp);
+						break;
+					} else if (operatorAware.descendant(prev.positions, j,
+							next.positions, i)
+							|| operatorAware.relativeDepth(prev.positions, j,
+									next.positions, i) > 0) {
+						continue;
+					}
+					break;
+				}
+				if (!shouldContinue)
+					break;
+			}
+		} else if (Operator.IMMEDIATE_PRECEDING.equals(op)) {
+			int start = 0;
+			for (int i = 0; i < next.size; i += positionLength) {
+				for (int j = start; j < prev.size; j += positionLength) {
+					while (j < prev.size
+							&& operatorAware.startsAfter(prev.positions, j,
+									next.positions, i)) {
+						j += positionLength;
+						start = j;
+					}
+					if (j >= prev.size) {
+						break;
+					}
+					if (operatorAware.immediatePreceding(prev.positions, j,
+							next.positions, i)) {
+						next.offset = i;
+						shouldContinue = addToResultAndContinue(next, nextOp);
+						break;
+					}
+					if (operatorAware.descendant(prev.positions, j,
+							next.positions, i)) {
+						break;
+					}
+				}
+				if (!shouldContinue)
+					break;
+			}
+		}
+		return result;
+	}
+
+	@Override
+	public NodePositions matchTerminateEarly(NodePositions prev, Operator op,
+			NodePositions next) {
+		prev.offset = 0;
+		next.offset = 0;
+		result.reset();
+		boolean shouldContinue = true;
+		if (Operator.DESCENDANT.equals(op)) {
+			while (next.offset < next.size && prev.offset < prev.size) {
+				if (op.match(prev, next, operatorAware)) {
+					result.push(next, positionLength);
+					break;
+				} else if (operatorAware.following(prev.positions, prev.offset,
+						next.positions, next.offset)) {
+					prev.offset += positionLength;
+				} else {
+					next.offset += positionLength;
+				}
+			}
+		} else if (Operator.ANCESTOR.equals(op)) {
+			while (next.offset < next.size && prev.offset < prev.size) {
+				if (op.match(prev, next, operatorAware)) {
+					result.push(next, positionLength);
+					break;
+				} else if (operatorAware.startsAfter(prev.positions,
+						prev.offset, next.positions, next.offset)) {
+					prev.offset += positionLength;
+				} else {
+					next.offset += positionLength;
+				}
+			}
+		} else if (Operator.CHILD.equals(op)) {
+			// similar to MPMG join but the marker is on poff here
+			while (next.offset < next.size) {
+				prev.offset = 0;
+				while (prev.offset < prev.size) {
+					if (op.match(prev, next, operatorAware)) {
+						result.push(next, positionLength);
+						shouldContinue = false;
+						break;
+					} else if (operatorAware.startsAfter(prev.positions,
+							prev.offset, next.positions, next.offset)) {
+						prev.offset += positionLength;
+					} else { // N is preceding or ancestor
+						break;
+					}
+				}
+				if (!shouldContinue) {
+					break;
+				}
+				next.offset += positionLength;
+			}
+		} else if (Operator.PARENT.equals(op)) {
+			// skip the first few precedings
+			while (next.offset < next.size) {
+				prev.offset = 0;
+				while (prev.offset < prev.size) {
+					if (op.match(prev, next, operatorAware)) {
+						result.push(next, positionLength);
+						shouldContinue = false;
+						break;
+					} else if (operatorAware.preceding(prev.positions,
+							prev.offset, next.positions, next.offset)) {
+						// commenting out this else block will give the same
+						// number of results but with fewer no. of comparisons
+						break;
+					}
+					prev.offset += positionLength;
+				}
+				if (!shouldContinue)
+					break;
+				next.offset += positionLength;
+			}
+		} else if (Operator.FOLLOWING.equals(op)) {
+			for (next.offset = 0; next.offset < next.size; next.offset += positionLength) {
+				for (prev.offset = 0; prev.offset < prev.size; prev.offset += positionLength) {
+					if (op.match(prev, next, operatorAware)) {
+						result.push(next, positionLength);
+						shouldContinue = false;
+						break;
+					} else if (operatorAware.startsBefore(prev.positions,
+							prev.offset, next.positions, next.offset)) {
+						break;
+					}
+				}
+				if (!shouldContinue) {
+					break;
+				}
+			}
+		} else if (Operator.PRECEDING.equals(op)) {
+			int pmark = 0;
+			for (next.offset = 0; next.offset < next.size; next.offset += positionLength) {
+				if (pmark == prev.size)
+					break;
+				for (prev.offset = pmark; prev.offset < prev.size; prev.offset += positionLength) {
+					if (op.match(prev, next, operatorAware)) {
+						result.push(next, positionLength);
+						shouldContinue = false;
+						break;
+					} else if (operatorAware.startsAfter(prev.positions,
+							prev.offset, next.positions, next.offset)) {
+						pmark = prev.offset + positionLength;
+						break;
+					}
+				}
+				if (!shouldContinue) {
+					break;
+				}
+			}
+
+		} else if (Operator.FOLLOWING_SIBLING.equals(op)
+				|| Operator.IMMEDIATE_FOLLOWING_SIBLING.equals(op)
+				|| Operator.IMMEDIATE_FOLLOWING.equals(op)) {
+			for (int i = 0; i < next.size; i += positionLength) {
+				for (int j = 0; j < prev.size; j += positionLength) {
+					if (op.match(prev.positions, j, next.positions, i,
+							operatorAware)) {
+						next.offset = i;
+						result.push(next, positionLength);
+						shouldContinue = false;
+						break;
+					} else if (operatorAware.startsBefore(prev.positions, j,
+							next.positions, i)) {
+						break;
+					}
+				}
+				if (!shouldContinue)
+					break;
+			}
+		} else if (Operator.PRECEDING_SIBLING.equals(op)
+				|| Operator.IMMEDIATE_PRECEDING_SIBLING.equals(op)) {
+			int start = 0;
+			for (int i = 0; i < next.size; i += positionLength) {
+				for (int j = start; j < prev.size; j += positionLength) {
+					while (j < prev.size
+							&& operatorAware.startsAfter(prev.positions, j,
+									next.positions, i)) {
+						j += positionLength;
+						start = j;
+					}
+					if (j >= prev.size) {
+						break;
+					}
+					if (op.match(prev.positions, j, next.positions, i,
+							operatorAware)) {
+						next.offset = i;
+						result.push(next, positionLength);
+						shouldContinue = false;
+						break;
+					} else if (operatorAware.descendant(prev.positions, j,
+							next.positions, i)
+							|| operatorAware.relativeDepth(prev.positions, j,
+									next.positions, i) > 0) {
+						continue;
+					}
+					break;
+				}
+				if (!shouldContinue)
+					break;
+			}
+		} else if (Operator.IMMEDIATE_PRECEDING.equals(op)) {
+			int start = 0;
+			for (int i = 0; i < next.size; i += positionLength) {
+				for (int j = start; j < prev.size; j += positionLength) {
+					while (j < prev.size
+							&& operatorAware.startsAfter(prev.positions, j,
+									next.positions, i)) {
+						j += positionLength;
+						start = j;
+					}
+					if (j >= prev.size) {
+						break;
+					}
+					if (operatorAware.immediatePreceding(prev.positions, j,
+							next.positions, i)) {
+						next.offset = i;
+						result.push(next, positionLength);
+						shouldContinue = false;
+						break;
+					}
+					if (operatorAware.descendant(prev.positions, j,
+							next.positions, i)) {
+						break;
+					}
+				}
+				if (!shouldContinue)
+					break;
+			}
+		}
+		return result;
 	}
 
 }
