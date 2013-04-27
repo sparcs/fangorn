@@ -26,8 +26,8 @@ public class Baseline2Join extends AbstractPairJoin implements HalfPairJoin {
 	public NodePositions match(NodePositions prev, Operator op,
 			NodePositions next) throws IOException {
 		result.reset();
-		for (prev.offset = 0; prev.offset < prev.size; prev.offset += positionLength) {
-			for (next.offset = 0; next.offset < next.size; next.offset += positionLength) {
+		for (next.offset = 0; next.offset < next.size; next.offset += positionLength) {
+			for (prev.offset = 0; prev.offset < prev.size; prev.offset += positionLength) {
 				if (op.match(prev, next, operatorAware)) {
 					result.push(next, positionLength);
 					break;

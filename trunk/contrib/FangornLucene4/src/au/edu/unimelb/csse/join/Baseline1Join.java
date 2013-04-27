@@ -9,7 +9,7 @@ import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
 
 public class Baseline1Join extends AbstractPairJoin implements FullPairJoin {
 	NodePositions buffer = new NodePositions();
-	
+
 	public Baseline1Join(LogicalNodePositionAware nodePositionAware) {
 		super(nodePositionAware);
 	}
