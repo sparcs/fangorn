@@ -5,7 +5,7 @@ import java.util.Arrays;
 import au.edu.unimelb.csse.Operator;
 
 class TreeQuery {
-	
+
 	private String[] labels;
 	private int[] parents;
 	private Operator[] operators;
@@ -13,7 +13,7 @@ class TreeQuery {
 	public void setLabels(String... labels) {
 		this.labels = labels;
 	}
-	
+
 	public String[] labels() {
 		return labels;
 	}
@@ -21,11 +21,11 @@ class TreeQuery {
 	public void setParents(int... parents) {
 		this.parents = parents;
 	}
-	
+
 	public int[] parents() {
 		return parents;
 	}
-	
+
 	public void setOperators(Operator... operators) {
 		this.operators = operators;
 	}
@@ -48,5 +48,12 @@ class TreeQuery {
 			prev = parents[i];
 		}
 		return false;
+	}
+
+	@Override
+	public String toString() {
+		return "[ labels:" + Arrays.toString(labels) + ", parentids:"
+				+ Arrays.toString(parents) + ", operators:"
+				+ Arrays.toString(operators) + "]";
 	}
 }

@@ -40,7 +40,6 @@ public class CorrectnessTest {
 			TreeQuery query = queries.getQuery(i);
 			Map<Integer, List<JoinType>> numDocsJoinType = new HashMap<Integer, List<JoinType>>();
 			Map<Integer, List<JoinType>> numMatchesJoinType = new HashMap<Integer, List<JoinType>>();
-
 			for (JoinType joinType : JoinType.values()) {
 				countingNPA.getCountingOperatorAware().resetCount();
 				if (query.hasBranches() && !joinType.allowsBranches()) {
