@@ -49,7 +49,7 @@ public class CreateIndex {
 
 		Directory d = new MMapDirectory(new File(indexDir));
 		Analyzer a = new TreeAnalyzer(new LRDP(LRDP.PhysicalPayloadFormat.BYTE1111));
-		IndexWriterConfig c = new IndexWriterConfig(Version.LUCENE_40, a);
+		IndexWriterConfig c = new IndexWriterConfig(Version.LUCENE_42, a);
 		c.setRAMBufferSizeMB(1024);
 		writer = new IndexWriter(d, c);
 		ft = createFieldType();
