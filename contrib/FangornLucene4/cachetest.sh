@@ -11,7 +11,7 @@ file=`echo "$fileprefix$mem"`;
 for query in `seq 0 28`; do
 for join in 'BASELINE1' 'BASELINE2' 'MPMG1' 'MPMG2' 'STACKTREE' 'MPMG3' 'MPMG4' 'STAIRCASE' 'LATE' 'LATEMRR' 'TWIGSTACK' 'PATHSTACK'; do
 sudo sh clearcache.sh;
-java -Xmx${mem}m -cp .:./fangornL4.jar:./lib/lucene-core-4.0-SNAPSHOT.jar au.edu.unimelb.csse.exp.CacheEffectTest $indexdir $join $query $byteformat | tee -a $file;
+java -Xmx${mem}m -cp .:./fangornL4.jar:./lib/lucene-core-4.2.1.jar au.edu.unimelb.csse.exp.CacheEffectTest $indexdir $join $query $byteformat | tee -a $file;
 done;
 done;
 done;
