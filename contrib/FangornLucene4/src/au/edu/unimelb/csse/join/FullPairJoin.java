@@ -19,6 +19,8 @@ public interface FullPairJoin {
 	 * Ensure that all params and buffers have their offsets and sizes reset
 	 * appropriately before passing them into this function
 	 * 
+	 * Result object stores the output sorted by the first node's positions
+	 * 
 	 * @param prev
 	 * @param op
 	 * @param node

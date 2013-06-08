@@ -207,6 +207,7 @@ public class LookaheadTermEarlyPipeline extends HalfPairJoinPipeline implements
 			buffer.offset += positionLength;
 			if (Operator.PRECEDING.equals(nextOp)) {
 				buffer.offset = buffer.size - positionLength;
+				prevPositions.reset();
 				prevPositions.push(buffer, positionLength);
 				return prevPositions;
 			}

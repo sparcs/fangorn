@@ -11,6 +11,12 @@ import au.edu.unimelb.csse.join.NodePositions;
 public interface LogicalNodePositionAware {
 	OperatorAware getOperatorHandler();
 
+	/**
+	 * Reads all positions of node into buffer. Resets offset to 0 in the buffer 
+	 * @param buffer
+	 * @param node
+	 * @throws IOException
+	 */
 	void getAllPositions(NodePositions buffer, DocsAndPositionsEnum node)
 			throws IOException;
 
