@@ -57,7 +57,7 @@ public abstract class IndexTestCase extends TestCase {
 
 	protected IndexWriter setupIndex() throws IOException {
 		Analyzer a = new TreeAnalyzer(new LRDP(LRDP.PhysicalPayloadFormat.BYTE1111));
-		IndexWriterConfig c = new IndexWriterConfig(Version.LUCENE_40, a);
+		IndexWriterConfig c = new IndexWriterConfig(Version.LUCENE_42, a);
 		IndexWriter w = new IndexWriter(d, c);
 		return w;
 	}
@@ -120,6 +120,17 @@ public abstract class IndexTestCase extends TestCase {
 		assertEquals("Incorrect offset", expectedOffset, prev.offset);
 		for (int i = 0; i < expected.length; i++) {
 			assertEquals("Incorrect value at index " + i, expected[i],
+					prev.positions[i]);
+		}
+	}
+	
+	protected void assertPositions(String message, int[] expected, int expectedOffset,
+			NodePositions prev) {
+		assertEquals(message + " Incorrect number of positions", expected.length,
+				prev.size);
+		assertEquals(message + " Incorrect offset", expectedOffset, prev.offset);
+		for (int i = 0; i < expected.length; i++) {
+			assertEquals(message + " Incorrect value at index " + i, expected[i],
 					prev.positions[i]);
 		}
 	}

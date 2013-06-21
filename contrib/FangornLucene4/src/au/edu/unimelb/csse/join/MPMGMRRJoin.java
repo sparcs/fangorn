@@ -30,7 +30,7 @@ public class MPMGMRRJoin extends AbstractPairJoin implements HalfPairJoin {
 			nodePositionAware.getNextPosition(result, node);
 			numNextRead++;
 			prev.offset = pmark;
-			Operator relation = operatorAware.mostRelevantRelation(
+			Operator relation = operatorAware.mostRelevantOpRelation(
 					prev.positions, prev.offset, result.positions,
 					result.offset);
 			while (Position.AFTER.equals(relation.getPosition())
@@ -42,7 +42,7 @@ public class MPMGMRRJoin extends AbstractPairJoin implements HalfPairJoin {
 				if (prev.offset >= prev.size) {
 					break;
 				}
-				relation = operatorAware.mostRelevantRelation(prev.positions,
+				relation = operatorAware.mostRelevantOpRelation(prev.positions,
 						prev.offset, result.positions, result.offset);
 			}
 			if (!checkMatch(prev, op, result, relation)) {
@@ -64,7 +64,7 @@ public class MPMGMRRJoin extends AbstractPairJoin implements HalfPairJoin {
 			if (pmark == prev.size)
 				break;
 			prev.offset = pmark;
-			Operator relation = operatorAware.mostRelevantRelation(
+			Operator relation = operatorAware.mostRelevantOpRelation(
 					prev.positions, prev.offset, next.positions, next.offset);
 			while (Position.AFTER.equals(relation.getPosition())
 					|| !descOrChildOp
@@ -75,7 +75,7 @@ public class MPMGMRRJoin extends AbstractPairJoin implements HalfPairJoin {
 				if (prev.offset >= prev.size) {
 					break;
 				}
-				relation = operatorAware.mostRelevantRelation(prev.positions,
+				relation = operatorAware.mostRelevantOpRelation(prev.positions,
 						prev.offset, next.positions, next.offset);
 			}
 			if (checkMatch(prev, op, next, relation)) {
@@ -102,7 +102,7 @@ public class MPMGMRRJoin extends AbstractPairJoin implements HalfPairJoin {
 			}
 			prev.offset += positionLength;
 			if (prev.offset < prev.size) {
-				relation = operatorAware.mostRelevantRelation(prev.positions,
+				relation = operatorAware.mostRelevantOpRelation(prev.positions,
 						prev.offset, next.positions, next.offset);
 			}
 		}

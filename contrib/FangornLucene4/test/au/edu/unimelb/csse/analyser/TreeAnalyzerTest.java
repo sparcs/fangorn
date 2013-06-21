@@ -36,7 +36,7 @@ public class TreeAnalyzerTest extends TestCase {
 	public void setUp() throws Exception {
 		d = new RAMDirectory();
 		Analyzer a = new TreeAnalyzer(new LRDP(LRDP.PhysicalPayloadFormat.BYTE1111));
-		IndexWriterConfig c = new IndexWriterConfig(Version.LUCENE_40, a);
+		IndexWriterConfig c = new IndexWriterConfig(Version.LUCENE_42, a);
 		IndexWriter w = new IndexWriter(d, c);
 		w.addDocument(getDoc("(AA BB)")); // doc 0
 		w.addDocument(getDoc("(D(BB CC)(AA BB)(FFF G))")); // doc 1

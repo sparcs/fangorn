@@ -19,5 +19,7 @@ public interface OperatorAware {
 	// equivalent to following || descendant
 	boolean startsAfter(int[] prev, int poff, int[] next, int noff);
 	int relativeDepth(int[] prev, int poff, int[] next, int noff);
-	Operator mostRelevantRelation(int[] prev, int poff, int[] next, int noff);
+	boolean isLeftAligned(int[] prev, int poff, int[] next, int noff);
+	Operator mostRelevantOpRelation(int[] prev, int poff, int[] next, int noff);
+	Position positionRelation(int[] prev, int poff, int[] next, int noff);
 }

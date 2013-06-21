@@ -7,6 +7,7 @@ import org.apache.lucene.util.BytesRef;
 
 import au.edu.unimelb.csse.Operator;
 import au.edu.unimelb.csse.OperatorAware;
+import au.edu.unimelb.csse.Position;
 import au.edu.unimelb.csse.join.NodePositions;
 
 public class LRDP implements LogicalNodePositionAware {
@@ -189,7 +190,7 @@ public class LRDP implements LogicalNodePositionAware {
 		}
 
 		@Override
-		public Operator mostRelevantRelation(int[] prev, int poff, int[] next,
+		public Operator mostRelevantOpRelation(int[] prev, int poff, int[] next,
 				int noff) {
 			int leftDiff = prev[poff + LEFT] - next[noff + LEFT]; 
 			int rightDiff = prev[poff + RIGHT] - next[noff + RIGHT];
@@ -247,6 +248,43 @@ public class LRDP implements LogicalNodePositionAware {
 				return Operator.PRECEDING_SIBLING;
 			}
 			return Operator.PRECEDING;
+		}
+
+		@Override
+		public Position positionRelation(int[] prev, int poff, int[] next,
+				int noff) {
+			int leftDiff = prev[poff + LEFT] - next[noff + LEFT];
+			int rightDiff = prev[poff + RIGHT] - next[noff + RIGHT];
+			if (leftDiff > 0) {
+				if (rightDiff > 0) {
+					return Position.BEFORE;
+				} 
+				return Position.ABOVE;
+			} else if (leftDiff < 0) {
+				if (rightDiff < 0) {
+					return Position.AFTER;
+				} 
+				return Position.BELOW;
+			}
+			if (rightDiff > 0) {
+				return Position.BELOW;
+			} else if (rightDiff < 0) {
+				return Position.ABOVE;
+			} else {
+				int depthDiff = prev[poff + DEPTH] - next[noff + DEPTH];
+				if (depthDiff < 0) {
+					return Position.BELOW;
+				} else if (depthDiff > 0) {
+					return Position.ABOVE;
+				}
+				return Position.SAME;
+			}
+
+		}
+
+		@Override
+		public boolean isLeftAligned(int[] prev, int poff, int[] next, int noff) {
+			return prev[poff + LEFT] - next[noff + LEFT] == 0;
 		}
 	}
 
