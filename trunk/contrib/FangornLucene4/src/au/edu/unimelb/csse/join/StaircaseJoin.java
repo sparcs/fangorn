@@ -5,6 +5,7 @@ import java.io.IOException;
 import org.apache.lucene.index.DocsAndPositionsEnum;
 
 import au.edu.unimelb.csse.Operator;
+import au.edu.unimelb.csse.join.HalfPairLATEJoin.PruneOperation;
 import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
 
 /**
@@ -195,10 +196,6 @@ public class StaircaseJoin extends AbstractPairJoin implements HalfPairJoin {
 						result.insert(next, 0, positionLength);
 						break;
 					}
-//					if (operatorAware.ancestor(prev.positions, j,
-//							next.positions, i)) {
-//						break;
-//					}
 				}
 			}
 		} else if (Operator.IMMEDIATE_PRECEDING.equals(op)) {
@@ -219,13 +216,24 @@ public class StaircaseJoin extends AbstractPairJoin implements HalfPairJoin {
 						result.push(next, positionLength);
 						break;
 					}
-					if (operatorAware.descendant(prev.positions, j,
-							next.positions, i)) {
+				}
+			}
+		} else if (Operator.IMMEDIATE_FOLLOWING.equals(op) || Operator.FOLLOWING_SIBLING.equals(op)
+				|| Operator.IMMEDIATE_FOLLOWING_SIBLING.equals(op)) {
+			for (; next.offset < next.size; next.offset += positionLength) {
+				for (int j = 0; j < prev.size; j += positionLength) {
+					if (op.match(prev.positions, j, next.positions,
+							next.offset, operatorAware)) {
+						result.push(next, positionLength);
+						break;
+					} else if (operatorAware.startsBefore(prev.positions, j,
+							next.positions, next.offset)) {
 						break;
 					}
 				}
 			}
 		}
+	
 	}
 
 	/**

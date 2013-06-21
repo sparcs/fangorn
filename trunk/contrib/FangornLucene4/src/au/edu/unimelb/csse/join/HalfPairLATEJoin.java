@@ -19,4 +19,8 @@ public interface HalfPairLATEJoin extends HalfPairJoin {
 
 	NodePositions matchTerminateEarly(NodePositions prev, Operator op,
 			NodePositions next);
+	
+	enum PruneOperation {
+		PRUNE, PRUNE_STOP, JOIN_MATCH_REPLACE, JOIN_MATCH_ADD, JOIN_MATCH_ADD_STOP, JOIN_MATCH_REPLACE_MANY
+	};
 }

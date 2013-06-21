@@ -119,10 +119,10 @@ public class CountingOperatorAware implements OperatorAware {
 	}
 
 	@Override
-	public Operator mostRelevantRelation(int[] prev, int poff, int[] next,
+	public Operator mostRelevantOpRelation(int[] prev, int poff, int[] next,
 			int noff) {
 		count++;
-		return inner.mostRelevantRelation(prev, poff, next, noff);
+		return inner.mostRelevantOpRelation(prev, poff, next, noff);
 	}
 
 	@Override
@@ -133,6 +133,18 @@ public class CountingOperatorAware implements OperatorAware {
 	
 	public void resetCount() {
 		count = 0;
+	}
+
+	@Override
+	public Position positionRelation(int[] prev, int poff, int[] next, int noff) {
+		count++;
+		return inner.positionRelation(prev, poff, next, noff);
+	}
+
+	@Override
+	public boolean isLeftAligned(int[] prev, int poff, int[] next, int noff) {
+		count++;
+		return inner.isLeftAligned(prev, poff, next, noff);
 	}
 
 }
