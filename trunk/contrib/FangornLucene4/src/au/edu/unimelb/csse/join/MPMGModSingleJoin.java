@@ -5,6 +5,7 @@ import java.io.IOException;
 import org.apache.lucene.index.DocsAndPositionsEnum;
 
 import au.edu.unimelb.csse.Operator;
+import au.edu.unimelb.csse.OperatorAware;
 import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
 
 /**
@@ -35,17 +36,25 @@ import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
  * @author sumukh
  * 
  */
-public class MPMGModSingleJoin extends AbstractPairJoin implements HalfPairJoin {
+public abstract class MPMGModSingleJoin implements HalfPairJoin {
+	public static final JoinBuilder JOIN_BUILDER = new MPMGModSingleJoinBuilder();
+	protected final LogicalNodePositionAware nodePositionAware;
+	protected final int positionLength;
+	protected final OperatorAware operatorAware;
 	NodePositions result = new NodePositions();
+	Operator op;
 
-	public MPMGModSingleJoin(LogicalNodePositionAware nodePositionAware) {
-		super(nodePositionAware);
+	public MPMGModSingleJoin(Operator op,
+			LogicalNodePositionAware nodePositionAware) {
+		this.nodePositionAware = nodePositionAware;
+		positionLength = nodePositionAware.getPositionLength();
+		operatorAware = nodePositionAware.getOperatorHandler();
+		this.op = op;
 	}
 
 	@Override
 	public NodePositions match(NodePositions prev, Operator op,
-			DocsAndPositionsEnum node)
-			throws IOException {
+			DocsAndPositionsEnum node) throws IOException {
 		int freq = node.freq();
 		result.reset();
 		int numNextRead = 0;
@@ -56,26 +65,12 @@ public class MPMGModSingleJoin extends AbstractPairJoin implements HalfPairJoin 
 			nodePositionAware.getNextPosition(result, node);
 			numNextRead++;
 			prev.offset = pmark;
-			boolean found = false;
-			if (Operator.DESCENDANT.equals(op)
-					|| Operator.CHILD.equals(op)) {
-				while (prev.offset < prev.size && operatorAware.following(prev.positions, prev.offset,
-						result.positions, result.offset)) {
-					// skip before
-					prev.offset += positionLength;
-					pmark = prev.offset;
-				}
-				found = checkDescChild(prev, op, result, found);
-			} else { // ancestor or parent
-				while (prev.offset < prev.size && operatorAware.startsAfter(prev.positions, prev.offset,
-						result.positions, result.offset)) {
-					// skip before
-					prev.offset += positionLength;
-					pmark = prev.offset;
-				}
-				found = checkAncParent(prev, op, result, found);
+			while (prev.offset < prev.size && skipCondition(prev)) {
+				// skip before
+				prev.offset += positionLength;
+				pmark = prev.offset;
 			}
-			if (!found) {
+			if (!join(prev, result)) {
 				result.removeLast(positionLength);
 			}
 		}
@@ -90,28 +85,14 @@ public class MPMGModSingleJoin extends AbstractPairJoin implements HalfPairJoin 
 		int pmark = 0;
 		while (next.offset < next.size) {
 			if (pmark == prev.size)
-				break;	
+				break;
 			prev.offset = pmark;
-			boolean found = false;
-			if (Operator.DESCENDANT.equals(op)
-					|| Operator.CHILD.equals(op)) {
-				while (prev.offset < prev.size && operatorAware.following(prev.positions, prev.offset,
-						next.positions, next.offset)) {
-					// skip before
-					prev.offset += positionLength;
-					pmark = prev.offset;
-				}
-				found = checkDescChild(prev, op, next, found);
-			} else { // ancestor or parent
-				while (prev.offset < prev.size && operatorAware.startsAfter(prev.positions, prev.offset,
-						next.positions, next.offset)) {
-					// skip before
-					prev.offset += positionLength;
-					pmark = prev.offset;
-				}
-				found = checkAncParent(prev, op, next, found);
+			while (prev.offset < prev.size && skipCondition(prev)) {
+				// skip before
+				prev.offset += positionLength;
+				pmark = prev.offset;
 			}
-			if (found) {
+			if (join(prev, next)) {
 				result.push(next, positionLength);
 			}
 			next.offset += positionLength;
@@ -119,33 +100,73 @@ public class MPMGModSingleJoin extends AbstractPairJoin implements HalfPairJoin 
 		return result;
 	}
 
-	private boolean checkAncParent(NodePositions prev, Operator op,
-			NodePositions next, boolean found) {
-		while (prev.offset < prev.size) {
-			if (op.match(prev, next, operatorAware)) {
-				found = true;
-				break;
-			} else if (operatorAware.following(next.positions, next.offset, prev.positions, prev.offset)) {
-				break;
-			}
-			prev.offset += positionLength;
-		}
-		return found;
+	abstract boolean skipCondition(NodePositions prev);
+
+	abstract boolean join(NodePositions prev, NodePositions next);
+}
+
+class DescChildMPMGModSingle extends MPMGModSingleJoin {
+
+	public DescChildMPMGModSingle(Operator op, LogicalNodePositionAware nodePositionAware) {
+		super(op, nodePositionAware);
 	}
 
-	private boolean checkDescChild(NodePositions prev, Operator op,
-			NodePositions next, boolean found) {
+	boolean skipCondition(NodePositions prev) {
+		return operatorAware.following(prev.positions, prev.offset,
+				result.positions, result.offset);
+	}
+
+	boolean join(NodePositions prev, NodePositions next) {
 		while (prev.offset < prev.size) {
 			if (op.match(prev, next, operatorAware)) {
-				found = true;
-				break; // solution found; abort
-			} else if (operatorAware.preceding(prev.positions,
-					prev.offset, next.positions, next.offset)) {
+				return true;
+			} else if (operatorAware.preceding(prev.positions, prev.offset,
+					next.positions, next.offset)) {
 				// prev is after
 				break;
 			}
 			prev.offset += positionLength;
 		}
-		return found;
+		return false;
+	}
+}
+
+class AncParMPMGModSingle extends MPMGModSingleJoin {
+
+	public AncParMPMGModSingle(Operator op, LogicalNodePositionAware nodePositionAware) {
+		super(op, nodePositionAware);
+	}
+
+	boolean skipCondition(NodePositions prev) {
+		return operatorAware.startsAfter(prev.positions, prev.offset,
+				result.positions, result.offset);
+	}
+
+	boolean join(NodePositions prev, NodePositions next) {
+		while (prev.offset < prev.size) {
+			if (op.match(prev, next, operatorAware)) {
+				return true;
+			} else if (operatorAware.following(next.positions, next.offset,
+					prev.positions, prev.offset)) {
+				break;
+			}
+			prev.offset += positionLength;
+		}
+		return false;
+	}
+
+}
+
+class MPMGModSingleJoinBuilder implements JoinBuilder {
+
+	@Override
+	public HalfPairJoin getHalfPairJoin(Operator op,
+			LogicalNodePositionAware nodePositionAware) {
+		if (Operator.ANCESTOR.equals(op) || Operator.PARENT.equals(op)) {
+			return new AncParMPMGModSingle(op, nodePositionAware);
+		} else if (Operator.DESCENDANT.equals(op) || Operator.CHILD.equals(op)) {
+			return new DescChildMPMGModSingle(op, nodePositionAware);
+		}
+		return null;
 	}
 }

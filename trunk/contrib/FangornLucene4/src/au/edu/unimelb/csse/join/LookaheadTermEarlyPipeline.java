@@ -12,15 +12,15 @@ import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
 
 public class LookaheadTermEarlyPipeline extends HalfPairJoinPipeline implements
 		BooleanJoinPipeline {
-	HalfPairLATEJoin lateJoin;
 	NodePositions buffer;
 	int positionLength;
 	OperatorAware operatorAware;
+	LATEJoinBuilder lateJoinBuilder;
 
 	public LookaheadTermEarlyPipeline(
-			LogicalNodePositionAware nodePositionAware, HalfPairLATEJoin join) {
-		super(nodePositionAware, join);
-		lateJoin = join;
+			LogicalNodePositionAware nodePositionAware, LATEJoinBuilder jb) {
+		super(nodePositionAware, jb);
+		lateJoinBuilder = jb;
 		buffer = new NodePositions();
 		positionLength = nodePositionAware.getPositionLength();
 		operatorAware = nodePositionAware.getOperatorHandler();
@@ -148,20 +148,21 @@ public class LookaheadTermEarlyPipeline extends HalfPairJoinPipeline implements
 	}
 
 	class LookaheadPipe extends AbstractPipe implements Pipe {
-
+		HalfPairLATEJoin join;
 		Operator nextOp;
 		Operator op;
 
 		public LookaheadPipe(DocsAndPositionsEnum node, Operator op,
 				Operator nextOp, Pipe prev) {
 			super(node, prev);
+			join = lateJoinBuilder.getHalfPairJoin(op, nodePositionAware);
 			this.op = op;
 			this.nextOp = nextOp;
 		}
 
 		@Override
 		public NodePositions execute() throws IOException {
-			NodePositions results = lateJoin.matchWithLookahead(prevPositions,
+			NodePositions results = join.matchWithLookahead(prevPositions,
 					op, node, nextOp);
 			if (results.size > 0) {
 				return continueExection(results);
@@ -173,15 +174,17 @@ public class LookaheadTermEarlyPipeline extends HalfPairJoinPipeline implements
 
 	class TerminateEarlyPipe extends AbstractPipe implements Pipe {
 		Operator op;
+		HalfPairLATEJoin join;
 
 		public TerminateEarlyPipe(DocsAndPositionsEnum node, Operator op) {
 			super(node);
 			this.op = op;
+			join = lateJoinBuilder.getHalfPairJoin(op, nodePositionAware);
 		}
 
 		@Override
 		public NodePositions execute() throws IOException {
-			NodePositions results = lateJoin.matchTerminateEarly(prevPositions,
+			NodePositions results = join.matchTerminateEarly(prevPositions,
 					op, node);
 			if (results.size > 0) {
 				return continueExection(results);
@@ -246,9 +249,11 @@ public class LookaheadTermEarlyPipeline extends HalfPairJoinPipeline implements
 	}
 
 	class MetaTerminateEarlyPipe extends MetaPipe implements Pipe {
+		HalfPairLATEJoin join;
 
 		public MetaTerminateEarlyPipe(Operator op, Pipe prev) {
 			super(op, prev);
+			join = lateJoinBuilder.getHalfPairJoin(op, nodePositionAware);
 		}
 
 		@Override
@@ -260,7 +265,7 @@ public class LookaheadTermEarlyPipeline extends HalfPairJoinPipeline implements
 				return results;
 			}
 			prevPositions.makeCloneOf(results);
-			return lateJoin.matchTerminateEarly(prevPositions, op, metaPrev);
+			return join.matchTerminateEarly(prevPositions, op, metaPrev);
 		}
 	}
 

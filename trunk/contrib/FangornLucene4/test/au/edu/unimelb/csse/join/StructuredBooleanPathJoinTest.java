@@ -4,6 +4,8 @@ import org.apache.lucene.index.IndexReader;
 
 import au.edu.unimelb.csse.IndexTestCase;
 import au.edu.unimelb.csse.Operator;
+import au.edu.unimelb.csse.join.BooleanJoinPipeline.Pipe;
+import au.edu.unimelb.csse.join.HalfPairJoinPipeline.MetaPipe;
 import au.edu.unimelb.csse.paypack.LRDP;
 import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
 
@@ -13,12 +15,12 @@ public class StructuredBooleanPathJoinTest extends IndexTestCase {
 		LogicalNodePositionAware lrdp = new LRDP(
 				LRDP.PhysicalPayloadFormat.BYTE1111);
 
-		HalfPairJoin[] joins = new HalfPairJoin[] { new StaircaseJoin(lrdp),
-				new MPMGModSingleJoin(lrdp) };
+		JoinBuilder[] joins = new JoinBuilder[] { StaircaseJoin.JOIN_BUILDER,
+				MPMGModSingleJoin.JOIN_BUILDER };
 
 		for (int i = 0; i < joins.length; i++) {
-			HalfPairJoin hpj = joins[i];
-			HalfPairJoinPipeline pipeline = new HalfPairJoinPipeline(lrdp, hpj);
+			JoinBuilder jb = joins[i];
+			HalfPairJoinPipeline pipeline = new HalfPairJoinPipeline(lrdp, jb);
 			StructuredBooleanPathJoin join = new StructuredBooleanPathJoin(
 					new String[] { "A", "B", "C", "D", "E" }, new int[] { -1,
 							0, 1, 0, 3 }, getDescOp(5), pipeline, lrdp);
@@ -28,12 +30,16 @@ public class StructuredBooleanPathJoinTest extends IndexTestCase {
 			join.nextDoc();
 
 			assertTrue(join.match());
+
+			Pipe lastPipe = pipeline.root.getNext().getNext();
 			if (i == 0) {
+				StaircaseJoin scj = (StaircaseJoin) ((MetaPipe) lastPipe).join;
 				assertPositions(new int[] { 0, 6, 0, 0, 4, 6, 1, 15 }, 4,
-						((StaircaseJoin) hpj).result);
+						scj.result);
 			} else {
+				MPMGModSingleJoin mpmgmods = (MPMGModSingleJoin) ((MetaPipe) lastPipe).join;
 				assertPositions(new int[] { 0, 6, 0, 0, 4, 6, 1, 15 }, 4,
-						((MPMGModSingleJoin) hpj).result);
+						mpmgmods.result);
 
 			}
 		}

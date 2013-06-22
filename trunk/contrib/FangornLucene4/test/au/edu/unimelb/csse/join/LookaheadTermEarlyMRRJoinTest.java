@@ -9,7 +9,7 @@ import org.junit.Before;
 import au.edu.unimelb.csse.Operator;
 
 public class LookaheadTermEarlyMRRJoinTest extends PairJoinTestCase {
-	LookaheadTermEarlyMRRJoin join;
+	JoinBuilder join;
 	Operator[] lookaheadOps = new Operator[] { Operator.DESCENDANT,
 			Operator.ANCESTOR, Operator.FOLLOWING, Operator.PRECEDING };
 
@@ -17,7 +17,7 @@ public class LookaheadTermEarlyMRRJoinTest extends PairJoinTestCase {
 	@Before
 	protected void setUp() throws Exception {
 		super.setUp();
-		join = new LookaheadTermEarlyMRRJoin(lrdp);
+		join = LookaheadTermEarlyMRRJoin.JOIN_BUILDER;
 	}
 
 	public void testFollowingOpWithSimpleFollows() throws Exception {
@@ -166,7 +166,7 @@ public class LookaheadTermEarlyMRRJoinTest extends PairJoinTestCase {
 				new int[] { 1, 2, 3, 3, 2, 3, 2, 5, 5, 6, 2, 11, 8, 9, 2, 20 },
 				new int[] { 1, 2, 3, 3, 2, 3, 2, 5, 5, 6, 2, 11, 8, 9, 2, 20 },
 				new int[] { 1, 2, 3, 3 }, new int[] { 8, 9, 2, 20 } };
-		int[] expectedNumComparisons = new int[] { 20, 31, 3, 9 };
+		int[] expectedNumComparisons = new int[] { 20, 22, 3, 3 };
 		Operator op = Operator.CHILD;
 
 		assertJoinWithLookaheads(sent, term1, op, term2, 28, expectedResults,
@@ -215,7 +215,7 @@ public class LookaheadTermEarlyMRRJoinTest extends PairJoinTestCase {
 				new int[] { 1, 2, 2, 4, 4, 5, 3, 9 },
 				new int[] { 1, 2, 2, 4, 4, 5, 3, 9 }, new int[] { 1, 2, 2, 4 },
 				new int[] { 4, 5, 3, 9 } };
-		int[] expectedNumComparisons = new int[] { 9, 10, 3, 1 };
+		int[] expectedNumComparisons = new int[] { 9, 9, 3, 1 };
 		Operator op = Operator.CHILD;
 
 		assertJoinWithLookaheads(sent, term1, op, term2, 12, expectedResults,
@@ -256,7 +256,7 @@ public class LookaheadTermEarlyMRRJoinTest extends PairJoinTestCase {
 		int[][] expectedResults = new int[][] { new int[] { 28, 34, 7, 52 },
 				new int[] { 28, 34, 7, 52 }, new int[] { 28, 34, 7, 52 },
 				new int[] { 28, 34, 7, 52 } };
-		int[] expectedNumComparisons = new int[] { 32, 54, 17, 41 };
+		int[] expectedNumComparisons = new int[] { 32, 47, 17, 41 };
 		Operator op = Operator.CHILD;
 
 		assertJoinWithLookaheads(sent, term1, op, term2, 68, expectedResults,

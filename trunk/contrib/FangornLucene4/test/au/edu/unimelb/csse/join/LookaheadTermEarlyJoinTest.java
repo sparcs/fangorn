@@ -11,7 +11,7 @@ import au.edu.unimelb.csse.Operator;
 import au.edu.unimelb.csse.join.LookaheadTermEarlyPipeline.GetAllLookaheadPipe;
 
 public class LookaheadTermEarlyJoinTest extends PairJoinTestCase {
-	LookaheadTermEarlyJoin join;
+	JoinBuilder jb = LookaheadTermEarlyJoin.JOIN_BUILDER;
 	Operator[] lookaheadOps = new Operator[] { Operator.DESCENDANT,
 			Operator.ANCESTOR, Operator.FOLLOWING, Operator.PRECEDING };
 
@@ -19,7 +19,6 @@ public class LookaheadTermEarlyJoinTest extends PairJoinTestCase {
 	@Before
 	protected void setUp() throws Exception {
 		super.setUp();
-		join = new LookaheadTermEarlyJoin(lrdp);
 	}
 
 	public void testFollowingOpWithSimpleFollows() throws Exception {
@@ -170,7 +169,7 @@ public class LookaheadTermEarlyJoinTest extends PairJoinTestCase {
 				new int[] { 1, 2, 3, 3, 2, 3, 2, 5, 5, 6, 2, 11, 8, 9, 2, 20 },
 				new int[] { 1, 2, 3, 3, 2, 3, 2, 5, 5, 6, 2, 11, 8, 9, 2, 20 },
 				new int[] { 1, 2, 3, 3 }, new int[] { 8, 9, 2, 20 } };
-		int[] expectedNumComparisons = new int[] { 31, 52, 5, 17 };
+		int[] expectedNumComparisons = new int[] { 31, 42, 5, 6 };
 		Operator op = Operator.CHILD;
 
 		assertJoinWithLookaheads(sent, term1, op, term2, 28, expectedResults,
@@ -219,7 +218,7 @@ public class LookaheadTermEarlyJoinTest extends PairJoinTestCase {
 				new int[] { 1, 2, 2, 4, 4, 5, 3, 9 },
 				new int[] { 1, 2, 2, 4, 4, 5, 3, 9 }, new int[] { 1, 2, 2, 4 },
 				new int[] { 4, 5, 3, 9 } };
-		int[] expectedNumComparisons = new int[] { 17, 14, 6, 2 };
+		int[] expectedNumComparisons = new int[] { 17, 13, 6, 2 };
 		Operator op = Operator.CHILD;
 
 		assertJoinWithLookaheads(sent, term1, op, term2, 12, expectedResults,
@@ -260,7 +259,7 @@ public class LookaheadTermEarlyJoinTest extends PairJoinTestCase {
 		int[][] expectedResults = new int[][] { new int[] { 28, 34, 7, 52 },
 				new int[] { 28, 34, 7, 52 }, new int[] { 28, 34, 7, 52 },
 				new int[] { 28, 34, 7, 52 } };
-		int[] expectedNumComparisons = new int[] { 50, 99, 31, 76 };
+		int[] expectedNumComparisons = new int[] { 50, 122, 31, 110 };
 		Operator op = Operator.CHILD;
 
 		assertJoinWithLookaheads(sent, term1, op, term2, 68, expectedResults,
@@ -462,7 +461,7 @@ public class LookaheadTermEarlyJoinTest extends PairJoinTestCase {
 				posEnum = initPrevGetNext(r, expectedTerm1Num, 0, term1, term2);
 			}
 			lookaheadJoinAndAssertOutput(expectedResults[i].length,
-					expectedNumComparisons[i], join, prev, op, nextOp, posEnum,
+					expectedNumComparisons[i], jb, prev, op, nextOp, posEnum,
 					i);
 			int expectedOffset = expectedResults[i].length - 4;
 			assertPositions(
@@ -479,7 +478,7 @@ public class LookaheadTermEarlyJoinTest extends PairJoinTestCase {
 		DocsAndPositionsEnum posEnum = initPrevGetNext(r, expectedTerm1Num, 0,
 				term1, term2);
 		termEarlyJoinAndAssertOutput(expectedResults.length,
-				expectedNumComparisons, join, prev, op, posEnum);
+				expectedNumComparisons, jb, prev, op, posEnum);
 		int expectedOffset = expectedResults.length - 4;
 		assertPositions(expectedResults, expectedOffset < 0 ? 0
 				: expectedOffset, bufferResult);
@@ -492,7 +491,7 @@ public class LookaheadTermEarlyJoinTest extends PairJoinTestCase {
 		DocsAndPositionsEnum posEnum = initPrevGetNext(r, expectedTerm1Num, 0,
 				term1, term2);
 		joinAndAssertOutput(expectedResults.length, expectedNumComparisons,
-				join, prev, op, posEnum);
+				jb, prev, op, posEnum);
 		int expectedOffset = expectedResults.length - 4;
 		assertPositions(expectedResults, expectedOffset < 0 ? 0
 				: expectedOffset, bufferResult);

@@ -3,6 +3,7 @@ package au.edu.unimelb.csse.join;
 import org.apache.lucene.index.DocsAndPositionsEnum;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.Term;
+import org.junit.Before;
 
 import au.edu.unimelb.csse.Operator;
 import au.edu.unimelb.csse.join.AbstractJoin.PostingsAndFreq;
@@ -18,11 +19,17 @@ import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
 public class LookaheadTermEarlyPipelineTest extends PipelineTestCase {
 	private LogicalNodePositionAware npa = new LRDP(
 			LRDP.PhysicalPayloadFormat.BYTE1111);
+	LookaheadTermEarlyPipeline pipeline;
+
+	@Override
+	@Before
+	protected void setUp() throws Exception {
+		super.setUp();
+		pipeline = new LookaheadTermEarlyPipeline(npa,
+				LookaheadTermEarlyJoin.JOIN_BUILDER);
+	}
 
 	public void testCreatePipeline() throws Exception {
-		LookaheadTermEarlyJoin join = new LookaheadTermEarlyJoin(npa);
-		LookaheadTermEarlyPipeline pipeline = new LookaheadTermEarlyPipeline(
-				npa, join);
 		IndexReader rdr = setupIndexWithDocs("(A(B(C D)(E(F G)(H I)))(J K))");
 		DocsAndPositionsEnum aPosEnum = getPosEnum(rdr, 0, new Term("s", "A"));
 		DocsAndPositionsEnum bPosEnum = getPosEnum(rdr, 0, new Term("s", "B"));
@@ -84,8 +91,7 @@ public class LookaheadTermEarlyPipelineTest extends PipelineTestCase {
 
 		innerpipe = innerpipe.getNext();
 
-		assertSimplePipe(bPosEnum, Operator.PARENT, 
-				innerpipe, true);
+		assertSimplePipe(bPosEnum, Operator.PARENT, innerpipe, true);
 
 		innerpipe = innerpipe.getNext();
 
@@ -133,9 +139,6 @@ public class LookaheadTermEarlyPipelineTest extends PipelineTestCase {
 	}
 
 	public void testPipelineExecutionReturnsNoResults() throws Exception {
-		LookaheadTermEarlyJoin join = new LookaheadTermEarlyJoin(npa);
-		LookaheadTermEarlyPipeline pipeline = new LookaheadTermEarlyPipeline(
-				npa, join);
 
 		String sent = "(S1 (S (NP (DT The) (NN road)) (VP (VBZ runs) (ADVP (RB mostly) (JJ parallel) (PP (TO to) (NP (DT the) (NNP Gatineau) (NNP River)))) (PP (IN on) (NP (NP (DT the) (JJ eastern) (NN side)) (PP (IN of) (NP (PRP it)))))) (. .)))";
 		IndexReader r = setupIndexWithDocs(sent);
@@ -153,9 +156,6 @@ public class LookaheadTermEarlyPipelineTest extends PipelineTestCase {
 	public void testCannotPerformLookaheadOnBranchNodeWithVaryingChildOps()
 			throws Exception {
 		String sent = "(A(B(C(D W)(E W))(F W)(G W)))";
-		LookaheadTermEarlyJoin join = new LookaheadTermEarlyJoin(npa);
-		LookaheadTermEarlyPipeline pipeline = new LookaheadTermEarlyPipeline(
-				npa, join);
 		Operator[] operators = new Operator[] { Operator.DESCENDANT,
 				Operator.DESCENDANT, Operator.DESCENDANT, Operator.FOLLOWING,
 				Operator.FOLLOWING, Operator.CHILD, Operator.DESCENDANT };
@@ -192,9 +192,6 @@ public class LookaheadTermEarlyPipelineTest extends PipelineTestCase {
 	public void testShouldLookaheadTopmostBranchNodeAndNoOtherBranchNodes()
 			throws Exception {
 		String sent = "(A(B(C(D W)(E W))(F W)(G W)))";
-		LookaheadTermEarlyJoin join = new LookaheadTermEarlyJoin(npa);
-		LookaheadTermEarlyPipeline pipeline = new LookaheadTermEarlyPipeline(
-				npa, join);
 		Operator[] operators = new Operator[] { Operator.DESCENDANT,
 				Operator.DESCENDANT, Operator.DESCENDANT, Operator.FOLLOWING,
 				Operator.FOLLOWING, Operator.DESCENDANT, Operator.DESCENDANT };
@@ -224,51 +221,57 @@ public class LookaheadTermEarlyPipelineTest extends PipelineTestCase {
 
 		pipe = pipe.getNext();
 
-		assertLookaheadPipe(bPosEnum, Operator.DESCENDANT, Operator.DESCENDANT, true, pipe);
-		
+		assertLookaheadPipe(bPosEnum, Operator.DESCENDANT, Operator.DESCENDANT,
+				true, pipe);
+
 		Pipe metapipe = pipe.getNext();
-		
+
 		assertMetaPipe(Operator.ANCESTOR, true, false, metapipe);
 
-		Pipe inner = ((MetaPipe)metapipe).getInner();
-		
+		Pipe inner = ((MetaPipe) metapipe).getInner();
+
 		assertGetAllLookaheadPipe(dPosEnum, true, inner);
-		
+
 		inner = inner.getNext();
-		
+
 		assertSimplePipe(cPosEnum, Operator.PRECEDING, inner, true);
-		
+
 		Pipe innermeta = inner.getNext();
-		
+
 		assertMetaPipe(Operator.PRECEDING, false, false, innermeta);
-		
-		innermeta = ((MetaPipe)innermeta).getInner();
-		
+
+		innermeta = ((MetaPipe) innermeta).getInner();
+
 		assertGetAllLookaheadPipe(ePosEnum, false, innermeta);
-		
+
 		metapipe = metapipe.getNext();
-		
-		assertMetaPipe(Operator.ANCESTOR, true, false, metapipe); // CHECK: expected Parent
-		
-		inner = ((MetaPipe)metapipe).getInner();
-		
+
+		assertMetaPipe(Operator.ANCESTOR, true, false, metapipe); // CHECK:
+																	// expected
+																	// Parent
+
+		inner = ((MetaPipe) metapipe).getInner();
+
 		assertGetAllLookaheadPipe(fPosEnum, false, inner);
-		
+
 		metapipe = metapipe.getNext();
-		
+
 		assertMetaTerminateEarlyPipe(Operator.ANCESTOR, false, false, metapipe);
-		
+
 		inner = ((MetaTerminateEarlyPipe) metapipe).getInner();
-		
+
 	}
-	
-	public void testPrecedingPrunesAllButLastInGetAllPositionsPipeline() throws Exception {
+
+	public void testPrecedingPrunesAllButLastInGetAllPositionsPipeline()
+			throws Exception {
 		String sent = "(A(B(D A)(E A)))";
 		IndexReader rdr = setupIndexWithDocs(sent);
 		DocsAndPositionsEnum aPosEnum = getPosEnum(rdr, 0, new Term("s", "A"));
-		LookaheadTermEarlyPipeline pipeline = new LookaheadTermEarlyPipeline(npa, null);
+		LookaheadTermEarlyPipeline pipeline = new LookaheadTermEarlyPipeline(
+				npa, null);
 		pipeline.setPrevBuffer(new NodePositions());
-		GetAllLookaheadPipe pipe = pipeline.new GetAllLookaheadPipe(aPosEnum, Operator.PRECEDING);
+		GetAllLookaheadPipe pipe = pipeline.new GetAllLookaheadPipe(aPosEnum,
+				Operator.PRECEDING);
 		assertEquals(0, pipeline.buffer.size);
 		assertEquals(0, pipeline.buffer.offset);
 		assertEquals(0, pipeline.prevPositions.size);
@@ -276,16 +279,19 @@ public class LookaheadTermEarlyPipelineTest extends PipelineTestCase {
 		pipe.execute();
 		assertEquals(4, pipeline.prevPositions.size);
 		assertEquals(0, pipeline.prevPositions.offset);
-		assertPositions(new int[] {1, 2, 3, 2}, 0, pipeline.prevPositions);
+		assertPositions(new int[] { 1, 2, 3, 2 }, 0, pipeline.prevPositions);
 	}
-	
-	public void testFollowingPrunesAllButLeftBottommostInGetAllPositionsPipeline() throws Exception {
+
+	public void testFollowingPrunesAllButLeftBottommostInGetAllPositionsPipeline()
+			throws Exception {
 		String sent = "(A(B(D A)(E A)))";
 		IndexReader rdr = setupIndexWithDocs(sent);
 		DocsAndPositionsEnum aPosEnum = getPosEnum(rdr, 0, new Term("s", "A"));
-		LookaheadTermEarlyPipeline pipeline = new LookaheadTermEarlyPipeline(npa, null);
+		LookaheadTermEarlyPipeline pipeline = new LookaheadTermEarlyPipeline(
+				npa, null);
 		pipeline.setPrevBuffer(new NodePositions());
-		GetAllLookaheadPipe pipe = pipeline.new GetAllLookaheadPipe(aPosEnum, Operator.FOLLOWING);
+		GetAllLookaheadPipe pipe = pipeline.new GetAllLookaheadPipe(aPosEnum,
+				Operator.FOLLOWING);
 		assertEquals(0, pipeline.buffer.size);
 		assertEquals(0, pipeline.buffer.offset);
 		assertEquals(0, pipeline.prevPositions.size);
@@ -293,16 +299,19 @@ public class LookaheadTermEarlyPipelineTest extends PipelineTestCase {
 		pipe.execute();
 		assertEquals(4, pipeline.prevPositions.size);
 		assertEquals(0, pipeline.prevPositions.offset);
-		assertPositions(new int[] {0, 1, 3, 1}, 0, pipeline.prevPositions);
+		assertPositions(new int[] { 0, 1, 3, 1 }, 0, pipeline.prevPositions);
 	}
-	
-	public void testDescendantPrunesAllButTopmostInGetAllPositionsPipeline() throws Exception {
+
+	public void testDescendantPrunesAllButTopmostInGetAllPositionsPipeline()
+			throws Exception {
 		String sent = "(A(B(D A)(E A)))";
 		IndexReader rdr = setupIndexWithDocs(sent);
 		DocsAndPositionsEnum aPosEnum = getPosEnum(rdr, 0, new Term("s", "A"));
-		LookaheadTermEarlyPipeline pipeline = new LookaheadTermEarlyPipeline(npa, null);
+		LookaheadTermEarlyPipeline pipeline = new LookaheadTermEarlyPipeline(
+				npa, null);
 		pipeline.setPrevBuffer(new NodePositions());
-		GetAllLookaheadPipe pipe = pipeline.new GetAllLookaheadPipe(aPosEnum, Operator.DESCENDANT);
+		GetAllLookaheadPipe pipe = pipeline.new GetAllLookaheadPipe(aPosEnum,
+				Operator.DESCENDANT);
 		assertEquals(0, pipeline.buffer.size);
 		assertEquals(0, pipeline.buffer.offset);
 		assertEquals(0, pipeline.prevPositions.size);
@@ -310,16 +319,19 @@ public class LookaheadTermEarlyPipelineTest extends PipelineTestCase {
 		pipe.execute();
 		assertEquals(4, pipeline.prevPositions.size);
 		assertEquals(0, pipeline.prevPositions.offset);
-		assertPositions(new int[] {0, 2, 0, 0}, 0, pipeline.prevPositions);
+		assertPositions(new int[] { 0, 2, 0, 0 }, 0, pipeline.prevPositions);
 	}
-	
-	public void testAncestorRetainsLeavesInGetAllPositionsPipeline() throws Exception {
+
+	public void testAncestorRetainsLeavesInGetAllPositionsPipeline()
+			throws Exception {
 		String sent = "(A(B(D A)(E A)))";
 		IndexReader rdr = setupIndexWithDocs(sent);
 		DocsAndPositionsEnum aPosEnum = getPosEnum(rdr, 0, new Term("s", "A"));
-		LookaheadTermEarlyPipeline pipeline = new LookaheadTermEarlyPipeline(npa, null);
+		LookaheadTermEarlyPipeline pipeline = new LookaheadTermEarlyPipeline(
+				npa, null);
 		pipeline.setPrevBuffer(new NodePositions());
-		GetAllLookaheadPipe pipe = pipeline.new GetAllLookaheadPipe(aPosEnum, Operator.ANCESTOR);
+		GetAllLookaheadPipe pipe = pipeline.new GetAllLookaheadPipe(aPosEnum,
+				Operator.ANCESTOR);
 		assertEquals(0, pipeline.buffer.size);
 		assertEquals(0, pipeline.buffer.offset);
 		assertEquals(0, pipeline.prevPositions.size);
@@ -327,7 +339,8 @@ public class LookaheadTermEarlyPipelineTest extends PipelineTestCase {
 		pipe.execute();
 		assertEquals(8, pipeline.prevPositions.size);
 		assertEquals(4, pipeline.prevPositions.offset);
-		assertPositions(new int[] {0, 1, 3, 1, 1, 2, 3, 2}, 4, pipeline.prevPositions);
+		assertPositions(new int[] { 0, 1, 3, 1, 1, 2, 3, 2 }, 4,
+				pipeline.prevPositions);
 	}
 
 	private void assertLookaheadPipe(DocsAndPositionsEnum posEnum, Operator op,
@@ -345,9 +358,9 @@ public class LookaheadTermEarlyPipelineTest extends PipelineTestCase {
 		assertEquals(posEnum, ((GetAllLookaheadPipe) pipe).node);
 		assertHasNext(hasNext, pipe);
 	}
-	
-	protected void assertMetaTerminateEarlyPipe(Operator expectedMetaOp, boolean metaHasNext,
-			boolean innerIsGetAll, Pipe p) {
+
+	protected void assertMetaTerminateEarlyPipe(Operator expectedMetaOp,
+			boolean metaHasNext, boolean innerIsGetAll, Pipe p) {
 		assertNotNull(p);
 		assertTrue(p instanceof MetaTerminateEarlyPipe);
 		assertEquals(expectedMetaOp, ((MetaTerminateEarlyPipe) p).getOp());
@@ -362,8 +375,5 @@ public class LookaheadTermEarlyPipelineTest extends PipelineTestCase {
 		}
 		assertHasNext(metaHasNext, p);
 	}
-
-	
-	
 
 }

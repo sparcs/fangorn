@@ -12,14 +12,15 @@ import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
 public class HalfPairJoinPipeline implements BooleanJoinPipeline {
 	Pipe root;
 	final LogicalNodePositionAware nodePositionAware;
-	final HalfPairJoin join;
+//	HalfPairJoin join;
 	Operator[] operators;
 	NodePositions prevPositions;
-
+	JoinBuilder joinBuilder;
+	
 	public HalfPairJoinPipeline(LogicalNodePositionAware nodePositionAware,
-			HalfPairJoin join) {
+			JoinBuilder joinBuilder) {
 		this.nodePositionAware = nodePositionAware;
-		this.join = join;
+		this.joinBuilder = joinBuilder;
 	}
 
 	public Pipe createExecPipeline(PostingsAndFreq pfRoot, Operator[] operators) {
@@ -127,10 +128,12 @@ public class HalfPairJoinPipeline implements BooleanJoinPipeline {
 
 	class SimplePipe extends AbstractPipe {
 		private Operator op;
+		HalfPairJoin join;
 
 		public SimplePipe(DocsAndPositionsEnum node, Operator op, Pipe prev) {
 			super(node, prev);
 			this.op = op;
+			join = joinBuilder.getHalfPairJoin(op, nodePositionAware);
 		}
 
 		@Override
@@ -153,9 +156,11 @@ public class HalfPairJoinPipeline implements BooleanJoinPipeline {
 		protected Operator op;
 		protected NodePositions metaPrev;
 		private Pipe prev;
+		HalfPairJoin join;
 
 		public MetaPipe(Operator op, Pipe prev) {
 			this.op = op;
+			join = joinBuilder.getHalfPairJoin(op, nodePositionAware);
 			metaPrev = new NodePositions();
 			this.prev = prev;
 		}

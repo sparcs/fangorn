@@ -22,7 +22,7 @@ public class HalfPairJoinPipelineTest extends PipelineTestCase {
 			throws Exception {
 		IndexReader r = setupIndexWithDocs("(A(B C))");
 		HalfPairJoinPipeline pipeline = new HalfPairJoinPipeline(npa,
-				new StaircaseJoin(npa));
+				StaircaseJoin.JOIN_BUILDER);
 		DocsAndPositionsEnum aPosEnum = getPosEnum(r, 0, new Term("s", "A"));
 		PostingsAndFreq pfRoot = getPf(aPosEnum, 0);
 		Pipe p = pipeline.createExecPipeline(pfRoot,
@@ -33,7 +33,7 @@ public class HalfPairJoinPipelineTest extends PipelineTestCase {
 	public void testReturnsSingleGetRootPipeForChild1stOp() throws Exception {
 		IndexReader r = setupIndexWithDocs("(A(B C))");
 		HalfPairJoinPipeline pipeline = new HalfPairJoinPipeline(npa,
-				new StaircaseJoin(npa));
+				StaircaseJoin.JOIN_BUILDER);
 		DocsAndPositionsEnum aPosEnum = getPosEnum(r, 0, new Term("s", "A"));
 		PostingsAndFreq pfRoot = getPf(aPosEnum, 0);
 		Pipe p = pipeline.createExecPipeline(pfRoot,
@@ -45,7 +45,7 @@ public class HalfPairJoinPipelineTest extends PipelineTestCase {
 	public void testReturnsSimplePipelineConstruction() throws Exception {
 		IndexReader r = setupIndexWithDocs("(A(B C))");
 		HalfPairJoinPipeline pipeline = new HalfPairJoinPipeline(npa,
-				new StaircaseJoin(npa));
+				StaircaseJoin.JOIN_BUILDER);
 		DocsAndPositionsEnum aPosEnum = getPosEnum(r, 0, new Term("s", "A"));
 		DocsAndPositionsEnum cPosEnum = getPosEnum(r, 0, new Term("s", "C"));
 
@@ -69,7 +69,7 @@ public class HalfPairJoinPipelineTest extends PipelineTestCase {
 
 	public void testTopLevelBranch() throws Exception {
 		HalfPairJoinPipeline pipeline = new HalfPairJoinPipeline(npa,
-				new StaircaseJoin(npa));
+				StaircaseJoin.JOIN_BUILDER);
 		IndexReader r = setupIndexWithDocs("(A(B C)(D E))");
 		DocsAndPositionsEnum aPosEnum = getPosEnum(r, 0, new Term("s", "A"));
 		DocsAndPositionsEnum cPosEnum = getPosEnum(r, 0, new Term("s", "C"));
@@ -98,7 +98,7 @@ public class HalfPairJoinPipelineTest extends PipelineTestCase {
 
 	public void testLongQueryConstruction() throws Exception {
 		HalfPairJoinPipeline pipeline = new HalfPairJoinPipeline(npa,
-				new StaircaseJoin(npa));
+				StaircaseJoin.JOIN_BUILDER);
 		IndexReader rdr = setupIndexWithDocs("(A(B(C D)(E(F(G H)(I J))(K(L(M N))(O P))(Q R))))");
 		DocsAndPositionsEnum aPosEnum = getPosEnum(rdr, 0, new Term("s", "A"));
 		DocsAndPositionsEnum bPosEnum = getPosEnum(rdr, 0, new Term("s", "B"));
@@ -232,9 +232,8 @@ public class HalfPairJoinPipelineTest extends PipelineTestCase {
 	}
 
 	public void testSimplePipeExecuteCallsNextAfterItself() throws Exception {
-		StaircaseJoin join = new StaircaseJoin(npa);
 		HalfPairJoinPipeline pipeline = new HalfPairJoinPipeline(npa,
-				join);
+				StaircaseJoin.JOIN_BUILDER);
 		IndexReader rdr = setupIndexWithDocs("(S(A(B C))(B(A C)))");
 		DocsAndPositionsEnum aPosEnum = getPosEnum(rdr, 0, new Term("s", "A"));
 		DocsAndPositionsEnum bPosEnum = getPosEnum(rdr, 0, new Term("s", "B"));
@@ -250,11 +249,11 @@ public class HalfPairJoinPipelineTest extends PipelineTestCase {
 		NodePositions out = a.execute();
 		assertPositions(new int[] { 0, 1, 2, 2 }, 0, out);
 
-		assertPositions(new int[] { 0, 1, 2, 2 }, 0, join.result);
+		assertPositions(new int[] { 0, 1, 2, 2 }, 0, ((StaircaseJoin)b.join).result);
 		assertPositions(new int[] { 0, 1, 1, 5, 1, 2, 2, 4 }, 4, prev);
-		assertFalse(prev == join.result); // prev and firstBuffer are distinct
+		assertFalse(prev == ((StaircaseJoin)b.join).result); // prev and firstBuffer are distinct
 
-		assertPositions(new int[] { 0, 1, 2, 2, 1, 2, 1, 5 }, 8, join.next);
+		assertPositions(new int[] { 0, 1, 2, 2, 1, 2, 1, 5 }, 8, ((StaircaseJoin)b.join).next);
 	}
 
 

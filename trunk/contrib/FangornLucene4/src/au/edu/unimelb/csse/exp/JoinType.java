@@ -5,9 +5,7 @@ import au.edu.unimelb.csse.join.Baseline2Join;
 import au.edu.unimelb.csse.join.BooleanJoinPipeline;
 import au.edu.unimelb.csse.join.ComputesBooleanResult;
 import au.edu.unimelb.csse.join.ComputesFullResults;
-import au.edu.unimelb.csse.join.HalfPairJoin;
 import au.edu.unimelb.csse.join.HalfPairJoinPipeline;
-import au.edu.unimelb.csse.join.HalfPairLATEJoin;
 import au.edu.unimelb.csse.join.LookaheadTermEarlyJoin;
 import au.edu.unimelb.csse.join.LookaheadTermEarlyMRRJoin;
 import au.edu.unimelb.csse.join.LookaheadTermEarlyPipeline;
@@ -38,7 +36,7 @@ public enum JoinType {
 		public ComputesBooleanResult getBooleanJoin(TreeQuery query,
 				LogicalNodePositionAware nodePositionAware) {
 			HalfPairJoinPipeline pipeline = new HalfPairJoinPipeline(
-					nodePositionAware, new Baseline2Join(nodePositionAware));
+					nodePositionAware, Baseline2Join.JOIN_BUILDER);
 			return new StructuredBooleanPathJoin(query.labels(),
 					query.parents(), query.operators(), pipeline,
 					nodePositionAware);
@@ -75,9 +73,8 @@ public enum JoinType {
 		@Override
 		public ComputesBooleanResult getBooleanJoin(TreeQuery query,
 				LogicalNodePositionAware nodePositionAware) {
-			HalfPairJoin join = new MPMGModSingleJoin(nodePositionAware);
 			HalfPairJoinPipeline pipeline = new HalfPairJoinPipeline(
-					nodePositionAware, join);
+					nodePositionAware, MPMGModSingleJoin.JOIN_BUILDER);
 			return new StructuredBooleanPathJoin(query.labels(),
 					query.parents(), query.operators(), pipeline,
 					nodePositionAware);
@@ -88,7 +85,7 @@ public enum JoinType {
 		public ComputesBooleanResult getBooleanJoin(TreeQuery query,
 				LogicalNodePositionAware nodePositionAware) {
 			HalfPairJoinPipeline pipeline = new HalfPairJoinPipeline(
-					nodePositionAware, new MPMGMRRJoin(nodePositionAware));
+					nodePositionAware, MPMGMRRJoin.JOIN_BUILDER);
 			return new StructuredBooleanPathJoin(query.labels(),
 					query.parents(), query.operators(), pipeline,
 					nodePositionAware);
@@ -98,9 +95,8 @@ public enum JoinType {
 		@Override
 		public ComputesBooleanResult getBooleanJoin(TreeQuery query,
 				LogicalNodePositionAware nodePositionAware) {
-			HalfPairJoin join = new StaircaseJoin(nodePositionAware);
 			HalfPairJoinPipeline pipeline = new HalfPairJoinPipeline(
-					nodePositionAware, join);
+					nodePositionAware, StaircaseJoin.JOIN_BUILDER);
 			return new StructuredBooleanPathJoin(query.labels(),
 					query.parents(), query.operators(), pipeline,
 					nodePositionAware);
@@ -110,10 +106,8 @@ public enum JoinType {
 		@Override
 		public ComputesBooleanResult getBooleanJoin(TreeQuery query,
 				LogicalNodePositionAware nodePositionAware) {
-			HalfPairLATEJoin join = new LookaheadTermEarlyJoin(
-					nodePositionAware);
 			BooleanJoinPipeline pipeline = new LookaheadTermEarlyPipeline(
-					nodePositionAware, join);
+					nodePositionAware, LookaheadTermEarlyJoin.JOIN_BUILDER);
 			return new StructuredBooleanPathJoin(query.labels(),
 					query.parents(), query.operators(), pipeline,
 					nodePositionAware);
@@ -123,10 +117,8 @@ public enum JoinType {
 		@Override
 		public ComputesBooleanResult getBooleanJoin(TreeQuery query,
 				LogicalNodePositionAware nodePositionAware) {
-			HalfPairLATEJoin join = new LookaheadTermEarlyMRRJoin(
-					nodePositionAware);
 			BooleanJoinPipeline pipeline = new LookaheadTermEarlyPipeline(
-					nodePositionAware, join);
+					nodePositionAware, LookaheadTermEarlyMRRJoin.JOIN_BUILDER);
 			return new StructuredBooleanPathJoin(query.labels(),
 					query.parents(), query.operators(), pipeline,
 					nodePositionAware);
