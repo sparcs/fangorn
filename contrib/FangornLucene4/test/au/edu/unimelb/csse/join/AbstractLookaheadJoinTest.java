@@ -11,40 +11,11 @@ import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
 public class AbstractLookaheadJoinTest extends TestCase {
 	LogicalNodePositionAware lrdp = new LRDP(
 			LRDP.PhysicalPayloadFormat.BYTE1111);
-	AbstractLookaheadJoin join = new AbstractLookaheadJoin(lrdp) {
-
-		@Override
-		public NodePositions matchTerminateEarly(NodePositions prev,
-				Operator op, NodePositions next) {
-			// TODO Auto-generated method stub
-			return null;
-		}
-
-		@Override
-		public NodePositions match(NodePositions prev, Operator op,
-				NodePositions next) throws IOException {
-			// TODO Auto-generated method stub
-			return null;
-		}
-
-		@Override
-		protected NodePositions matchLookaheadFwdIter(NodePositions prev,
-				Operator op, NodePositions next, Operator nextOp) {
-			// TODO Auto-generated method stub
-			return null;
-		}
-
-		@Override
-		protected NodePositions matchLookaheadBwdIter(NodePositions prev,
-				Operator op, NodePositions next, Operator nextOp) {
-			// TODO Auto-generated method stub
-			return null;
-		}
-	};
 	
 	public void testFwdIterPrecedingLAReturnsJoinMatchReplace()
 			throws Exception {
 		NodePositions node = new NodePositions(new int[] { 1, 2, 3, 4 });
+		AbstractLookaheadJoin join = getJoin(Operator.PRECEDING);
 		join.result = new NodePositions(new int[] { 2, 3, 4, 5 });
 		PruneOperation op = join.getFwdIterPruneOperation(node, Operator.PRECEDING);
 		assertEquals(PruneOperation.JOIN_MATCH_REPLACE, op);
@@ -53,6 +24,7 @@ public class AbstractLookaheadJoinTest extends TestCase {
 	public void testBwdIterPrecedingLABwdIterReturnsStopAtJoinMatch()
 			throws Exception {
 		NodePositions node = new NodePositions(new int[] { 1, 2, 3, 4 });
+		AbstractLookaheadJoin join = getJoin(Operator.PRECEDING);
 		PruneOperation op = join.getBwdIterPruneOperation(node, Operator.PRECEDING);
 		assertEquals(PruneOperation.JOIN_MATCH_ADD_STOP, op);
 		
@@ -68,6 +40,7 @@ public class AbstractLookaheadJoinTest extends TestCase {
 		NodePositions node = new NodePositions(new int[] { 1, 2, 3, 4 });
 		for (Operator op : new Operator[] { Operator.DESCENDANT,
 				Operator.ANCESTOR, Operator.FOLLOWING, Operator.PRECEDING }) {
+			AbstractLookaheadJoin join = getJoin(op);
 			PruneOperation pruneOp = join.getFwdIterPruneOperation(node, op);
 			assertEquals(PruneOperation.JOIN_MATCH_ADD, pruneOp);
 		}
@@ -75,6 +48,7 @@ public class AbstractLookaheadJoinTest extends TestCase {
 	
 	public void testFwdIterDescendantLAReturnsPruneWhenDesc() throws Exception {
 		NodePositions node = new NodePositions(new int[] { 2, 3, 3, 4 });
+		AbstractLookaheadJoin join = getJoin(Operator.DESCENDANT);
 		join.result = new NodePositions(new int[] { 2, 3, 1, 2 });
 		PruneOperation pruneOp = join.getFwdIterPruneOperation(node, Operator.DESCENDANT);
 		assertEquals(PruneOperation.PRUNE, pruneOp);
@@ -86,6 +60,7 @@ public class AbstractLookaheadJoinTest extends TestCase {
 	
 	public void testBwdIterDescendantLABwdIterReturnsJoinMatchReplaceManyWhenAncestor() throws Exception {
 		NodePositions node = new NodePositions(new int[] { 2, 3, 1, 2 });
+		AbstractLookaheadJoin join = getJoin(Operator.DESCENDANT);
 		join.result = new NodePositions(new int[] { 2, 3, 3, 4 });
 		PruneOperation pruneOp = join.getBwdIterPruneOperation(node, Operator.DESCENDANT);
 		assertEquals(PruneOperation.JOIN_MATCH_REPLACE_MANY, pruneOp);
@@ -97,6 +72,7 @@ public class AbstractLookaheadJoinTest extends TestCase {
 	
 	public void testFwdIterAncestorLAReturnsJoinMatchReplaceWhenDesc() throws Exception {
 		NodePositions node = new NodePositions(new int[] { 2, 3, 3, 4 });
+		AbstractLookaheadJoin join = getJoin(Operator.ANCESTOR);
 		join.result = new NodePositions(new int[] { 2, 3, 1, 2 });
 		PruneOperation pruneOp = join.getFwdIterPruneOperation(node, Operator.ANCESTOR);
 		assertEquals(PruneOperation.JOIN_MATCH_REPLACE, pruneOp);
@@ -108,6 +84,7 @@ public class AbstractLookaheadJoinTest extends TestCase {
 	
 	public void testBwdIterAncestorLABwdIterReturnsPruneWhenAncestor() throws Exception {
 		NodePositions node = new NodePositions(new int[] { 1, 2, 1, 2 });
+		AbstractLookaheadJoin join = getJoin(Operator.ANCESTOR);
 		join.result = new NodePositions(new int[] { 1, 2, 3, 4 });
 		PruneOperation pruneOp = join.getBwdIterPruneOperation(node, Operator.ANCESTOR);
 		assertEquals(PruneOperation.PRUNE, pruneOp);
@@ -119,6 +96,7 @@ public class AbstractLookaheadJoinTest extends TestCase {
 
 	public void testFwdIterFollowingLAReturnsJoinMatchReplaceWhenDescPruneStopOtherwise() throws Exception {
 		NodePositions node = new NodePositions(new int[] { 1, 2, 3, 4 });
+		AbstractLookaheadJoin join = getJoin(Operator.FOLLOWING);
 		join.result = new NodePositions(new int[] { 1, 2, 1, 2 });
 		PruneOperation pruneOp = join.getFwdIterPruneOperation(node, Operator.FOLLOWING);
 		assertEquals(PruneOperation.JOIN_MATCH_REPLACE, pruneOp);
@@ -130,6 +108,7 @@ public class AbstractLookaheadJoinTest extends TestCase {
 
 	public void testBwdIterFollowingLABwdIterReturnsPruneWhenAncJoinMatchReplaceOtherwise() throws Exception {
 		NodePositions node = new NodePositions(new int[] { 1, 2, 1, 2 });
+		AbstractLookaheadJoin join = getJoin(Operator.FOLLOWING);
 		join.result = new NodePositions(new int[] { 1, 2, 3, 4 });
 		PruneOperation pruneOp = join.getBwdIterPruneOperation(node, Operator.FOLLOWING);
 		assertEquals(PruneOperation.PRUNE, pruneOp);
@@ -137,5 +116,38 @@ public class AbstractLookaheadJoinTest extends TestCase {
 		join.result = new NodePositions(new int[] { 3, 4, 5, 6 });
 		pruneOp = join.getBwdIterPruneOperation(node, Operator.FOLLOWING);
 		assertEquals(PruneOperation.JOIN_MATCH_REPLACE, pruneOp);
+	}
+	
+	AbstractLookaheadJoin getJoin(Operator op) {
+		return new AbstractLookaheadJoin(op, lrdp) {
+
+			@Override
+			public NodePositions matchTerminateEarly(NodePositions prev,
+					Operator op, NodePositions next) {
+				// TODO Auto-generated method stub
+				return null;
+			}
+
+			@Override
+			public NodePositions match(NodePositions prev, Operator op,
+					NodePositions next) throws IOException {
+				// TODO Auto-generated method stub
+				return null;
+			}
+
+			@Override
+			protected NodePositions matchLookaheadFwdIter(NodePositions prev,
+					Operator op, NodePositions next, Operator nextOp) {
+				// TODO Auto-generated method stub
+				return null;
+			}
+
+			@Override
+			protected NodePositions matchLookaheadBwdIter(NodePositions prev,
+					Operator op, NodePositions next, Operator nextOp) {
+				// TODO Auto-generated method stub
+				return null;
+			}
+		};
 	}
 }

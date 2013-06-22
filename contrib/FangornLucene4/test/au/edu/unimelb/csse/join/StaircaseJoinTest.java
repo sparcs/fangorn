@@ -7,25 +7,24 @@ import org.junit.Before;
 import au.edu.unimelb.csse.Operator;
 
 public class StaircaseJoinTest extends PairJoinTestCase {
-	StaircaseJoin join;
+	JoinBuilder jb = StaircaseJoin.JOIN_BUILDER;
 
 	@Override
 	@Before
 	protected void setUp() throws Exception {
 		super.setUp();
-		join = new StaircaseJoin(lrdp);
 	}
 
 	public void testPruneReturnsSamePrevWhenLengthIsLessThan4()
 			throws Exception {
-		StaircaseJoin j = (StaircaseJoin) join;
 		Operator[] ops = new Operator[] { Operator.DESCENDANT, Operator.CHILD,
 				Operator.ANCESTOR, Operator.PARENT, Operator.FOLLOWING,
 				Operator.PRECEDING };
 		for (Operator op : ops) {
+			StaircaseJoin j = getJoin(op);
 			NodePositions prev = new NodePositions();
 			setValues(prev, new int[] { 1, 4, 2, 12 });
-			j.prune(prev, op);
+			j.prune(prev);
 			assertPositions(new int[] { 1, 4, 2, 12 }, 0, prev);
 		}
 	}
@@ -37,50 +36,50 @@ public class StaircaseJoinTest extends PairJoinTestCase {
 	}
 
 	public void testDescendantOpPruning() throws Exception {
-		StaircaseJoin j = (StaircaseJoin) join;
+		StaircaseJoin j = getJoin(Operator.DESCENDANT);
 		NodePositions prev = new NodePositions();
 		setValues(prev, new int[] { 1, 4, 2, 12, 2, 3, 3, 4, 5, 9, 2, 28, 7, 9,
 				5, 22 });
-		j.pruneDescendant(prev); // prune two leave two
+		j.prune(prev); // prune two leave two
 		assertPositions(new int[] { 1, 4, 2, 12, 5, 9, 2, 28 }, 0, prev);
 		setValues(prev, new int[] { 1, 4, 2, 12, 4, 5, 2, 21, 5, 9, 2, 28, 9,
 				13, 5, 38 });
 		resetBuffers(j);
-		j.pruneDescendant(prev); // no pruning
+		j.prune(prev); // no pruning
 		assertPositions(new int[] { 1, 4, 2, 12, 4, 5, 2, 21, 5, 9, 2, 28, 9,
 				13, 5, 38 }, 0, prev);
 		setValues(prev, new int[] { 1, 17, 2, 65, 4, 5, 3, 21, 5, 9, 4, 28, 9,
 				13, 5, 38 });
 		resetBuffers(j);
-		j.pruneDescendant(prev); // prune all but 1
+		j.prune(prev); // prune all but 1
 		assertPositions(new int[] { 1, 17, 2, 65 }, 0, prev);
 	}
 
 	public void testAncestorOpPruning() throws Exception {
-		StaircaseJoin j = (StaircaseJoin) join;
+		StaircaseJoin j = getJoin(Operator.ANCESTOR);
 		NodePositions prev = new NodePositions();
 		setValues(prev, new int[] { 1, 4, 2, 12, 2, 3, 3, 4, 5, 9, 2, 28, 7, 9,
 				5, 22 });
-		j.pruneAncestor(prev); // prune two leave two
+		j.prune(prev); // prune two leave two
 		assertPositions(new int[] { 2, 3, 3, 4, 7, 9, 5, 22 }, 0, prev);
 
 		resetBuffers(j);
 		setValues(prev, new int[] { 1, 4, 2, 12, 4, 5, 2, 21, 5, 9, 2, 28, 9,
 				13, 5, 38 });
-		j.pruneAncestor(prev); // no pruning
+		j.prune(prev); // no pruning
 		assertPositions(new int[] { 1, 4, 2, 12, 4, 5, 2, 21, 5, 9, 2, 28, 9,
 				13, 5, 38 }, 0, prev);
 
 		resetBuffers(j);
 		setValues(prev, new int[] { 1, 17, 2, 65, 4, 5, 3, 21, 5, 9, 4, 28, 9,
 				13, 5, 38 });
-		j.pruneAncestor(prev); // prune one
+		j.prune(prev); // prune one
 		assertPositions(new int[] { 4, 5, 3, 21, 5, 9, 4, 28, 9, 13, 5, 38 },
 				0, prev);
 
 		resetBuffers(j);
 		setValues(prev, new int[] { 1, 17, 2, 65, 4, 5, 3, 21, 4, 5, 4, 20 });
-		j.pruneAncestor(prev); // retain one (nested pruning)
+		j.prune(prev); // retain one (nested pruning)
 		assertPositions(new int[] { 4, 5, 4, 20 }, 0, prev);
 	}
 
@@ -91,33 +90,33 @@ public class StaircaseJoinTest extends PairJoinTestCase {
 	}
 
 	public void testFollowingOpPruning() throws Exception {
-		StaircaseJoin j = (StaircaseJoin) join;
+		StaircaseJoin j = getJoin(Operator.FOLLOWING);
 		NodePositions prev = new NodePositions();
 		setValues(prev, new int[] { 2, 3, 3, 4, 5, 9, 2, 28, 7, 9, 5, 22 });
-		j.pruneFollowing(prev); // retain first
+		j.prune(prev); // retain first
 		assertPositions(new int[] { 2, 3, 3, 4 }, 0, prev);
 		setValues(prev, new int[] { 1, 4, 2, 12, 2, 3, 3, 4, 5, 9, 2, 28, 7, 9,
 				5, 22 });
 		resetBuffers(j);
-		j.pruneFollowing(prev); // find descendant and stop
+		j.prune(prev); // find descendant and stop
 		assertPositions(new int[] { 2, 3, 3, 4 }, 0, prev);
 		setValues(prev, new int[] { 1, 17, 2, 65, 4, 7, 3, 28, 4, 6, 4, 20, 4,
 				5, 6, 18 });
 		resetBuffers(j);
-		j.pruneFollowing(prev); // find last descendant
+		j.prune(prev); // find last descendant
 		assertPositions(new int[] { 4, 5, 6, 18 }, 0, prev);
 	}
 
 	public void testPrecedingOpPruning() throws Exception {
-		StaircaseJoin j = (StaircaseJoin) join;
+		StaircaseJoin j = getJoin(Operator.PRECEDING);
 		NodePositions prev = new NodePositions();
 		setValues(prev, new int[] { 2, 3, 3, 4, 5, 9, 2, 28, 7, 9, 5, 22 });
-		j.prunePreceding(prev); // retain last
+		j.prune(prev); // retain last
 		assertPositions(new int[] { 7, 9, 5, 22 }, 0, prev);
 		setValues(prev, new int[] { 1, 17, 2, 65, 4, 7, 3, 28, 4, 6, 4, 20, 4,
 				5, 6, 18 });
 		resetBuffers(j);
-		j.prunePreceding(prev);
+		j.prune(prev);
 		assertPositions(new int[] { 4, 5, 6, 18 }, 0, prev);
 	}
 
@@ -125,47 +124,47 @@ public class StaircaseJoinTest extends PairJoinTestCase {
 
 		IndexReader r = setupIndexWithDocs("(SS(PP(PP WW))(NN(FF WW))(ZZ(FF WW)))");
 		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 8, 0, "PP", "FF");
-		joinAndAssertOutput(8, 3, join, prev, Operator.FOLLOWING, posEnum);
+		joinAndAssertOutput(8, 3, jb, prev, Operator.FOLLOWING, posEnum);
 		assertPositions(new int[] { 1, 2, 2, 4, 2, 3, 2, 6 }, 4, bufferResult);
 	}
 
 	public void testFollowingOpWithOnePrecedingIgnored() throws Exception {
 		IndexReader r = setupIndexWithDocs("(SS(AA(FF WW))(PP(PP WW))(NN(FF WW))(ZZ(FF WW)))");
 		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 8, 0, "PP", "FF");
-		joinAndAssertOutput(8, 4, join, prev, Operator.FOLLOWING, posEnum);
+		joinAndAssertOutput(8, 4, jb, prev, Operator.FOLLOWING, posEnum);
 		assertPositions(new int[] { 2, 3, 2, 6, 3, 4, 2, 8 }, 4, bufferResult);
 	}
 
 	public void testFollowingOpWithNoneFollowing() throws Exception {
 		IndexReader r = setupIndexWithDocs("(SS(AA(FF WW))(PP(PP WW))(NN(JJ WW))(ZZ(JJ WW)))");
 		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 8, 0, "PP", "FF");
-		joinAndAssertOutput(0, 2, join, prev, Operator.FOLLOWING, posEnum);
+		joinAndAssertOutput(0, 2, jb, prev, Operator.FOLLOWING, posEnum);
 	}
 
 	public void testPrecedingOpSimple() throws Exception {
 		IndexReader r = setupIndexWithDocs("(SS(PP(PP WW))(NN(FF WW))(ZZ(FF WW)))");
 		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 8, 0, "FF", "PP");
-		joinAndAssertOutput(8, 2, join, prev, Operator.PRECEDING, posEnum);
+		joinAndAssertOutput(8, 2, jb, prev, Operator.PRECEDING, posEnum);
 		assertPositions(new int[] { 0, 1, 1, 7, 0, 1, 2, 2 }, 4, bufferResult);
 	}
 
 	public void testPrecedingOpWithNonePreceding() throws Exception {
 		IndexReader r = setupIndexWithDocs("(SS(NN(FF WW))(ZZ(FF WW))(PP(PP WW)))");
 		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 8, 0, "FF", "PP");
-		joinAndAssertOutput(0, 2, join, prev, Operator.PRECEDING, posEnum);
+		joinAndAssertOutput(0, 2, jb, prev, Operator.PRECEDING, posEnum);
 	}
 
 	public void testPrecedingOpWithOneIgnored() throws Exception {
 		IndexReader r = setupIndexWithDocs("(SS(PP(PP WW)(FF WW))(ZZ(FF WW))(PP WW))");
 		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 8, 0, "FF", "PP");
-		joinAndAssertOutput(8, 3, join, prev, Operator.PRECEDING, posEnum);
+		joinAndAssertOutput(8, 3, jb, prev, Operator.PRECEDING, posEnum);
 		assertPositions(new int[] { 0, 2, 1, 7, 0, 1, 2, 3 }, 4, bufferResult);
 	}
 
 	public void testDescendantOpWithMixedPositions() throws Exception {
 		IndexReader r = setupIndexWithDocs("(SS(AA(PP WW)(AA(DD WW)))(ZZ(DD ww))(AA(FF WW))(AA(DD(AA WW))))");
 		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 20, 0, "AA", "DD");
-		joinAndAssertOutput(8, 12, join, prev, Operator.DESCENDANT, posEnum);
+		joinAndAssertOutput(8, 12, jb, prev, Operator.DESCENDANT, posEnum);
 		assertPositions(new int[] { 1, 2, 3, 3, 4, 5, 2, 11 }, 4, bufferResult);
 	}
 
@@ -175,7 +174,7 @@ public class StaircaseJoinTest extends PairJoinTestCase {
 				+ "(AA(PP WW)(AA(DD(CC WW)))(CC WW))" + "(ZZ(CC WW))"
 				+ "(AA(FF WW))" + "(AA(CC(AA(DD(CC WW))))))");
 		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 28, 0, "AA", "CC");
-		joinAndAssertOutput(16, 54, join, prev, Operator.CHILD, posEnum);
+		joinAndAssertOutput(16, 54, jb, prev, Operator.CHILD, posEnum);
 		assertPositions(new int[] { 1, 2, 3, 3, 2, 3, 2, 5, 5, 6, 2, 11, 8, 9,
 				2, 20 }, 12, bufferResult);
 	}
@@ -183,7 +182,7 @@ public class StaircaseJoinTest extends PairJoinTestCase {
 	public void testAncestorOpWithNestedDescendants() throws Exception {
 		IndexReader r = setupIndexWithDocs("(SS(AA(PP WW)(AA(DD WW)))(ZZ(DD ww))(AA(FF WW))(AA(DD(AA WW))))");
 		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 12, 0, "DD", "AA");
-		joinAndAssertOutput(12, 13, join, prev, Operator.ANCESTOR, posEnum);
+		joinAndAssertOutput(12, 13, jb, prev, Operator.ANCESTOR, posEnum);
 		assertPositions(new int[] { 0, 2, 1, 12, 1, 2, 2, 4, 4, 5, 1, 12 }, 8,
 				bufferResult);
 	}
@@ -191,14 +190,14 @@ public class StaircaseJoinTest extends PairJoinTestCase {
 	public void testChildOp() throws Exception {
 		IndexReader r = setupIndexWithDocs("(SS(CC WW)(PP(CC WW)(JJ WW))(PP(QQ(CC WW))(PP(CC WW)(ZZ WW))))");
 		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 12, 0, "PP", "CC");
-		joinAndAssertOutput(8, 14, join, prev, Operator.CHILD, posEnum);
+		joinAndAssertOutput(8, 14, jb, prev, Operator.CHILD, posEnum);
 		assertPositions(new int[] { 1, 2, 2, 4, 4, 5, 3, 9 }, 4, bufferResult);
 	}
 
 	public void testParentOp() throws Exception {
 		IndexReader r = setupIndexWithDocs("(SS(CC WW)(PP(CC WW)(JJ WW))(PP(QQ(CC WW))(PP(CC WW)(ZZ WW))))");
 		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 16, 0, "CC", "PP");
-		joinAndAssertOutput(8, 18, join, prev, Operator.PARENT, posEnum);
+		joinAndAssertOutput(8, 18, jb, prev, Operator.PARENT, posEnum);
 		assertPositions(new int[] { 1, 3, 1, 11, 4, 6, 2, 10 }, 4, bufferResult);
 	}
 
@@ -206,7 +205,7 @@ public class StaircaseJoinTest extends PairJoinTestCase {
 		String sent = "(S1 (S (PP (IN In) (NP (NP (NNP September)) (, ,) (NP (CD 2008)))) (, ,) (NP (DT the) (NN organization)) (VP (VBD marked) (NP (NP (NP (DT the) (JJ 5th) ('' ') (NN anniversary) ('' ')) (PP (IN of) (NP (NP (NP (DT the) (NNP RIAA) (POS 's)) (NN litigation) (NN campaign)) (PP (IN by) (S (VP (VBG publishing) (NP (DT a) (ADJP (RB highly) (JJ critical)) (, ,) (JJ detailed) (NN report))))) (, ,) (VP (VBN entitled) ('' ') (NP (NNP RIAA)) (PP (IN v.) (NP (NNP The) (NNP People))))))) (: :) (NP (NP (CD Five) (NNS Years)) (RB Later) (POS '))) (, ,) (S (VP (VBG concluding) (SBAR (IN that) (S (NP (DT the) (NN campaign)) (VP (AUX was) (NP (DT a) (NN failure)))))))) (. .)))";
 		IndexReader r = setupIndexWithDocs(sent);
 		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 68, 0, "NP", "VP");
-		joinAndAssertOutput(4, 113, join, prev, Operator.CHILD, posEnum);
+		joinAndAssertOutput(4, 113, jb, prev, Operator.CHILD, posEnum);
 		assertPositions(new int[] { 28, 34, 7, 52 }, 0, bufferResult);
 	}
 
@@ -214,7 +213,7 @@ public class StaircaseJoinTest extends PairJoinTestCase {
 		String sent = "(S1 (S (PP (IN In) (NP (NP (NNP September)) (, ,) (NP (CD 2008)))) (, ,) (NP (DT the) (NN organization)) (VP (VBD marked) (NP (NP (NP (DT the) (JJ 5th) ('' ') (NN anniversary) ('' ')) (PP (IN of) (NP (NP (NP (DT the) (NNP RIAA) (POS 's)) (NN litigation) (NN campaign)) (PP (IN by) (S (VP (VBG publishing) (NP (DT a) (ADJP (RB highly) (JJ critical)) (, ,) (JJ detailed) (NN report))))) (, ,) (VP (VBN entitled) ('' ') (NP (NNP RIAA)) (PP (IN v.) (NP (NNP The) (NNP People))))))) (: :) (NP (NP (CD Five) (NNS Years)) (RB Later) (POS '))) (, ,) (S (VP (VBG concluding) (SBAR (IN that) (S (NP (DT the) (NN campaign)) (VP (AUX was) (NP (DT a) (NN failure)))))))) (. .)))";
 		IndexReader r = setupIndexWithDocs(sent);
 		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 20, 0, "VP", "NP");
-		joinAndAssertOutput(4, 99, join, prev, Operator.PARENT, posEnum);
+		joinAndAssertOutput(4, 99, jb, prev, Operator.PARENT, posEnum);
 		assertPositions(new int[] { 14, 34, 6, 53 }, 0, bufferResult);
 	}
 
@@ -243,7 +242,7 @@ public class StaircaseJoinTest extends PairJoinTestCase {
 		String sent = "(N(P(P(P(P(N A)(P B))(G C)(N D)(P N)(P E)))(N F)))";
 		IndexReader r = setupIndexWithDocs(sent);
 		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 28, 0, "P", "N");
-		joinAndAssertOutput(8, 41, join, prev, Operator.FOLLOWING_SIBLING,
+		joinAndAssertOutput(8, 41, jb, prev, Operator.FOLLOWING_SIBLING,
 				posEnum);
 		assertPositions(new int[] { 3, 4, 4, 8, 6, 7, 2, 11 }, 4, bufferResult);
 	}
@@ -252,7 +251,7 @@ public class StaircaseJoinTest extends PairJoinTestCase {
 		String sent = "(N(P(P(P(P(N A)(P B))(P C)(N D)(P N)(P E)))(N F)))";
 		IndexReader r = setupIndexWithDocs(sent);
 		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 32, 0, "P", "N");
-		joinAndAssertOutput(8, 42, join, prev,
+		joinAndAssertOutput(8, 42, jb, prev,
 				Operator.IMMEDIATE_FOLLOWING_SIBLING, posEnum);
 		assertPositions(new int[] { 3, 4, 4, 8, 6, 7, 2, 11 }, 4, bufferResult);
 	}
@@ -261,7 +260,7 @@ public class StaircaseJoinTest extends PairJoinTestCase {
 		String sent = "(N(P(P(P(P(N A)(P B))(P C)(N D)(P N)(P E)))(N F)))";
 		IndexReader r = setupIndexWithDocs(sent);
 		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 20, 0, "N", "P");
-		joinAndAssertOutput(12, 74, join, prev, Operator.PRECEDING_SIBLING,
+		joinAndAssertOutput(12, 74, jb, prev, Operator.PRECEDING_SIBLING,
 				posEnum);
 		assertPositions(new int[] { 0, 6, 2, 11, 0, 2, 4, 8, 2, 3, 4, 8 }, 8,
 				bufferResult);
@@ -271,7 +270,7 @@ public class StaircaseJoinTest extends PairJoinTestCase {
 		String sent = "(N(P(P(P(P(N A)(P B))(P C)(N D)(P N)(P E)))(N F)))";
 		IndexReader r = setupIndexWithDocs(sent);
 		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 20, 0, "N", "P");
-		joinAndAssertOutput(8, 76, join, prev,
+		joinAndAssertOutput(8, 76, jb, prev,
 				Operator.IMMEDIATE_PRECEDING_SIBLING, posEnum);
 		assertPositions(new int[] { 0, 6, 2, 11, 2, 3, 4, 8 }, 4, bufferResult);
 	}
@@ -280,7 +279,7 @@ public class StaircaseJoinTest extends PairJoinTestCase {
 		String sent = "(N(P(P(P(P(N A)(P B))(P C)(N D)(P N)(P E)))(N F)))";
 		IndexReader r = setupIndexWithDocs(sent);
 		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 32, 0, "P", "N");
-		joinAndAssertOutput(8, 34, join, prev, Operator.IMMEDIATE_FOLLOWING,
+		joinAndAssertOutput(8, 34, jb, prev, Operator.IMMEDIATE_FOLLOWING,
 				posEnum);
 		assertPositions(new int[] { 3, 4, 4, 8, 6, 7, 2, 11 }, 4, bufferResult);
 	}
@@ -289,10 +288,13 @@ public class StaircaseJoinTest extends PairJoinTestCase {
 		String sent = "(N(P(P(P(P(N A)(P B))(P C)(N D)(P N)(P E)))(N F)))";
 		IndexReader r = setupIndexWithDocs(sent);
 		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 20, 0, "N", "P");
-		joinAndAssertOutput(16, 50, join, prev, Operator.IMMEDIATE_PRECEDING,
+		joinAndAssertOutput(16, 50, jb, prev, Operator.IMMEDIATE_PRECEDING,
 				posEnum);
 		assertPositions(new int[] { 0, 6, 2, 11, 0, 6, 3, 9, 2, 3, 4, 8, 5, 6,
 				4, 8 }, 12, bufferResult);
 	}
 
+	StaircaseJoin getJoin(Operator op) {
+		return (StaircaseJoin) StaircaseJoin.JOIN_BUILDER.getHalfPairJoin(op, lrdp);
+	}
 }

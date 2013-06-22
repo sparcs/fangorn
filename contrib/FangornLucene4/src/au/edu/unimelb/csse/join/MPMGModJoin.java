@@ -5,6 +5,7 @@ import java.io.IOException;
 import org.apache.lucene.index.DocsAndPositionsEnum;
 
 import au.edu.unimelb.csse.Operator;
+import au.edu.unimelb.csse.OperatorAware;
 import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
 
 /**
@@ -30,11 +31,16 @@ import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
  * @author sumukh
  * 
  */
-public class MPMGModJoin extends AbstractPairJoin implements FullPairJoin {
+public class MPMGModJoin implements FullPairJoin {
+	private final LogicalNodePositionAware nodePositionAware;
+	private final int positionLength;
+	private final OperatorAware operatorAware;
 	NodePositions buffer = new NodePositions();
 	
 	public MPMGModJoin(LogicalNodePositionAware nodePositionAware) {
-		super(nodePositionAware);
+		this.nodePositionAware = nodePositionAware;
+		positionLength = nodePositionAware.getPositionLength();
+		operatorAware = nodePositionAware.getOperatorHandler();
 	}
 
 	@Override

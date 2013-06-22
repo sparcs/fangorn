@@ -5,6 +5,7 @@ import java.io.IOException;
 import org.apache.lucene.index.DocsAndPositionsEnum;
 
 import au.edu.unimelb.csse.Operator;
+import au.edu.unimelb.csse.OperatorAware;
 import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
 
 /**
@@ -25,13 +26,18 @@ import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
  * @author sumukh
  * 
  */
-public class StackTreeJoin extends AbstractPairJoin implements
+public class StackTreeJoin implements
 		FullPairJoin {
+	private final LogicalNodePositionAware nodePositionAware;
+	private final int positionLength;
+	private final OperatorAware operatorAware;
 	NodePositions buffer = new NodePositions();
 	NodePositions stack = new NodePositions();
 
 	public StackTreeJoin(LogicalNodePositionAware nodePositionAware) {
-		super(nodePositionAware);
+		this.nodePositionAware = nodePositionAware;
+		positionLength = nodePositionAware.getPositionLength();
+		operatorAware = nodePositionAware.getOperatorHandler();
 	}
 
 	@Override

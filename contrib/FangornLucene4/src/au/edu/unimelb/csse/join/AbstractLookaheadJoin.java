@@ -5,19 +5,28 @@ import java.io.IOException;
 import org.apache.lucene.index.DocsAndPositionsEnum;
 
 import au.edu.unimelb.csse.Operator;
+import au.edu.unimelb.csse.OperatorAware;
 import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
 
-public abstract class AbstractLookaheadJoin extends AbstractPairJoin implements
+public abstract class AbstractLookaheadJoin implements
 		HalfPairLATEJoin {
+	protected final LogicalNodePositionAware nodePositionAware;
+	protected final int positionLength;
+	protected final OperatorAware operatorAware;
 	NodePositions result;
 	NodePositions next;
 	NodePositions buffer;
+	Operator op;
 
-	AbstractLookaheadJoin(LogicalNodePositionAware nodePositionAware) {
-		super(nodePositionAware);
+
+	AbstractLookaheadJoin(Operator op, LogicalNodePositionAware nodePositionAware) {
+		this.nodePositionAware = nodePositionAware;
+		positionLength = nodePositionAware.getPositionLength();
+		operatorAware = nodePositionAware.getOperatorHandler();
 		result = new NodePositions();
 		next = new NodePositions();
 		buffer = new NodePositions();
+		this.op = op;
 	}
 
 	PruneOperation getFwdIterPruneOperation(NodePositions node, Operator nextOp) {

@@ -5,14 +5,23 @@ import java.io.IOException;
 import org.apache.lucene.index.DocsAndPositionsEnum;
 
 import au.edu.unimelb.csse.Operator;
+import au.edu.unimelb.csse.OperatorAware;
 import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
 
-public class Baseline2Join extends AbstractPairJoin implements HalfPairJoin {
+public class Baseline2Join implements HalfPairJoin {
+	public static final JoinBuilder JOIN_BUILDER = new Baseline2Builder();  
+	private final LogicalNodePositionAware nodePositionAware;
+	private final int positionLength;
+	private final OperatorAware operatorAware;
 	NodePositions result = new NodePositions();
 	NodePositions buffer = new NodePositions();
+	Operator op;
 
-	public Baseline2Join(LogicalNodePositionAware nodePositionAware) {
-		super(nodePositionAware);
+	public Baseline2Join(Operator op, LogicalNodePositionAware nodePositionAware) {
+		this.nodePositionAware = nodePositionAware;
+		positionLength = nodePositionAware.getPositionLength();
+		operatorAware = nodePositionAware.getOperatorHandler();
+		this.op = op;
 	}
 
 	@Override
@@ -36,4 +45,14 @@ public class Baseline2Join extends AbstractPairJoin implements HalfPairJoin {
 		}
 		return result;
 	}
+	
+}
+
+class Baseline2Builder implements JoinBuilder {
+	
+	@Override
+	public HalfPairJoin getHalfPairJoin(Operator op, LogicalNodePositionAware nodePositionAware) {
+		return new Baseline2Join(op, nodePositionAware);
+	}
+	
 }

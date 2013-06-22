@@ -5,13 +5,19 @@ import java.io.IOException;
 import org.apache.lucene.index.DocsAndPositionsEnum;
 
 import au.edu.unimelb.csse.Operator;
+import au.edu.unimelb.csse.OperatorAware;
 import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
 
-public class Baseline1Join extends AbstractPairJoin implements FullPairJoin {
+public class Baseline1Join implements FullPairJoin {
+	private final LogicalNodePositionAware nodePositionAware;
+	private final int positionLength;
+	private final OperatorAware operatorAware;
 	NodePositions buffer = new NodePositions();
 
 	public Baseline1Join(LogicalNodePositionAware nodePositionAware) {
-		super(nodePositionAware);
+		this.nodePositionAware = nodePositionAware;
+		positionLength = nodePositionAware.getPositionLength();
+		operatorAware = nodePositionAware.getOperatorHandler();
 	}
 
 	@Override

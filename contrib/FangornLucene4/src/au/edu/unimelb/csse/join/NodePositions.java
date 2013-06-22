@@ -67,7 +67,7 @@ public class NodePositions {
 		while (size + length >= positions.length) {
 			expand();
 		}
-		System.arraycopy(positions, position, positions, position + length, length);
+		System.arraycopy(positions, position, positions, position + length, size);
 		System.arraycopy(value.positions, value.offset, positions, position, length);
 		size += length;
 		offset = size - length;
