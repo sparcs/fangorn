@@ -258,28 +258,26 @@ public class LRDP implements LogicalNodePositionAware {
 			if (leftDiff > 0) {
 				if (rightDiff > 0) {
 					return Position.BEFORE;
-				} 
+				}
 				return Position.ABOVE;
 			} else if (leftDiff < 0) {
 				if (rightDiff < 0) {
 					return Position.AFTER;
-				} 
+				}
 				return Position.BELOW;
 			}
 			if (rightDiff > 0) {
 				return Position.BELOW;
 			} else if (rightDiff < 0) {
 				return Position.ABOVE;
-			} else {
-				int depthDiff = prev[poff + DEPTH] - next[noff + DEPTH];
-				if (depthDiff < 0) {
-					return Position.BELOW;
-				} else if (depthDiff > 0) {
-					return Position.ABOVE;
-				}
-				return Position.SAME;
 			}
-
+			int depthDiff = prev[poff + DEPTH] - next[noff + DEPTH];
+			if (depthDiff < 0) {
+				return Position.BELOW;
+			} else if (depthDiff > 0) {
+				return Position.ABOVE;
+			}
+			return Position.SAME;
 		}
 
 		@Override

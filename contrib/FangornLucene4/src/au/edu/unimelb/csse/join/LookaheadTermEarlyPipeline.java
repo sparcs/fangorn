@@ -124,8 +124,13 @@ public class LookaheadTermEarlyPipeline extends HalfPairJoinPipeline implements
 		Pipe prev = addInReverseFirstNode(node, nextOp, false);
 		for (int i = 1; i < node.children.length; i++) {
 			PostingsAndFreq child = node.children[i];
-			MetaPipe meta = new MetaPipe(
-					OperatorInverse.get(operators[child.position]), prev);
+			Operator op = OperatorInverse.get(operators[child.position]);
+			MetaPipe meta;
+			if (i == node.children.length - 1 && isLookaheadOp(nextOp)) {
+				meta = new MetaLookaheadPipe(op, nextOp, prev);
+			} else {
+				meta = new MetaPipe(op, prev);
+			}
 			Pipe last = addInReverse(child);
 			meta.setInner(last.getStart());
 			prev.setNext(meta);
@@ -134,7 +139,8 @@ public class LookaheadTermEarlyPipeline extends HalfPairJoinPipeline implements
 		return prev;
 	}
 
-	private Pipe addInReverseFirstNode(PostingsAndFreq node, Operator nextOp, boolean canUseLookahead) {
+	private Pipe addInReverseFirstNode(PostingsAndFreq node, Operator nextOp,
+			boolean canUseLookahead) {
 		Pipe prev = addInReverse(node.children[0]);
 		Operator op = OperatorInverse.get(operators[node.children[0].position]);
 		Pipe current;
@@ -162,8 +168,8 @@ public class LookaheadTermEarlyPipeline extends HalfPairJoinPipeline implements
 
 		@Override
 		public NodePositions execute() throws IOException {
-			NodePositions results = join.matchWithLookahead(prevPositions,
-					op, node, nextOp);
+			NodePositions results = join.matchWithLookahead(prevPositions, op,
+					node, nextOp);
 			if (results.size > 0) {
 				return continueExection(results);
 			}
@@ -184,8 +190,8 @@ public class LookaheadTermEarlyPipeline extends HalfPairJoinPipeline implements
 
 		@Override
 		public NodePositions execute() throws IOException {
-			NodePositions results = join.matchTerminateEarly(prevPositions,
-					op, node);
+			NodePositions results = join.matchTerminateEarly(prevPositions, op,
+					node);
 			if (results.size > 0) {
 				return continueExection(results);
 			}
@@ -269,13 +275,15 @@ public class LookaheadTermEarlyPipeline extends HalfPairJoinPipeline implements
 		}
 	}
 
-	/*class MetaLookaheadPipe extends MetaPipe implements Pipe {
+	class MetaLookaheadPipe extends MetaPipe implements Pipe {
 
 		private Operator nextOp;
+		HalfPairLATEJoin join;
 
 		public MetaLookaheadPipe(Operator op, Operator nextOp, Pipe prev) {
 			super(op, prev);
 			this.nextOp = nextOp;
+			join = lateJoinBuilder.getHalfPairJoin(op, nodePositionAware);
 		}
 
 		@Override
@@ -287,7 +295,7 @@ public class LookaheadTermEarlyPipeline extends HalfPairJoinPipeline implements
 				return results;
 			}
 			prevPositions.makeCloneOf(results);
-			results = lateJoin.matchWithLookahead(prevPositions, op, metaPrev,
+			results = join.matchWithLookahead(prevPositions, op, metaPrev,
 					nextOp);
 			if (next == null) {
 				return results;
@@ -295,5 +303,9 @@ public class LookaheadTermEarlyPipeline extends HalfPairJoinPipeline implements
 			prevPositions.makeCloneOf(results);
 			return next.execute();
 		}
-	}*/
+		
+		Operator getLookaheadOp() {
+			return nextOp;
+		}
+	}
 }
