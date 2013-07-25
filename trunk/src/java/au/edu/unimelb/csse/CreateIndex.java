@@ -117,7 +117,10 @@ public class CreateIndex {
 
 	private void processDir(File f, int level) throws IOException {
 		if (f.isDirectory()) {
-			System.out.println("[" + DateFormat.getInstance().format(new Date()) + "] Indexing contents of directory " + f.getAbsolutePath());
+			System.out
+					.println("[" + DateFormat.getInstance().format(new Date())
+							+ "] Indexing contents of directory "
+							+ f.getAbsolutePath());
 			File[] files = f.listFiles();
 			for (File fi : files) {
 				if (maxReached)
@@ -142,7 +145,8 @@ public class CreateIndex {
 				return;
 		}
 		BufferedReader reader = new BufferedReader(getInputStreamReader(file));
-		System.out.println("[" + DateFormat.getInstance().format(new Date()) + "] Indexing file " + file.getName() );
+		System.out.println("[" + DateFormat.getInstance().format(new Date())
+				+ "] Indexing file " + file.getName());
 
 		if (tokenizer == null) {
 			tokenizer = new SentenceTokenizer(reader);
@@ -165,6 +169,8 @@ public class CreateIndex {
 			d.add(new Field("sent", asJson, Field.Store.COMPRESS,
 					Field.Index.ANALYZED_NO_NORMS,
 					Field.TermVector.WITH_POSITIONS));
+			d.add(new Field("docnum", file.getName() + "." + next.lineOffset(),
+					Field.Store.YES, Field.Index.NO, Field.TermVector.NO));
 			// String id = "n=" + fname + "&l=" + next.lineOffset() + "&nol"
 			// + next.numberOfLines();
 			try {
@@ -172,7 +178,7 @@ public class CreateIndex {
 				sentencesProcessed++;
 			} catch (OverflowException e) {
 				// System.err.println("cannot index sentence " + id);
-				//logger.info(e.getMessage());
+				// logger.info(e.getMessage());
 				next = tokenizer.next();
 				continue;
 			} catch (Exception e) {
@@ -219,8 +225,9 @@ public class CreateIndex {
 			System.exit(1);
 		}
 		final String dataSource = args[0];
-		CreateIndex ix = new CreateIndex(args[1], dataSource, Integer
-				.parseInt(args[3]), args[2], Boolean.parseBoolean(args[4]));
+		CreateIndex ix = new CreateIndex(args[1], dataSource,
+				Integer.parseInt(args[3]), args[2],
+				Boolean.parseBoolean(args[4]));
 		long start = System.currentTimeMillis();
 		ix.create();
 		ix.commit();
@@ -231,9 +238,11 @@ public class CreateIndex {
 	}
 
 	private void commit() throws CorruptIndexException, IOException {
-		System.out.println("[" + DateFormat.getInstance().format(new Date()) + "] Optimizing Index.");
+		System.out.println("[" + DateFormat.getInstance().format(new Date())
+				+ "] Optimizing Index.");
 		writer.optimize();
-		System.out.println("[" + DateFormat.getInstance().format(new Date()) + "] Committing Index.");
+		System.out.println("[" + DateFormat.getInstance().format(new Date())
+				+ "] Committing Index.");
 		writer.commit();
 		writer.close();
 	}

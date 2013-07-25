@@ -168,7 +168,7 @@ public class LookaheadTermEarlyPipeline extends HalfPairJoinPipeline implements
 
 		@Override
 		public NodePositions execute() throws IOException {
-			NodePositions results = join.matchWithLookahead(prevPositions, op,
+			NodePositions results = join.matchWithLookahead(prevPositions,
 					node, nextOp);
 			if (results.size > 0) {
 				return continueExection(results);
@@ -179,18 +179,16 @@ public class LookaheadTermEarlyPipeline extends HalfPairJoinPipeline implements
 	}
 
 	class TerminateEarlyPipe extends AbstractPipe implements Pipe {
-		Operator op;
 		HalfPairLATEJoin join;
 
 		public TerminateEarlyPipe(DocsAndPositionsEnum node, Operator op) {
 			super(node);
-			this.op = op;
 			join = lateJoinBuilder.getHalfPairJoin(op, nodePositionAware);
 		}
 
 		@Override
 		public NodePositions execute() throws IOException {
-			NodePositions results = join.matchTerminateEarly(prevPositions, op,
+			NodePositions results = join.matchTerminateEarly(prevPositions,
 					node);
 			if (results.size > 0) {
 				return continueExection(results);
@@ -271,7 +269,7 @@ public class LookaheadTermEarlyPipeline extends HalfPairJoinPipeline implements
 				return results;
 			}
 			prevPositions.makeCloneOf(results);
-			return join.matchTerminateEarly(prevPositions, op, metaPrev);
+			return join.matchTerminateEarly(prevPositions, metaPrev);
 		}
 	}
 
@@ -295,7 +293,7 @@ public class LookaheadTermEarlyPipeline extends HalfPairJoinPipeline implements
 				return results;
 			}
 			prevPositions.makeCloneOf(results);
-			results = join.matchWithLookahead(prevPositions, op, metaPrev,
+			results = join.matchWithLookahead(prevPositions, metaPrev,
 					nextOp);
 			if (next == null) {
 				return results;
@@ -303,7 +301,7 @@ public class LookaheadTermEarlyPipeline extends HalfPairJoinPipeline implements
 			prevPositions.makeCloneOf(results);
 			return next.execute();
 		}
-		
+
 		Operator getLookaheadOp() {
 			return nextOp;
 		}

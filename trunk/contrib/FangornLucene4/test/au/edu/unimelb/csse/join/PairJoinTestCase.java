@@ -54,7 +54,7 @@ public abstract class PairJoinTestCase extends IndexTestCase {
 		int startCount = countingOperatorAware.getCount();
 		int resultSize = 0;
 
-		bufferResult = join.match(prev, operator, posEnum);
+		bufferResult = join.match(prev, posEnum);
 		resultSize = bufferResult.size;
 		assertEquals("Incorrect number of results", expectedNumResults,
 				resultSize);
@@ -70,7 +70,7 @@ public abstract class PairJoinTestCase extends IndexTestCase {
 		int resultSize = 0;
 
 		HalfPairJoin join = joinBuilder.getHalfPairJoin(operator, lrdp);
-		bufferResult = join.match(prev, operator, posEnum);
+		bufferResult = join.match(prev, posEnum);
 		resultSize = bufferResult.size;
 		assertEquals("Incorrect number of results", expectedNumResults,
 				resultSize);
@@ -87,7 +87,7 @@ public abstract class PairJoinTestCase extends IndexTestCase {
 		int resultSize = 0;
 
 		HalfPairLATEJoin join = (HalfPairLATEJoin) jb.getHalfPairJoin(op, lrdp);
-		bufferResult = join.matchWithLookahead(prev, op, posEnum, nextOp);
+		bufferResult = join.matchWithLookahead(prev, posEnum, nextOp);
 		resultSize = bufferResult.size;
 		assertEquals("Incorrect number of results at pos " + i,
 				expectedNumResults, resultSize);
@@ -103,7 +103,7 @@ public abstract class PairJoinTestCase extends IndexTestCase {
 		int resultSize = 0;
 
 		HalfPairLATEJoin join = (HalfPairLATEJoin) jb.getHalfPairJoin(op, lrdp);
-		bufferResult = join.matchTerminateEarly(prev, op, posEnum);
+		bufferResult = join.matchTerminateEarly(prev, posEnum);
 		resultSize = bufferResult.size;
 		assertEquals("Incorrect number of results", expectedNumResults,
 				resultSize);

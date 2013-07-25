@@ -22,7 +22,7 @@ import au.edu.unimelb.csse.join.TwigStackJoin;
 import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
 
 public enum JoinType {
-	BASELINE1(0, true, true) {
+	BASELINE1(0, true, true, true) {
 		@Override
 		public ComputesFullResults getFullJoin(TreeQuery query,
 				LogicalNodePositionAware nodePositionAware) {
@@ -31,7 +31,7 @@ public enum JoinType {
 					nodePositionAware);
 		}
 	},
-	BASELINE2(1, false, true) {
+	BASELINE2(1, false, true, true) {
 		@Override
 		public ComputesBooleanResult getBooleanJoin(TreeQuery query,
 				LogicalNodePositionAware nodePositionAware) {
@@ -42,7 +42,7 @@ public enum JoinType {
 					nodePositionAware);
 		}
 	},
-	MPMG1(2, true, true) {
+	MPMG1(2, true, true, false) {
 		@Override
 		public ComputesFullResults getFullJoin(TreeQuery query,
 				LogicalNodePositionAware nodePositionAware) {
@@ -51,7 +51,7 @@ public enum JoinType {
 					nodePositionAware);
 		}
 	},
-	MPMG2(3, true, true) {
+	MPMG2(3, true, true, false) {
 		@Override
 		public ComputesFullResults getFullJoin(TreeQuery query,
 				LogicalNodePositionAware nodePositionAware) {
@@ -60,7 +60,7 @@ public enum JoinType {
 					nodePositionAware);
 		}
 	},
-	STACKTREE(4, true, true) {
+	STACKTREE(4, true, true, false) {
 		@Override
 		public ComputesFullResults getFullJoin(TreeQuery query,
 				LogicalNodePositionAware nodePositionAware) {
@@ -69,7 +69,7 @@ public enum JoinType {
 					nodePositionAware);
 		}
 	},
-	MPMG3(5, false, true) {
+	MPMG3(5, false, true, false) {
 		@Override
 		public ComputesBooleanResult getBooleanJoin(TreeQuery query,
 				LogicalNodePositionAware nodePositionAware) {
@@ -80,7 +80,7 @@ public enum JoinType {
 					nodePositionAware);
 		}
 	},
-	MPMG4(6, false, true) {
+	MPMG4(6, false, true, false) {
 		@Override
 		public ComputesBooleanResult getBooleanJoin(TreeQuery query,
 				LogicalNodePositionAware nodePositionAware) {
@@ -91,7 +91,7 @@ public enum JoinType {
 					nodePositionAware);
 		}
 	},
-	STAIRCASE(7, false, true) {
+	STAIRCASE(7, false, true, true) {
 		@Override
 		public ComputesBooleanResult getBooleanJoin(TreeQuery query,
 				LogicalNodePositionAware nodePositionAware) {
@@ -102,7 +102,7 @@ public enum JoinType {
 					nodePositionAware);
 		}
 	},
-	LATE(8, false, true) {
+	LATE(8, false, true, true) {
 		@Override
 		public ComputesBooleanResult getBooleanJoin(TreeQuery query,
 				LogicalNodePositionAware nodePositionAware) {
@@ -113,7 +113,7 @@ public enum JoinType {
 					nodePositionAware);
 		}
 	},
-	LATEMRR(9, false, true) {
+	LATEMRR(9, false, true, true) {
 		@Override
 		public ComputesBooleanResult getBooleanJoin(TreeQuery query,
 				LogicalNodePositionAware nodePositionAware) {
@@ -124,7 +124,7 @@ public enum JoinType {
 					nodePositionAware);
 		}
 	},
-	TWIGSTACK(10, true, true) {
+	TWIGSTACK(10, true, true, false) {
 		@Override
 		public ComputesFullResults getFullJoin(TreeQuery query,
 				LogicalNodePositionAware nodePositionAware) {
@@ -132,7 +132,7 @@ public enum JoinType {
 					query.operators(), nodePositionAware);
 		}
 	},
-	PATHSTACK(11, true, false) {
+	PATHSTACK(11, true, false, false) {
 		@Override
 		public ComputesFullResults getFullJoin(TreeQuery query,
 				LogicalNodePositionAware nodePositionAware) {
@@ -143,12 +143,14 @@ public enum JoinType {
 
 	private boolean fullResults;
 	private boolean allowsBranches;
+	private boolean supportsHorizontalOps;
 	private int id;
 
-	private JoinType(int num, boolean fullResults, boolean allowsBranches) {
+	private JoinType(int num, boolean fullResults, boolean allowsBranches, boolean supportsHorizontalOps) {
 		this.id = num;
 		this.fullResults = fullResults;
 		this.allowsBranches = allowsBranches;
+		this.supportsHorizontalOps = supportsHorizontalOps;
 	}
 
 	public boolean allowsBranches() {
@@ -157,6 +159,10 @@ public enum JoinType {
 
 	public boolean returnsFullResults() {
 		return fullResults;
+	}
+	
+	public boolean supportsHorizontalOps() {
+		return supportsHorizontalOps;
 	}
 
 	public int getId() {

@@ -3,7 +3,7 @@ package au.edu.unimelb.csse.exp;
 import au.edu.unimelb.csse.Operator;
 
 class Queries {
-	public static final int SIZE = 29;
+	public static final int SIZE = 45;
 
 	public TreeQuery getQuery(int pos) {
 		TreeQuery q = new TreeQuery();

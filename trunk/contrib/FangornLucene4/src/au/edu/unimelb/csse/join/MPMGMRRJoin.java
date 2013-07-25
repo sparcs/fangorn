@@ -25,8 +25,7 @@ public abstract class MPMGMRRJoin implements HalfPairJoin {
 	}
 
 	@Override
-	public NodePositions match(NodePositions prev, Operator op,
-			DocsAndPositionsEnum node) throws IOException {
+	public NodePositions match(NodePositions prev, DocsAndPositionsEnum node) throws IOException {
 		int freq = node.freq();
 		result.reset();
 		int numNextRead = 0;
@@ -43,8 +42,7 @@ public abstract class MPMGMRRJoin implements HalfPairJoin {
 	}
 
 	@Override
-	public NodePositions match(NodePositions prev, Operator op,
-			NodePositions next) throws IOException {
+	public NodePositions match(NodePositions prev, NodePositions next) throws IOException {
 		result.reset();
 		next.offset = 0;
 		int pmark = 0;
@@ -75,7 +73,7 @@ abstract class PositionRelationBased extends MPMGMRRJoin {
 	protected int doJoin(NodePositions prev, NodePositions next, int pmark) {
 		Position position = operatorAware.positionRelation(
 				prev.positions, prev.offset, next.positions, next.offset);
-		while (loopCondition(position)) {
+		while (skipCondition(position)) {
 			// skip
 			prev.offset += positionLength;
 			pmark = prev.offset;
@@ -96,7 +94,7 @@ abstract class PositionRelationBased extends MPMGMRRJoin {
 		Position position = operatorAware.positionRelation(
 				prev.positions, prev.offset, result.positions,
 				result.offset);
-		while (loopCondition(position)) {
+		while (skipCondition(position)) {
 			// skip
 			prev.offset += positionLength;
 			pmark = prev.offset;
@@ -133,7 +131,7 @@ abstract class PositionRelationBased extends MPMGMRRJoin {
 		return found;
 	}
 	
-	abstract boolean loopCondition(Position position);
+	abstract boolean skipCondition(Position position);
 	
 	abstract boolean matchCondition(Position position);
 }
@@ -149,7 +147,7 @@ abstract class OperatorRelationBased extends MPMGMRRJoin {
 	protected int doJoin(NodePositions prev, NodePositions next, int pmark) {
 		Operator relation = operatorAware.mostRelevantOpRelation(
 				prev.positions, prev.offset, next.positions, next.offset);
-		while (loopCondition(relation)) {
+		while (skipCondition(relation)) {
 			// skip
 			prev.offset += positionLength;
 			pmark = prev.offset;
@@ -159,7 +157,7 @@ abstract class OperatorRelationBased extends MPMGMRRJoin {
 			relation = operatorAware.mostRelevantOpRelation(prev.positions,
 					prev.offset, next.positions, next.offset);
 		}
-		if (checkMatch(prev, op, next, relation)) {
+		if (checkMatch(prev, next, relation)) {
 			result.push(next, positionLength);
 		}
 		return pmark;
@@ -170,24 +168,25 @@ abstract class OperatorRelationBased extends MPMGMRRJoin {
 		Operator relation = operatorAware.mostRelevantOpRelation(
 				prev.positions, prev.offset, result.positions,
 				result.offset);
-		while (loopCondition(relation)) {
+		while (skipCondition(relation)) {
 			// skip
 			prev.offset += positionLength;
 			pmark = prev.offset;
 			if (prev.offset >= prev.size) {
+				result.removeLast(positionLength); //TODO: test for the presence of this line
 				return pmark;
 			}
 			relation = operatorAware.mostRelevantOpRelation(prev.positions,
 					prev.offset, result.positions, result.offset);
 		}
-		if (!checkMatch(prev, op, result, relation)) {
+		if (!checkMatch(prev, result, relation)) {
 			result.removeLast(positionLength);
 		}
 		return pmark;
 	}
 	
-	protected boolean checkMatch(NodePositions prev, Operator op,
-			NodePositions next, Operator relation) {
+	protected boolean checkMatch(NodePositions prev, NodePositions next,
+			Operator relation) {
 		boolean found = false;
 		while (prev.offset < prev.size) {
 			if (matchCondition(relation)) {
@@ -206,7 +205,7 @@ abstract class OperatorRelationBased extends MPMGMRRJoin {
 		return found;
 	}
 	
-	abstract boolean loopCondition(Operator relation);
+	abstract boolean skipCondition(Operator relation);
 	
 	abstract boolean matchCondition(Operator relation);
 	
@@ -219,7 +218,7 @@ class DescMPMGMRR extends PositionRelationBased {
 	}
 
 	@Override
-	boolean loopCondition(Position position) {
+	boolean skipCondition(Position position) {
 		return Position.AFTER.equals(position);
 	}
 
@@ -237,7 +236,7 @@ class ChildMPMGMRR extends OperatorRelationBased {
 	}
 
 	@Override
-	boolean loopCondition(Operator relation) {
+	boolean skipCondition(Operator relation) {
 		return Position.AFTER.equals(relation.getPosition());
 	}
 
@@ -255,7 +254,7 @@ class AncMPMGMRR extends PositionRelationBased {
 	}
 
 	@Override
-	boolean loopCondition(Position position) {
+	boolean skipCondition(Position position) {
 		return Position.AFTER.equals(position) || Position.BELOW.equals(position);
 	}
 
@@ -273,7 +272,7 @@ class ParMPMGMRR extends OperatorRelationBased {
 	}
 
 	@Override
-	boolean loopCondition(Operator relation) {
+	boolean skipCondition(Operator relation) {
 		Position position = relation.getPosition();
 		return Position.AFTER.equals(position) || Position.BELOW.equals(position);
 	}

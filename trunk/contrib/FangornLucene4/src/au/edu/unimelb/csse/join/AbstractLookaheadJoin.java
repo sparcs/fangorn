@@ -80,20 +80,19 @@ public abstract class AbstractLookaheadJoin implements
 	}
 
 	@Override
-	public NodePositions matchWithLookahead(NodePositions prev, Operator op,
-			DocsAndPositionsEnum node, Operator nextOp) throws IOException {
+	public NodePositions matchWithLookahead(NodePositions prev, DocsAndPositionsEnum node,
+			Operator nextOp) throws IOException {
 		nodePositionAware.getAllPositions(next, node);
-		return matchWithLookahead(prev, op, next, nextOp);
+		return matchWithLookahead(prev, next, nextOp);
 	}
 
-	public NodePositions matchTerminateEarly(NodePositions prev, Operator op,
-			DocsAndPositionsEnum node) throws IOException {
+	public NodePositions matchTerminateEarly(NodePositions prev, DocsAndPositionsEnum node) throws IOException {
 		nodePositionAware.getAllPositions(next, node);
-		return matchTerminateEarly(prev, op, next);
+		return matchTerminateEarly(prev, next);
 	}
 
-	public NodePositions matchWithLookahead(NodePositions prev, Operator op,
-			NodePositions next, Operator nextOp) {
+	public NodePositions matchWithLookahead(NodePositions prev, NodePositions next,
+			Operator nextOp) {
 		result.reset();
 		if (nextOp.equals(Operator.PRECEDING)
 				|| nextOp.equals(Operator.ANCESTOR)) {
@@ -108,9 +107,8 @@ public abstract class AbstractLookaheadJoin implements
 	protected abstract NodePositions matchLookaheadBwdIter(NodePositions prev,
 			Operator op, NodePositions next, Operator nextOp);
 
-	public NodePositions match(NodePositions prev, Operator op,
-			DocsAndPositionsEnum node) throws IOException {
+	public NodePositions match(NodePositions prev, DocsAndPositionsEnum node) throws IOException {
 		nodePositionAware.getAllPositions(next, node);
-		return match(prev, op, next);
+		return match(prev, next);
 	}
 }

@@ -15,8 +15,7 @@ public abstract class LookaheadTermEarlyMRRJoin extends AbstractLookaheadJoin {
 		super(op, nodePositionAware);
 	}
 
-	public NodePositions match(NodePositions prev, Operator op,
-			NodePositions next) throws IOException {
+	public NodePositions match(NodePositions prev, NodePositions next) throws IOException {
 		prev.offset = 0;
 		next.offset = 0;
 		result.reset();
@@ -41,8 +40,7 @@ public abstract class LookaheadTermEarlyMRRJoin extends AbstractLookaheadJoin {
 	}
 	
 	@Override
-	public NodePositions matchTerminateEarly(NodePositions prev, Operator op,
-			NodePositions next) {
+	public NodePositions matchTerminateEarly(NodePositions prev, NodePositions next) {
 		prev.offset = 0;
 		next.offset = 0;
 		result.reset();

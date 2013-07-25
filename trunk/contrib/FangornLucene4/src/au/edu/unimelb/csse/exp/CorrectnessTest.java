@@ -42,7 +42,7 @@ public class CorrectnessTest {
 			Map<Integer, List<JoinType>> numMatchesJoinType = new HashMap<Integer, List<JoinType>>();
 			for (JoinType joinType : JoinType.values()) {
 				countingNPA.getCountingOperatorAware().resetCount();
-				if (query.hasBranches() && !joinType.allowsBranches()) {
+				if (query.hasBranches() && !joinType.allowsBranches() || query.hasHorizontalOps() && !joinType.supportsHorizontalOps()) {
 					continue;
 				}
 				if (joinType.returnsFullResults()) {

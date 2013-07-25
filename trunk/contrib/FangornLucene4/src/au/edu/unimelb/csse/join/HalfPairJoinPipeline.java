@@ -138,7 +138,7 @@ public class HalfPairJoinPipeline implements BooleanJoinPipeline {
 
 		@Override
 		public NodePositions execute() throws IOException {
-			NodePositions result = join.match(prevPositions, op, node);
+			NodePositions result = join.match(prevPositions, node);
 			if (result.size > 0) {
 				return continueExection(result);
 			}
@@ -178,7 +178,7 @@ public class HalfPairJoinPipeline implements BooleanJoinPipeline {
 				return results;
 			}
 			prevPositions.makeCloneOf(results);
-			results = join.match(prevPositions, op, metaPrev);
+			results = join.match(prevPositions, metaPrev);
 			if (next == null) {
 				return results;
 			}

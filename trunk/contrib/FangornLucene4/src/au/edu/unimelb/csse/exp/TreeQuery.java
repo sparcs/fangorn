@@ -49,6 +49,15 @@ class TreeQuery {
 		}
 		return false;
 	}
+	
+	boolean hasHorizontalOps() {
+		for (Operator op: operators) {
+			if (!(Operator.DESCENDANT.equals(op) || Operator.CHILD.equals(op) || Operator.ANCESTOR.equals(op) || Operator.PARENT.equals(op))) {
+				return true;
+			}
+		}
+		return false;
+	}
 
 	@Override
 	public String toString() {

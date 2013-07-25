@@ -49,8 +49,7 @@ public abstract class StaircaseJoin implements HalfPairJoin {
 	}
 
 	@Override
-	public NodePositions match(NodePositions prev, Operator op,
-			DocsAndPositionsEnum node) throws IOException {
+	public NodePositions match(NodePositions prev, DocsAndPositionsEnum node) throws IOException {
 		prev.offset = 0;
 		if (isPruneOp) {
 			prune(prev);
@@ -58,24 +57,23 @@ public abstract class StaircaseJoin implements HalfPairJoin {
 		next.reset();
 		result.reset();
 		nodePositionAware.getAllPositions(next, node);
-		doJoin(prev, op, next);
+		doJoin(prev, next);
 		return result;
 	}
 
 	@Override
-	public NodePositions match(NodePositions prev, Operator op,
-			NodePositions next) throws IOException {
+	public NodePositions match(NodePositions prev, NodePositions next) throws IOException {
 		prev.offset = 0;
 		if (isPruneOp) {
 			prune(prev);
 		}
 		next.offset = 0;
 		result.reset();
-		doJoin(prev, op, next);
+		doJoin(prev, next);
 		return result;
 	}
 
-	abstract void doJoin(NodePositions prev, Operator op, NodePositions next);
+	abstract void doJoin(NodePositions prev, NodePositions next);
 
 	/**
 	 * Prunes the prev list Makes use of result, next, and buffer variables as
@@ -95,7 +93,7 @@ class DescStaircase extends StaircaseJoin {
 	}
 
 	@Override
-	void doJoin(NodePositions prev, Operator op, NodePositions next) {
+	void doJoin(NodePositions prev, NodePositions next) {
 		while (next.offset < next.size && prev.offset < prev.size) {
 			if (op.match(prev, next, operatorAware)) {
 				result.push(next, positionLength);
@@ -138,7 +136,7 @@ class AncStaircase extends StaircaseJoin {
 	}
 
 	@Override
-	void doJoin(NodePositions prev, Operator op, NodePositions next) {
+	void doJoin(NodePositions prev, NodePositions next) {
 		while (next.offset < next.size && prev.offset < prev.size) {
 			if (op.match(prev, next, operatorAware)) {
 				result.push(next, positionLength);
@@ -206,7 +204,7 @@ class ChildStaircase extends StaircaseJoin {
 	}
 
 	@Override
-	void doJoin(NodePositions prev, Operator op, NodePositions next) {
+	void doJoin(NodePositions prev, NodePositions next) {
 		while (next.offset < next.size) {
 			prev.offset = 0;
 			while (prev.offset < prev.size) {
@@ -234,7 +232,7 @@ class ParentStaircase extends StaircaseJoin {
 	}
 
 	@Override
-	void doJoin(NodePositions prev, Operator op, NodePositions next) {
+	void doJoin(NodePositions prev, NodePositions next) {
 		while (next.offset < next.size) {
 			prev.offset = 0;
 			while (prev.offset < prev.size) {
@@ -261,7 +259,7 @@ class FollPrecStaircase extends StaircaseJoin {
 	}
 
 	@Override
-	void doJoin(NodePositions prev, Operator op, NodePositions next) {
+	void doJoin(NodePositions prev, NodePositions next) {
 		for (next.offset = 0; next.offset < next.size; next.offset += positionLength) {
 			if (op.match(prev, next, operatorAware)) {
 				result.push(next, positionLength);
@@ -295,7 +293,7 @@ class FolSibImFolSibStaircase extends StaircaseJoin {
 	}
 
 	@Override
-	void doJoin(NodePositions prev, Operator op, NodePositions next) {
+	void doJoin(NodePositions prev, NodePositions next) {
 		int start = prev.size - positionLength;
 		for (int i = next.size - positionLength; i >= 0; i -= positionLength) {
 			for (int j = start; j >= 0; j -= positionLength) {
@@ -332,7 +330,7 @@ class PrecSibImPrecSibStaircase extends StaircaseJoin {
 	}
 
 	@Override
-	void doJoin(NodePositions prev, Operator op, NodePositions next) {
+	void doJoin(NodePositions prev, NodePositions next) {
 		int start = 0;
 		for (int i = 0; i < next.size; i += positionLength) {
 			for (int j = start; j < prev.size; j += positionLength) {
@@ -371,7 +369,7 @@ class ImFolStaircase extends StaircaseJoin {
 	}
 
 	@Override
-	void doJoin(NodePositions prev, Operator op, NodePositions next) {
+	void doJoin(NodePositions prev, NodePositions next) {
 		int start = prev.size - positionLength;
 		for (int i = next.size - positionLength; i >= 0; i -= positionLength) {
 			for (int j = start; j >= 0; j -= positionLength) {
@@ -403,7 +401,7 @@ class ImPrecStaircase extends StaircaseJoin {
 	}
 
 	@Override
-	void doJoin(NodePositions prev, Operator op, NodePositions next) {
+	void doJoin(NodePositions prev, NodePositions next) {
 		int start = 0;
 		for (int i = 0; i < next.size; i += positionLength) {
 			for (int j = start; j < prev.size; j += positionLength) {

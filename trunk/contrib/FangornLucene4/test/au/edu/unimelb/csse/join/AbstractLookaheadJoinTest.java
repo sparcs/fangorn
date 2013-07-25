@@ -123,14 +123,13 @@ public class AbstractLookaheadJoinTest extends TestCase {
 
 			@Override
 			public NodePositions matchTerminateEarly(NodePositions prev,
-					Operator op, NodePositions next) {
+					NodePositions next) {
 				// TODO Auto-generated method stub
 				return null;
 			}
 
 			@Override
-			public NodePositions match(NodePositions prev, Operator op,
-					NodePositions next) throws IOException {
+			public NodePositions match(NodePositions prev, NodePositions next) throws IOException {
 				// TODO Auto-generated method stub
 				return null;
 			}

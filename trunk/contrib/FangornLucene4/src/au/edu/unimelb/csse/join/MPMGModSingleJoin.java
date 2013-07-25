@@ -53,8 +53,7 @@ public abstract class MPMGModSingleJoin implements HalfPairJoin {
 	}
 
 	@Override
-	public NodePositions match(NodePositions prev, Operator op,
-			DocsAndPositionsEnum node) throws IOException {
+	public NodePositions match(NodePositions prev, DocsAndPositionsEnum node) throws IOException {
 		int freq = node.freq();
 		result.reset();
 		int numNextRead = 0;
@@ -65,7 +64,7 @@ public abstract class MPMGModSingleJoin implements HalfPairJoin {
 			nodePositionAware.getNextPosition(result, node);
 			numNextRead++;
 			prev.offset = pmark;
-			while (prev.offset < prev.size && skipCondition(prev)) {
+			while (prev.offset < prev.size && skipCondition(prev, result)) {
 				// skip before
 				prev.offset += positionLength;
 				pmark = prev.offset;
@@ -78,8 +77,7 @@ public abstract class MPMGModSingleJoin implements HalfPairJoin {
 	}
 
 	@Override
-	public NodePositions match(NodePositions prev, Operator op,
-			NodePositions next) throws IOException {
+	public NodePositions match(NodePositions prev, NodePositions next) throws IOException {
 		result.reset();
 		next.offset = 0;
 		int pmark = 0;
@@ -87,7 +85,7 @@ public abstract class MPMGModSingleJoin implements HalfPairJoin {
 			if (pmark == prev.size)
 				break;
 			prev.offset = pmark;
-			while (prev.offset < prev.size && skipCondition(prev)) {
+			while (prev.offset < prev.size && skipCondition(prev, next)) {
 				// skip before
 				prev.offset += positionLength;
 				pmark = prev.offset;
@@ -100,7 +98,7 @@ public abstract class MPMGModSingleJoin implements HalfPairJoin {
 		return result;
 	}
 
-	abstract boolean skipCondition(NodePositions prev);
+	abstract boolean skipCondition(NodePositions prev, NodePositions next);
 
 	abstract boolean join(NodePositions prev, NodePositions next);
 }
@@ -111,16 +109,16 @@ class DescChildMPMGModSingle extends MPMGModSingleJoin {
 		super(op, nodePositionAware);
 	}
 
-	boolean skipCondition(NodePositions prev) {
+	boolean skipCondition(NodePositions prev, NodePositions next) {
 		return operatorAware.following(prev.positions, prev.offset,
-				result.positions, result.offset);
+				next.positions, next.offset);
 	}
 
 	boolean join(NodePositions prev, NodePositions next) {
 		while (prev.offset < prev.size) {
 			if (op.match(prev, next, operatorAware)) {
 				return true;
-			} else if (operatorAware.preceding(prev.positions, prev.offset,
+			} else if (operatorAware.startsBefore(prev.positions, prev.offset,
 					next.positions, next.offset)) {
 				// prev is after
 				break;
@@ -137,9 +135,9 @@ class AncParMPMGModSingle extends MPMGModSingleJoin {
 		super(op, nodePositionAware);
 	}
 
-	boolean skipCondition(NodePositions prev) {
+	boolean skipCondition(NodePositions prev, NodePositions next) {
 		return operatorAware.startsAfter(prev.positions, prev.offset,
-				result.positions, result.offset);
+				next.positions, next.offset);
 	}
 
 	boolean join(NodePositions prev, NodePositions next) {
