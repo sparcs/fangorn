@@ -25,15 +25,13 @@ public class Baseline2Join implements HalfPairJoin {
 	}
 
 	@Override
-	public NodePositions match(NodePositions prev, Operator op,
-			DocsAndPositionsEnum node) throws IOException {
+	public NodePositions match(NodePositions prev, DocsAndPositionsEnum node) throws IOException {
 		nodePositionAware.getAllPositions(buffer, node);
-		return match(prev, op, buffer);
+		return match(prev, buffer);
 	}
 
 	@Override
-	public NodePositions match(NodePositions prev, Operator op,
-			NodePositions next) throws IOException {
+	public NodePositions match(NodePositions prev, NodePositions next) throws IOException {
 		result.reset();
 		for (next.offset = 0; next.offset < next.size; next.offset += positionLength) {
 			for (prev.offset = 0; prev.offset < prev.size; prev.offset += positionLength) {

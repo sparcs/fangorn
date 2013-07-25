@@ -28,7 +28,7 @@ public class MPMGModSingleJoinTest extends PairJoinTestCase {
 	public void testTree1Desc() throws Exception {
 		IndexReader r = setupIndexWithDocs("(DD(AA DD)(AA CC)(AA CC))");
 		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 12);
-		joinAndAssertOutput(4, 9, jb, prev, Operator.DESCENDANT, posEnum);
+		joinAndAssertOutput(4, 5, jb, prev, Operator.DESCENDANT, posEnum);
 		// was 5 comparisons in MPMG
 	}
 
@@ -36,7 +36,7 @@ public class MPMGModSingleJoinTest extends PairJoinTestCase {
 	public void testNoResultsDesc() throws Exception {
 		IndexReader r = setupIndexWithDocs("(DD(BB AA)(BB AA))");
 		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 8);
-		joinAndAssertOutput(0, 5, jb, prev, Operator.DESCENDANT, posEnum);
+		joinAndAssertOutput(0, 3, jb, prev, Operator.DESCENDANT, posEnum);
 		// 2 comparisons in MPMG
 	}
 
@@ -44,7 +44,7 @@ public class MPMGModSingleJoinTest extends PairJoinTestCase {
 	public void testNoResultsChild() throws Exception {
 		IndexReader r = setupIndexWithDocs("(DD(BB AA)(BB AA))");
 		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 8);
-		joinAndAssertOutput(0, 5, jb, prev, Operator.CHILD, posEnum);
+		joinAndAssertOutput(0, 3, jb, prev, Operator.CHILD, posEnum);
 		// 2 comparisons in MPMG
 	}
 
