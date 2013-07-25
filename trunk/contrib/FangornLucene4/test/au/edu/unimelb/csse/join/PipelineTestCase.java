@@ -15,7 +15,7 @@ public abstract class PipelineTestCase extends IndexTestCase {
 	protected void assertMetaPipe(Operator expectedMetaOp, boolean metaHasNext,
 			boolean innerIsGetAll, Pipe p) {
 		assertNotNull(p);
-		assertTrue(p instanceof MetaPipe);
+		assertEquals(MetaPipe.class, p.getClass());
 		assertEquals(expectedMetaOp, ((MetaPipe) p).getOp());
 		Pipe ip = ((MetaPipe) p).getInner();
 		if (innerIsGetAll) {

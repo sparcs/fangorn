@@ -12,6 +12,7 @@ import au.edu.unimelb.csse.join.HalfPairJoinPipeline.GetAllPipe;
 import au.edu.unimelb.csse.join.HalfPairJoinPipeline.MetaPipe;
 import au.edu.unimelb.csse.join.LookaheadTermEarlyPipeline.GetAllLookaheadPipe;
 import au.edu.unimelb.csse.join.LookaheadTermEarlyPipeline.LookaheadPipe;
+import au.edu.unimelb.csse.join.LookaheadTermEarlyPipeline.MetaLookaheadPipe;
 import au.edu.unimelb.csse.join.LookaheadTermEarlyPipeline.MetaTerminateEarlyPipe;
 import au.edu.unimelb.csse.paypack.LRDP;
 import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
@@ -29,6 +30,20 @@ public class LookaheadTermEarlyPipelineTest extends PipelineTestCase {
 				LookaheadTermEarlyJoin.JOIN_BUILDER);
 	}
 
+	/*-
+	 * 
+	 *          A
+	 *         / \
+	 *        B   J
+	 *       / \   \
+	 *      C   \   K
+	 *      |    E
+	 *      D   / \
+	 *         F   H
+	 *         |   |
+	 *         G   I
+	 *        
+	 */
 	public void testCreatePipeline() throws Exception {
 		IndexReader rdr = setupIndexWithDocs("(A(B(C D)(E(F G)(H I)))(J K))");
 		DocsAndPositionsEnum aPosEnum = getPosEnum(rdr, 0, new Term("s", "A"));
@@ -95,7 +110,7 @@ public class LookaheadTermEarlyPipelineTest extends PipelineTestCase {
 
 		innerpipe = innerpipe.getNext();
 
-		assertMetaPipe(Operator.PARENT, false, true, innerpipe);
+		assertMetaLookaheadPipe(Operator.PARENT, Operator.ANCESTOR, false, true, innerpipe);
 
 		Pipe inner2pipe = ((MetaPipe) innerpipe).getInner();
 
@@ -125,7 +140,7 @@ public class LookaheadTermEarlyPipelineTest extends PipelineTestCase {
 
 		pipe = pipe.getNext();
 
-		assertMetaPipe(Operator.IMMEDIATE_PRECEDING, false, true, pipe);
+		assertMetaTerminateEarlyPipe(Operator.IMMEDIATE_PRECEDING, false, true, pipe);
 
 		innerpipe = ((MetaPipe) pipe).getInner();
 
@@ -189,7 +204,19 @@ public class LookaheadTermEarlyPipelineTest extends PipelineTestCase {
 
 	}
 
-	public void testShouldLookaheadTopmostBranchNodeAndNoOtherBranchNodes()
+	/*-
+	 * 					 A
+	 * 			    	 |D
+	 * 					 B
+	 * 					 |
+	 *         ---------------------
+	 *         |D        |D        |D
+	 *         C		 F		   G
+	 *       F/ \F                 
+	 *       D   E		 		   
+	 *      
+	 */
+	public void testShouldLookaheadTopmostBranchNodeWhenAllBranchesStartWithLookaheadableOp()
 			throws Exception {
 		String sent = "(A(B(C(D W)(E W))(F W)(G W)))";
 		Operator[] operators = new Operator[] { Operator.DESCENDANT,
@@ -238,7 +265,7 @@ public class LookaheadTermEarlyPipelineTest extends PipelineTestCase {
 
 		Pipe innermeta = inner.getNext();
 
-		assertMetaPipe(Operator.PRECEDING, false, false, innermeta);
+		assertMetaLookaheadPipe(Operator.PRECEDING, Operator.ANCESTOR, false, false, innermeta);
 
 		innermeta = ((MetaPipe) innermeta).getInner();
 
@@ -354,7 +381,7 @@ public class LookaheadTermEarlyPipelineTest extends PipelineTestCase {
 
 	private void assertGetAllLookaheadPipe(DocsAndPositionsEnum posEnum,
 			boolean hasNext, Pipe pipe) {
-		assertTrue(pipe instanceof GetAllLookaheadPipe);
+		assertEquals(GetAllLookaheadPipe.class, pipe.getClass());
 		assertEquals(posEnum, ((GetAllLookaheadPipe) pipe).node);
 		assertHasNext(hasNext, pipe);
 	}
@@ -362,7 +389,7 @@ public class LookaheadTermEarlyPipelineTest extends PipelineTestCase {
 	protected void assertMetaTerminateEarlyPipe(Operator expectedMetaOp,
 			boolean metaHasNext, boolean innerIsGetAll, Pipe p) {
 		assertNotNull(p);
-		assertTrue(p instanceof MetaTerminateEarlyPipe);
+		assertEquals(MetaTerminateEarlyPipe.class, p.getClass());
 		assertEquals(expectedMetaOp, ((MetaTerminateEarlyPipe) p).getOp());
 		Pipe ip = ((MetaTerminateEarlyPipe) p).getInner();
 		if (innerIsGetAll) {
@@ -375,5 +402,27 @@ public class LookaheadTermEarlyPipelineTest extends PipelineTestCase {
 		}
 		assertHasNext(metaHasNext, p);
 	}
+	
+	protected void assertMetaLookaheadPipe(Operator expectedMetaOp, 
+			Operator lookaheadOp, boolean metaHasNext, boolean innerIsGetAll,
+			Pipe p) {
+		assertNotNull(p);
+		assertEquals(MetaLookaheadPipe.class, p.getClass());
+		MetaLookaheadPipe mlp = (MetaLookaheadPipe) p;
+		assertEquals(expectedMetaOp, mlp.getOp());
+		assertEquals(lookaheadOp, mlp.getLookaheadOp());
+		Pipe ip = mlp.getInner();
+		if (innerIsGetAll) {
+			assertTrue("Expected inner pipe to be an instance of GetAllPipe",
+					ip instanceof GetAllPipe);
+		} else {
+			assertTrue(
+					"Expected inner pipe to be an instance of GetAllLookaheadPipe",
+					ip instanceof GetAllLookaheadPipe);
+		}
+		assertHasNext(metaHasNext, p);
+		
+	}
+	
 
 }
