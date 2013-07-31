@@ -11,11 +11,13 @@ import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
 public abstract class LookaheadTermEarlyMRRJoin extends AbstractLookaheadJoin {
 	public static final LATEJoinBuilder JOIN_BUILDER = new LookaheadTermEarlyMRRJoinBuilder();
 
-	public LookaheadTermEarlyMRRJoin(Operator op, LogicalNodePositionAware nodePositionAware) {
+	public LookaheadTermEarlyMRRJoin(Operator op,
+			LogicalNodePositionAware nodePositionAware) {
 		super(op, nodePositionAware);
 	}
 
-	public NodePositions match(NodePositions prev, NodePositions next) throws IOException {
+	public NodePositions match(NodePositions prev, NodePositions next)
+			throws IOException {
 		prev.offset = 0;
 		next.offset = 0;
 		result.reset();
@@ -38,23 +40,27 @@ public abstract class LookaheadTermEarlyMRRJoin extends AbstractLookaheadJoin {
 		doMatchLookaheadBwdIter(prev, next, nextOp);
 		return result;
 	}
-	
+
 	@Override
-	public NodePositions matchTerminateEarly(NodePositions prev, NodePositions next) {
+	public NodePositions matchTerminateEarly(NodePositions prev,
+			NodePositions next) {
 		prev.offset = 0;
 		next.offset = 0;
 		result.reset();
 		doMatchTerminateEarly(prev, next);
 		return result;
 	}
-	
+
 	protected abstract void doMatch(NodePositions prev, NodePositions next);
-	
-	protected abstract void doMatchLookaheadFwdIter(NodePositions prev, NodePositions next, Operator nextOp);
-	
-	protected abstract void doMatchLookaheadBwdIter(NodePositions prev, NodePositions next, Operator nextOp);
-	
-	protected abstract void doMatchTerminateEarly(NodePositions prev, NodePositions next);
+
+	protected abstract void doMatchLookaheadFwdIter(NodePositions prev,
+			NodePositions next, Operator nextOp);
+
+	protected abstract void doMatchLookaheadBwdIter(NodePositions prev,
+			NodePositions next, Operator nextOp);
+
+	protected abstract void doMatchTerminateEarly(NodePositions prev,
+			NodePositions next);
 
 }
 
@@ -69,7 +75,8 @@ class DescLATEMRR extends LookaheadTermEarlyMRRJoin {
 	@Override
 	protected void doMatch(NodePositions prev, NodePositions next) {
 		while (next.offset < next.size && prev.offset < prev.size) {
-			Position position = operatorAware.positionRelation(prev.positions, prev.offset, next.positions, next.offset);
+			Position position = operatorAware.positionRelation(prev.positions,
+					prev.offset, next.positions, next.offset);
 			if (Position.BELOW.equals(position)) {
 				result.push(next, positionLength);
 				next.offset += positionLength;
@@ -118,8 +125,8 @@ class DescLATEMRR extends LookaheadTermEarlyMRRJoin {
 	@Override
 	protected void doMatchTerminateEarly(NodePositions prev, NodePositions next) {
 		while (next.offset < next.size && prev.offset < prev.size) {
-			Position position = operatorAware.positionRelation(prev.positions, prev.offset, next.positions,
-					next.offset);
+			Position position = operatorAware.positionRelation(prev.positions,
+					prev.offset, next.positions, next.offset);
 			if (Position.BELOW.equals(position)) {
 				result.push(next, positionLength);
 				break;
@@ -141,12 +148,14 @@ class AncLATEMRR extends LookaheadTermEarlyMRRJoin {
 	@Override
 	protected void doMatch(NodePositions prev, NodePositions next) {
 		while (next.offset < next.size && prev.offset < prev.size) {
-			Position position = operatorAware.positionRelation(prev.positions, prev.offset, next.positions, next.offset);
+			Position position = operatorAware.positionRelation(prev.positions,
+					prev.offset, next.positions, next.offset);
 			if (Position.ABOVE.equals(position)) {
 				result.push(next, positionLength);
 				next.offset += positionLength;
 			} else if (Position.BELOW.equals(position)
-					|| Position.AFTER.equals(position)) {
+					|| Position.AFTER.equals(position)
+					|| Position.SAME.equals(position)) {
 				prev.offset += positionLength;
 			} else {
 				next.offset += positionLength;
@@ -194,12 +203,15 @@ class AncLATEMRR extends LookaheadTermEarlyMRRJoin {
 			}
 			boolean matched = false;
 			for (prev.offset = start; prev.offset >= 0; prev.offset -= positionLength) {
-				Position position = operatorAware.positionRelation(prev.positions, prev.offset, next.positions, next.offset);
+				Position position = operatorAware.positionRelation(
+						prev.positions, prev.offset, next.positions,
+						next.offset);
 				if (Position.ABOVE.equals(position)) {
 					result.insert(next, 0, positionLength);
 					matched = true;
 					break;
-				} else if (Position.BELOW.equals(position) || Position.AFTER.equals(position)) {
+				} else if (Position.BELOW.equals(position)
+						|| Position.AFTER.equals(position)) {
 					break;
 				}
 			}
@@ -212,13 +224,14 @@ class AncLATEMRR extends LookaheadTermEarlyMRRJoin {
 	@Override
 	protected void doMatchTerminateEarly(NodePositions prev, NodePositions next) {
 		while (next.offset < next.size && prev.offset < prev.size) {
-			Position position = operatorAware.positionRelation(prev.positions, prev.offset, next.positions,
-					next.offset);
+			Position position = operatorAware.positionRelation(prev.positions,
+					prev.offset, next.positions, next.offset);
 			if (Position.ABOVE.equals(position)) {
 				result.push(next, positionLength);
 				break;
-			} else if (operatorAware.startsAfter(prev.positions,
-					prev.offset, next.positions, next.offset)) {
+			} else if (Position.BELOW.equals(position)
+					|| Position.AFTER.equals(position)
+					|| Position.SAME.equals(position)) {
 				prev.offset += positionLength;
 			} else {
 				next.offset += positionLength;
@@ -249,7 +262,7 @@ class ChildLATEMRR extends LookaheadTermEarlyMRRJoin {
 						prev.offset += positionLength;
 						poff = prev.offset;
 						continue;
-					} 
+					}
 					beginning = false;
 				}
 				if (Operator.CHILD.equals(relation)) {
@@ -258,7 +271,7 @@ class ChildLATEMRR extends LookaheadTermEarlyMRRJoin {
 				} else if (Position.BELOW.equals(position)
 						|| Position.AFTER.equals(position)) {
 					prev.offset += positionLength;
-				} else { 
+				} else {
 					break;
 				}
 			}
@@ -288,7 +301,7 @@ class ChildLATEMRR extends LookaheadTermEarlyMRRJoin {
 						prev.offset += positionLength;
 						poff = prev.offset;
 						continue;
-					} 
+					}
 					beginning = false;
 				}
 				if (Operator.CHILD.equals(relation)) {
@@ -300,7 +313,7 @@ class ChildLATEMRR extends LookaheadTermEarlyMRRJoin {
 						|| Position.AFTER.equals(position)) {
 					prev.offset += positionLength;
 					continue;
-				}  
+				}
 				break;
 			}
 		}
@@ -310,16 +323,19 @@ class ChildLATEMRR extends LookaheadTermEarlyMRRJoin {
 	protected void doMatchLookaheadBwdIter(NodePositions prev,
 			NodePositions next, Operator nextOp) {
 		int start = prev.offset;
-		for (;next.offset >= 0; next.offset -= positionLength) {
+		for (; next.offset >= 0; next.offset -= positionLength) {
 			PruneOperation pruneOp = getBwdIterPruneOperation(next, nextOp);
 			if (pruneOp.equals(PruneOperation.PRUNE)) {
 				continue;
 			}
 			boolean matched = false;
 			for (prev.offset = start; prev.offset >= 0; prev.offset -= positionLength) {
-				Operator relation = operatorAware.mostRelevantOpRelation(prev.positions, prev.offset, next.positions, next.offset);
+				Operator relation = operatorAware.mostRelevantOpRelation(
+						prev.positions, prev.offset, next.positions,
+						next.offset);
 				Position position = relation.getPosition();
-				if (Position.ABOVE.equals(position) || Position.BEFORE.equals(position)) {
+				if (Position.ABOVE.equals(position)
+						|| Position.BEFORE.equals(position)) {
 					start = prev.offset - positionLength;
 					continue;
 				} else if (Operator.CHILD.equals(relation)) {
@@ -353,7 +369,7 @@ class ChildLATEMRR extends LookaheadTermEarlyMRRJoin {
 						prev.offset += positionLength;
 						poff = prev.offset;
 						continue;
-					} 
+					}
 					beginning = false;
 				}
 				if (Operator.CHILD.equals(relation)) {
@@ -364,7 +380,7 @@ class ChildLATEMRR extends LookaheadTermEarlyMRRJoin {
 						|| Position.AFTER.equals(position)) {
 					prev.offset += positionLength;
 					continue;
-				}  
+				}
 				break;
 			}
 			if (!shouldContinue) {
@@ -372,7 +388,7 @@ class ChildLATEMRR extends LookaheadTermEarlyMRRJoin {
 			}
 		}
 	}
-	
+
 }
 
 class ParLATEMRR extends LookaheadTermEarlyMRRJoin {
@@ -384,7 +400,7 @@ class ParLATEMRR extends LookaheadTermEarlyMRRJoin {
 	@Override
 	protected void doMatch(NodePositions prev, NodePositions next) {
 		int poff = 0;
-		for (; next.offset < next.size; next.offset += positionLength) { 
+		for (; next.offset < next.size; next.offset += positionLength) {
 			prev.offset = poff;
 			while (prev.offset < prev.size) {
 				Operator relation = operatorAware.mostRelevantOpRelation(
@@ -394,7 +410,8 @@ class ParLATEMRR extends LookaheadTermEarlyMRRJoin {
 				if (Operator.PARENT.equals(relation)) {
 					result.push(next, positionLength);
 					break;
-				} else if (Position.BELOW.equals(position) || Position.AFTER.equals(position)) {
+				} else if (Position.BELOW.equals(position)
+						|| Position.AFTER.equals(position)) {
 					prev.offset += positionLength;
 					poff = prev.offset;
 					continue;
@@ -421,7 +438,7 @@ class ParLATEMRR extends LookaheadTermEarlyMRRJoin {
 			while (prev.offset < prev.size) {
 				Operator relation = operatorAware.mostRelevantOpRelation(
 						prev.positions, prev.offset, next.positions,
-						next.offset); 
+						next.offset);
 				Position position = relation.getPosition();
 				if (Operator.PARENT.equals(relation)) {
 					if (PruneOperation.JOIN_MATCH_REPLACE.equals(pruneOp)) {
@@ -453,13 +470,16 @@ class ParLATEMRR extends LookaheadTermEarlyMRRJoin {
 			}
 			boolean matched = false;
 			for (prev.offset = start; prev.offset >= 0; prev.offset -= positionLength) {
-				Operator relation = operatorAware.mostRelevantOpRelation(prev.positions, prev.offset, next.positions, next.offset);
+				Operator relation = operatorAware.mostRelevantOpRelation(
+						prev.positions, prev.offset, next.positions,
+						next.offset);
 				Position position = relation.getPosition();
 				if (Operator.PARENT.equals(relation)) {
 					result.insert(next, 0, positionLength);
 					matched = true;
 					break;
-				} else if (Position.BELOW.equals(position) || Position.AFTER.equals(position)) {
+				} else if (Position.BELOW.equals(position)
+						|| Position.AFTER.equals(position)) {
 					break;
 				}
 			}
@@ -506,8 +526,10 @@ class FolLATEMRR extends LookaheadTermEarlyMRRJoin {
 	@Override
 	protected void doMatch(NodePositions prev, NodePositions next) {
 		for (; next.offset < next.size; next.offset += positionLength) {
-			for (; prev.offset < prev.size; prev.offset += positionLength) {
-				Position position = operatorAware.positionRelation(prev.positions, prev.offset, next.positions, next.offset);
+			for (prev.offset = 0; prev.offset < prev.size; prev.offset += positionLength) {
+				Position position = operatorAware.positionRelation(
+						prev.positions, prev.offset, next.positions,
+						next.offset);
 				if (Position.AFTER.equals(position)) {
 					result.push(next, positionLength);
 					break;
@@ -532,14 +554,15 @@ class FolLATEMRR extends LookaheadTermEarlyMRRJoin {
 			for (prev.offset = 0; prev.offset < prev.size; prev.offset += positionLength) {
 				Position position = operatorAware.positionRelation(
 						prev.positions, prev.offset, next.positions,
-						next.offset); 
+						next.offset);
 				if (Position.AFTER.equals(position)) {
 					if (PruneOperation.JOIN_MATCH_REPLACE.equals(pruneOp)) {
 						result.removeLast(positionLength);
 					}
 					result.push(next, positionLength);
 					break;
-				} else if (Position.ABOVE.equals(position) || Position.BEFORE.equals(position)) {
+				} else if (Position.ABOVE.equals(position)
+						|| Position.BEFORE.equals(position)) {
 					break;
 				}
 			}
@@ -589,14 +612,15 @@ class PrecLATEMRR extends LookaheadTermEarlyMRRJoin {
 			if (pmark == prev.size)
 				break;
 			for (prev.offset = pmark; prev.offset < prev.size; prev.offset += positionLength) {
-				Position position = operatorAware.positionRelation(prev.positions, prev.offset, next.positions, next.offset);
+				Position position = operatorAware.positionRelation(
+						prev.positions, prev.offset, next.positions,
+						next.offset);
 				if (Position.BEFORE.equals(position)) {
 					result.push(next, positionLength);
 					break;
 				} else if (Position.BELOW.equals(position)
 						|| Position.AFTER.equals(position)) {
 					pmark = prev.offset + positionLength;
-					break;
 				}
 			}
 		}
@@ -623,9 +647,9 @@ class PrecLATEMRR extends LookaheadTermEarlyMRRJoin {
 					}
 					result.push(next, positionLength);
 					break;
-				} else if (Position.BELOW.equals(position) || Position.AFTER.equals(position)) {
+				} else if (Position.BELOW.equals(position)
+						|| Position.AFTER.equals(position)) {
 					poff += prev.offset + positionLength;
-					break;
 				}
 			}
 		}
@@ -641,9 +665,12 @@ class PrecLATEMRR extends LookaheadTermEarlyMRRJoin {
 			}
 			boolean matched = false;
 			for (prev.offset = prev.size - positionLength; prev.offset >= 0; prev.offset -= positionLength) {
-				Position position = operatorAware.positionRelation(prev.positions, prev.offset, next.positions, next.offset);
-				if (Position.ABOVE.equals(position) || 
-						Position.BELOW.equals(position) || Position.AFTER.equals(position)) {
+				Position position = operatorAware.positionRelation(
+						prev.positions, prev.offset, next.positions,
+						next.offset);
+				if (Position.ABOVE.equals(position)
+						|| Position.BELOW.equals(position)
+						|| Position.AFTER.equals(position)) {
 					break;
 				} else if (Position.BEFORE.equals(position)) {
 					result.insert(next, 0, positionLength);
@@ -654,7 +681,7 @@ class PrecLATEMRR extends LookaheadTermEarlyMRRJoin {
 			if (matched && pruneOp.equals(PruneOperation.JOIN_MATCH_ADD_STOP)) {
 				break;
 			}
-		}	
+		}
 	}
 
 	@Override
@@ -675,7 +702,6 @@ class PrecLATEMRR extends LookaheadTermEarlyMRRJoin {
 				} else if (Position.BELOW.equals(position)
 						|| Position.AFTER.equals(position)) {
 					pmark = prev.offset + positionLength;
-					break;
 				}
 			}
 			if (!shouldContinue) {
@@ -703,8 +729,9 @@ class FolSibImFolSibLATEMRR extends LookaheadTermEarlyMRRJoin {
 						prev.positions, j, next.positions, i);
 				Position position = relation.getPosition();
 				while (j >= 0
-						&& (Position.ABOVE.equals(position) || Position.BEFORE
-								.equals(position))) {
+						&& (Position.ABOVE.equals(position)
+								|| Position.BEFORE.equals(position) || Position.SAME
+									.equals(position))) {
 					j -= positionLength;
 					start = j;
 					if (j >= 0) {
@@ -752,7 +779,9 @@ class FolSibImFolSibLATEMRR extends LookaheadTermEarlyMRRJoin {
 						prev.positions, j, next.positions, next.offset);
 				Position position = relation.getPosition();
 				while (j >= 0
-						&& (Position.ABOVE.equals(position) || Position.BEFORE.equals(position))) {
+						&& (Position.ABOVE.equals(position)
+								|| Position.BEFORE.equals(position) || Position.SAME
+									.equals(position))) {
 					j -= positionLength;
 					start = j;
 					if (j >= 0) {
@@ -763,7 +792,9 @@ class FolSibImFolSibLATEMRR extends LookaheadTermEarlyMRRJoin {
 				}
 				if (j < 0)
 					break;
-				if (op.equals(relation) || (op.equals(Operator.FOLLOWING_SIBLING) && relation.equals(Operator.IMMEDIATE_FOLLOWING_SIBLING))) {
+				if (op.equals(relation)
+						|| (op.equals(Operator.FOLLOWING_SIBLING) && relation
+								.equals(Operator.IMMEDIATE_FOLLOWING_SIBLING))) {
 					result.insert(next, 0, positionLength);
 					matched = true;
 					break;
@@ -784,7 +815,7 @@ class FolSibImFolSibLATEMRR extends LookaheadTermEarlyMRRJoin {
 	protected void doMatchTerminateEarly(NodePositions prev, NodePositions next) {
 		common.termEarlyJoin(prev, next, result);
 	}
-	
+
 }
 
 class PrecSibImPrecSibLATEMRR extends LookaheadTermEarlyMRRJoin {
@@ -805,8 +836,9 @@ class PrecSibImPrecSibLATEMRR extends LookaheadTermEarlyMRRJoin {
 						prev.positions, j, next.positions, i);
 				Position position = relation.getPosition();
 				while (j < prev.size
-						&& (Position.BELOW.equals(position) || Position.AFTER
-								.equals(position))) {
+						&& (Position.BELOW.equals(position)
+								|| Position.AFTER.equals(position) || Position.SAME
+									.equals(position))) {
 					j += positionLength;
 					start = j;
 					if (j < prev.size) {
@@ -824,9 +856,8 @@ class PrecSibImPrecSibLATEMRR extends LookaheadTermEarlyMRRJoin {
 					next.offset = i;
 					result.push(next, positionLength);
 					break;
-				} else if (Position.BELOW.equals(position)
-						|| operatorAware.relativeDepth(prev.positions, j,
-								next.positions, i) > 0) {
+				} else if (operatorAware.relativeDepth(prev.positions, j,
+						next.positions, i) > 0) {
 					continue;
 				}
 				break;
@@ -850,8 +881,9 @@ class PrecSibImPrecSibLATEMRR extends LookaheadTermEarlyMRRJoin {
 						prev.positions, j, next.positions, next.offset);
 				Position position = relation.getPosition();
 				while (j < prev.size
-						&& (Position.BELOW.equals(position) || Position.AFTER
-								.equals(position))) {
+						&& (Position.BELOW.equals(position)
+								|| Position.AFTER.equals(position) || Position.SAME
+									.equals(position))) {
 					j += positionLength;
 					start = j;
 					if (j < prev.size) {
@@ -870,9 +902,8 @@ class PrecSibImPrecSibLATEMRR extends LookaheadTermEarlyMRRJoin {
 						result.removeLast(positionLength);
 					}
 					result.push(next, positionLength);
-				} else if (Position.BELOW.equals(position)
-						|| operatorAware.relativeDepth(prev.positions, j,
-								next.positions, next.offset) > 0) {
+				} else if (operatorAware.relativeDepth(prev.positions, j,
+						next.positions, next.offset) > 0) {
 					continue;
 				}
 				break;
@@ -896,8 +927,9 @@ class PrecSibImPrecSibLATEMRR extends LookaheadTermEarlyMRRJoin {
 						prev.positions, j, next.positions, i);
 				Position position = relation.getPosition();
 				while (j < prev.size
-						&& (Position.BELOW.equals(position) || Position.AFTER
-								.equals(position))) {
+						&& (Position.BELOW.equals(position)
+								|| Position.AFTER.equals(position) || Position.SAME
+									.equals(position))) {
 					j += positionLength;
 					start = j;
 					if (j < prev.size) {
@@ -916,9 +948,8 @@ class PrecSibImPrecSibLATEMRR extends LookaheadTermEarlyMRRJoin {
 					result.push(next, positionLength);
 					shouldContinue = false;
 					break;
-				} else if (Position.BELOW.equals(position)
-						|| operatorAware.relativeDepth(prev.positions, j,
-								next.positions, i) > 0) {
+				} else if (operatorAware.relativeDepth(prev.positions, j,
+						next.positions, i) > 0) {
 					continue;
 				}
 				break;
@@ -946,8 +977,9 @@ class ImFolLATEMRR extends LookaheadTermEarlyMRRJoin {
 						prev.positions, j, next.positions, i);
 				Position position = relation.getPosition();
 				while (j >= 0
-						&& (Position.ABOVE.equals(position) || Position.BEFORE
-								.equals(position))) {
+						&& (Position.ABOVE.equals(position)
+								|| Position.BEFORE.equals(position) || Position.SAME
+									.equals(position))) {
 					j -= positionLength;
 					start = j;
 					if (j >= 0) {
@@ -964,7 +996,8 @@ class ImFolLATEMRR extends LookaheadTermEarlyMRRJoin {
 					next.offset = i;
 					result.insert(next, 0, positionLength);
 				} else if (Position.BELOW.equals(position)) {
-					if (!operatorAware.isLeftAligned(prev.positions, prev.offset, next.positions, next.offset)) {
+					if (!operatorAware.isLeftAligned(prev.positions, j,
+							next.positions, i)) {
 						break;
 					}
 					continue;
@@ -995,7 +1028,9 @@ class ImFolLATEMRR extends LookaheadTermEarlyMRRJoin {
 						prev.positions, j, next.positions, next.offset);
 				Position position = relation.getPosition();
 				while (j >= 0
-						&& (Position.ABOVE.equals(position) || Position.BEFORE.equals(position))) {
+						&& (Position.ABOVE.equals(position)
+								|| Position.BEFORE.equals(position) || Position.SAME
+									.equals(position))) {
 					j -= positionLength;
 					start = j;
 					if (j >= 0) {
@@ -1006,7 +1041,9 @@ class ImFolLATEMRR extends LookaheadTermEarlyMRRJoin {
 				}
 				if (j < 0)
 					break;
-				if (Operator.IMMEDIATE_FOLLOWING.equals(relation) || Operator.IMMEDIATE_FOLLOWING_SIBLING.equals(relation)) {
+				if (Operator.IMMEDIATE_FOLLOWING.equals(relation)
+						|| Operator.IMMEDIATE_FOLLOWING_SIBLING
+								.equals(relation)) {
 					result.insert(next, 0, positionLength);
 					matched = true;
 				} else if (Position.BELOW.equals(position)) {
@@ -1156,7 +1193,8 @@ class ImPrecLATEMRR extends LookaheadTermEarlyMRRJoin {
 					shouldContinue = false;
 					break;
 				}
-				if (Position.BELOW.equals(position) || Position.AFTER.equals(position)) {
+				if (Position.BELOW.equals(position)
+						|| Position.AFTER.equals(position)) {
 					break;
 				}
 			}
@@ -1165,7 +1203,7 @@ class ImPrecLATEMRR extends LookaheadTermEarlyMRRJoin {
 		}
 
 	}
-	
+
 }
 
 class DescFolCommonLATEMRR {
@@ -1180,21 +1218,29 @@ class DescFolCommonLATEMRR {
 		positionLength = parent.positionLength;
 		this.op = op;
 	}
-	
-	void bwdIterJoin(NodePositions prev, NodePositions next, NodePositions result, Operator nextOp) {
+
+	void bwdIterJoin(NodePositions prev, NodePositions next,
+			NodePositions result, Operator nextOp) {
 		int start = prev.offset;
-		for (;next.offset >= 0; next.offset -= positionLength) {
-			PruneOperation pruneOp = parentJoin.getBwdIterPruneOperation(next, nextOp);
+		for (; next.offset >= 0; next.offset -= positionLength) {
+			PruneOperation pruneOp = parentJoin.getBwdIterPruneOperation(next,
+					nextOp);
 			if (pruneOp.equals(PruneOperation.PRUNE)) {
 				continue;
 			}
 			boolean matched = false;
 			for (prev.offset = start; prev.offset >= 0; prev.offset -= positionLength) {
-				Position position = operatorAware.positionRelation(prev.positions, prev.offset, next.positions, next.offset);
-				if (Position.ABOVE.equals(position) || Position.BEFORE.equals(position)) {
+				Position position = operatorAware.positionRelation(
+						prev.positions, prev.offset, next.positions,
+						next.offset);
+				if (Position.ABOVE.equals(position)
+						|| Position.BEFORE.equals(position)) {
 					start -= positionLength;
 					continue;
-				} else if (Position.BELOW.equals(position) && op.equals(Operator.DESCENDANT) || Position.AFTER.equals(position) && op.equals(Operator.FOLLOWING)) {
+				} else if (Position.BELOW.equals(position)
+						&& op.equals(Operator.DESCENDANT)
+						|| Position.AFTER.equals(position)
+						&& op.equals(Operator.FOLLOWING)) {
 					result.insert(next, 0, positionLength);
 					matched = true;
 					break;
@@ -1213,16 +1259,19 @@ class FolSibImFolSibImFolCommonLATEMRR {
 	private int positionLength;
 	private Operator op;
 
-	public FolSibImFolSibImFolCommonLATEMRR(LookaheadTermEarlyMRRJoin parent, Operator op) {
+	public FolSibImFolSibImFolCommonLATEMRR(LookaheadTermEarlyMRRJoin parent,
+			Operator op) {
 		parentJoin = parent;
 		operatorAware = parent.operatorAware;
 		positionLength = parent.positionLength;
 		this.op = op;
 	}
-	
-	void fwdIterJoin(NodePositions prev, NodePositions next, NodePositions result, Operator nextOp) {
+
+	void fwdIterJoin(NodePositions prev, NodePositions next,
+			NodePositions result, Operator nextOp) {
 		for (; next.offset < next.size; next.offset += positionLength) {
-			PruneOperation pruneOp = parentJoin.getFwdIterPruneOperation(next, nextOp);
+			PruneOperation pruneOp = parentJoin.getFwdIterPruneOperation(next,
+					nextOp);
 			if (PruneOperation.PRUNE.equals(pruneOp)) {
 				continue;
 			} else if (PruneOperation.PRUNE_STOP.equals(pruneOp)) {
@@ -1250,8 +1299,9 @@ class FolSibImFolSibImFolCommonLATEMRR {
 			}
 		}
 	}
-	
-	void termEarlyJoin(NodePositions prev, NodePositions next, NodePositions result) {
+
+	void termEarlyJoin(NodePositions prev, NodePositions next,
+			NodePositions result) {
 		boolean shouldContinue = true;
 		for (int i = 0; i < next.size; i += positionLength) {
 			for (int j = 0; j < prev.size; j += positionLength) {
@@ -1284,16 +1334,19 @@ class PrecSibImPrecSibImPrecCommonLATEMRR {
 	private int positionLength;
 	private Operator op;
 
-	public PrecSibImPrecSibImPrecCommonLATEMRR(LookaheadTermEarlyMRRJoin parent, Operator op) {
+	public PrecSibImPrecSibImPrecCommonLATEMRR(
+			LookaheadTermEarlyMRRJoin parent, Operator op) {
 		parentJoin = parent;
 		operatorAware = parent.operatorAware;
 		positionLength = parent.positionLength;
 		this.op = op;
 	}
-	
-	void bwdIterJoin(NodePositions prev, NodePositions next, NodePositions result, Operator nextOp) {
+
+	void bwdIterJoin(NodePositions prev, NodePositions next,
+			NodePositions result, Operator nextOp) {
 		for (; next.offset >= 0; next.offset -= positionLength) {
-			PruneOperation pruneOp = parentJoin.getBwdIterPruneOperation(next, nextOp);
+			PruneOperation pruneOp = parentJoin.getBwdIterPruneOperation(next,
+					nextOp);
 			if (pruneOp.equals(PruneOperation.PRUNE)) {
 				continue;
 			}
@@ -1301,7 +1354,8 @@ class PrecSibImPrecSibImPrecCommonLATEMRR {
 
 			for (prev.offset = prev.size - positionLength; prev.offset >= 0; prev.offset -= positionLength) {
 				Operator relation = operatorAware.mostRelevantOpRelation(
-						prev.positions, prev.offset, next.positions, next.offset);
+						prev.positions, prev.offset, next.positions,
+						next.offset);
 				Position position = relation.getPosition();
 				if (op.equals(relation)
 						|| (Operator.IMMEDIATE_PRECEDING_SIBLING
@@ -1312,7 +1366,8 @@ class PrecSibImPrecSibImPrecCommonLATEMRR {
 					matched = true;
 					break;
 				} else if (Position.ABOVE.equals(position)
-						|| Position.BELOW.equals(position) || Position.AFTER.equals(position)) {
+						|| Position.BELOW.equals(position)
+						|| Position.AFTER.equals(position)) {
 					break;
 				}
 			}
@@ -1328,17 +1383,29 @@ class LookaheadTermEarlyMRRJoinBuilder implements LATEJoinBuilder {
 	@Override
 	public HalfPairLATEJoin getHalfPairJoin(Operator op,
 			LogicalNodePositionAware nodePositionAware) {
-		if (Operator.DESCENDANT.equals(op)) return new DescLATEMRR(op, nodePositionAware);
-		if (Operator.ANCESTOR.equals(op)) return new AncLATEMRR(op, nodePositionAware);
-		if (Operator.CHILD.equals(op)) return new ChildLATEMRR(op, nodePositionAware);
-		if (Operator.PARENT.equals(op)) return new ParLATEMRR(op, nodePositionAware);
-		if (Operator.FOLLOWING.equals(op)) return new FolLATEMRR(op, nodePositionAware);
-		if (Operator.PRECEDING.equals(op)) return new PrecLATEMRR(op, nodePositionAware);
-		if (Operator.IMMEDIATE_FOLLOWING.equals(op)) return new ImFolLATEMRR(op, nodePositionAware);
-		if (Operator.IMMEDIATE_PRECEDING.equals(op)) return new ImPrecLATEMRR(op, nodePositionAware);
-		if (Operator.FOLLOWING_SIBLING.equals(op) || Operator.IMMEDIATE_FOLLOWING_SIBLING.equals(op)) return new FolSibImFolSibLATEMRR(op, nodePositionAware);
-		if (Operator.PRECEDING_SIBLING.equals(op) || Operator.IMMEDIATE_PRECEDING_SIBLING.equals(op)) return new PrecSibImPrecSibLATEMRR(op, nodePositionAware);
+		if (Operator.DESCENDANT.equals(op))
+			return new DescLATEMRR(op, nodePositionAware);
+		if (Operator.ANCESTOR.equals(op))
+			return new AncLATEMRR(op, nodePositionAware);
+		if (Operator.CHILD.equals(op))
+			return new ChildLATEMRR(op, nodePositionAware);
+		if (Operator.PARENT.equals(op))
+			return new ParLATEMRR(op, nodePositionAware);
+		if (Operator.FOLLOWING.equals(op))
+			return new FolLATEMRR(op, nodePositionAware);
+		if (Operator.PRECEDING.equals(op))
+			return new PrecLATEMRR(op, nodePositionAware);
+		if (Operator.IMMEDIATE_FOLLOWING.equals(op))
+			return new ImFolLATEMRR(op, nodePositionAware);
+		if (Operator.IMMEDIATE_PRECEDING.equals(op))
+			return new ImPrecLATEMRR(op, nodePositionAware);
+		if (Operator.FOLLOWING_SIBLING.equals(op)
+				|| Operator.IMMEDIATE_FOLLOWING_SIBLING.equals(op))
+			return new FolSibImFolSibLATEMRR(op, nodePositionAware);
+		if (Operator.PRECEDING_SIBLING.equals(op)
+				|| Operator.IMMEDIATE_PRECEDING_SIBLING.equals(op))
+			return new PrecSibImPrecSibLATEMRR(op, nodePositionAware);
 		return null;
 	}
-	
+
 }

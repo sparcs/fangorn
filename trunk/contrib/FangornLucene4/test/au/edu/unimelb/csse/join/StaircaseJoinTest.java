@@ -242,7 +242,7 @@ public class StaircaseJoinTest extends PairJoinTestCase {
 		String sent = "(N(P(P(P(P(N A)(P B))(G C)(N D)(P N)(P E)))(N F)))";
 		IndexReader r = setupIndexWithDocs(sent);
 		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 28, 0, "P", "N");
-		joinAndAssertOutput(8, 41, jb, prev, Operator.FOLLOWING_SIBLING,
+		joinAndAssertOutput(8, 49, jb, prev, Operator.FOLLOWING_SIBLING,
 				posEnum);
 		assertPositions(new int[] { 3, 4, 4, 8, 6, 7, 2, 11 }, 4, bufferResult);
 	}
@@ -251,7 +251,7 @@ public class StaircaseJoinTest extends PairJoinTestCase {
 		String sent = "(N(P(P(P(P(N A)(P B))(P C)(N D)(P N)(P E)))(N F)))";
 		IndexReader r = setupIndexWithDocs(sent);
 		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 32, 0, "P", "N");
-		joinAndAssertOutput(8, 42, jb, prev,
+		joinAndAssertOutput(8, 50, jb, prev,
 				Operator.IMMEDIATE_FOLLOWING_SIBLING, posEnum);
 		assertPositions(new int[] { 3, 4, 4, 8, 6, 7, 2, 11 }, 4, bufferResult);
 	}
@@ -293,7 +293,115 @@ public class StaircaseJoinTest extends PairJoinTestCase {
 		assertPositions(new int[] { 0, 6, 2, 11, 0, 6, 3, 9, 2, 3, 4, 8, 5, 6,
 				4, 8 }, 12, bufferResult);
 	}
-
+	
+	public void testDescendantWithSameNode() throws Exception {
+		String sent = "(A(A(A A)(A A)(A A))(A A))";
+		IndexReader r = setupIndexWithDocs(sent);
+		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 40, 0, "A", "A");
+		joinAndAssertOutput(36, 20, jb, prev, Operator.DESCENDANT,
+				posEnum);
+		assertPositions(new int[] { 0, 3, 1, 6, 0, 1, 2, 4, 0, 1, 3, 1, 1, 2, 2, 4, 1, 2, 3, 2, 2, 3, 2, 4, 2, 3, 3, 3, 3, 4, 1, 6, 3, 4, 2, 5 }, 32, bufferResult);
+	}
+	
+	public void testAncestorWithSameNode() throws Exception {
+		String sent = "(A(A(A A)(A A)(A A))(A A))";
+		IndexReader r = setupIndexWithDocs(sent);
+		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 40, 0, "A", "A");
+		joinAndAssertOutput(24, 36, jb, prev, Operator.ANCESTOR,
+				posEnum);
+		assertPositions(new int[] { 0, 4, 0, 0, 0, 3, 1, 6, 0, 1, 2, 4, 1, 2, 2, 4, 2, 3, 2, 4, 3, 4, 1 ,6 }, 20, bufferResult);		
+	}
+	
+	public void testChildWithSameNode() throws Exception {
+		String sent = "(A(A(A A)(A A)(B A))(A A))";
+		IndexReader r = setupIndexWithDocs(sent);
+		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 36, 0, "A", "A");
+		joinAndAssertOutput(28, 53, jb, prev, Operator.CHILD,
+				posEnum);
+		assertPositions(new int[] { 0, 3, 1, 6, 0, 1, 2, 4, 0, 1, 3, 1, 1, 2, 2, 4, 1, 2, 3, 2, 3, 4, 1, 6, 3, 4, 2, 5 }, 24, bufferResult);
+	}
+	
+	public void testParentWithSameNode() throws Exception {
+		String sent = "(A(A(A A)(A A)(B A))(A A))";
+		IndexReader r = setupIndexWithDocs(sent);
+		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 36, 0, "A", "A");
+		joinAndAssertOutput(20, 101, jb, prev, Operator.PARENT,
+				posEnum);
+		assertPositions(new int[] { 0, 4, 0, 0, 0, 3, 1, 6, 0, 1, 2, 4, 1, 2, 2, 4, 3, 4, 1 ,6 }, 16, bufferResult);
+	}
+	
+	public void testFollowingWithSameNode() throws Exception {
+		String sent = "(A(A(A A)(A A)(A A))(A A))";
+		IndexReader r = setupIndexWithDocs(sent);
+		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 40, 0, "A", "A");
+		joinAndAssertOutput(24, 14, jb, prev, Operator.FOLLOWING,
+				posEnum);
+		assertPositions(new int[] { 1, 2, 2, 4, 1, 2, 3, 2, 2, 3, 2, 4, 2, 3, 3, 3, 3, 4, 1, 6, 3, 4, 2, 5 }, 20, bufferResult);
+	}
+	
+	public void testPrecedingWithSameNode() throws Exception {
+		String sent = "(A(A(A A)(A A)(A A))(A A))";
+		IndexReader r = setupIndexWithDocs(sent);
+		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 40, 0, "A", "A");
+		joinAndAssertOutput(28, 10, jb, prev, Operator.PRECEDING,
+				posEnum);
+		assertPositions(new int[] { 0, 3, 1, 6, 0, 1, 2, 4, 0, 1, 3, 1, 1, 2, 2, 4, 1, 2, 3, 2, 2, 3, 2, 4, 2, 3, 3, 3 }, 24, bufferResult);
+	}
+	
+	public void testFollowingSiblingWithSameNode() throws Exception {
+		String sent = "(A(A(A A)(B A)(A A))(A A))";
+		IndexReader r = setupIndexWithDocs(sent);
+		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 36, 0, "A", "A");
+		joinAndAssertOutput(8, 99, jb, prev, Operator.FOLLOWING_SIBLING,
+				posEnum);
+		assertPositions(new int[] { 2, 3, 2, 4, 3, 4, 1, 6 }, 4, bufferResult);	
+	}
+	
+	public void testPrecedingSiblingWithSameNode() throws Exception {
+		String sent = "(A(A(A A)(B A)(A A))(A A))";
+		IndexReader r = setupIndexWithDocs(sent);
+		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 36, 0, "A", "A");
+		joinAndAssertOutput(8, 123, jb, prev, Operator.PRECEDING_SIBLING,
+				posEnum);
+		assertPositions(new int[] { 0, 3, 1, 6, 0, 1, 2, 4 }, 4, bufferResult);	
+	}
+	
+	public void testImmediatelyFollowingSiblingWithSameNode() throws Exception {
+		String sent = "(A(A(A A)(B A)(A A))(A A))";
+		IndexReader r = setupIndexWithDocs(sent);
+		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 36, 0, "A", "A");
+		joinAndAssertOutput(4, 102, jb, prev, Operator.IMMEDIATE_FOLLOWING_SIBLING,
+				posEnum);
+		assertPositions(new int[] { 3, 4, 1, 6 }, 0, bufferResult);	
+	}
+	
+	public void testImmediatelyPrecedingSiblingWithSameNode() throws Exception {
+		String sent = "(A(A(A A)(B A)(A A))(A A))";
+		IndexReader r = setupIndexWithDocs(sent);
+		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 36, 0, "A", "A");
+		joinAndAssertOutput(4, 125, jb, prev, Operator.IMMEDIATE_PRECEDING_SIBLING,
+				posEnum);
+		assertPositions(new int[] { 0, 3, 1, 6 }, 0, bufferResult);	
+	}
+	
+	public void testImmediatelyFollowingWithSameNode() throws Exception {
+		String sent = "(A(A(A A)(B A)(A A))(A A))";
+		IndexReader r = setupIndexWithDocs(sent);
+		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 36, 0, "A", "A");
+		joinAndAssertOutput(20, 52, jb, prev, Operator.IMMEDIATE_FOLLOWING,
+				posEnum);
+		assertPositions(new int[] { 1, 2, 3, 2, 2, 3, 2, 4, 2, 3, 3, 3, 3, 4, 1, 6, 3, 4, 2, 5 }, 16, bufferResult);	
+	}
+	
+	public void testImmediatelyPrecedingWithSameNode() throws Exception {
+		String sent = "(A(A(A A)(B A)(A A))(A A))";
+		IndexReader r = setupIndexWithDocs(sent);
+		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 36, 0, "A", "A");
+		joinAndAssertOutput(24, 70, jb, prev, Operator.IMMEDIATE_PRECEDING,
+				posEnum);
+		assertPositions(new int[] { 0, 3, 1, 6, 0, 1, 2, 4, 0, 1, 3, 1, 1, 2, 3, 2, 2, 3, 2, 4, 2, 3, 3, 3 }, 20, bufferResult);	
+	}
+	
 	StaircaseJoin getJoin(Operator op) {
 		return (StaircaseJoin) StaircaseJoin.JOIN_BUILDER.getHalfPairJoin(op, lrdp);
 	}

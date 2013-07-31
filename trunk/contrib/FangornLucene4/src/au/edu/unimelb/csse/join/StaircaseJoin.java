@@ -310,10 +310,10 @@ class FolSibImFolSibStaircase extends StaircaseJoin {
 					next.offset = i;
 					result.insert(next, 0, positionLength);
 					break;
-				} else if (operatorAware.following(prev.positions, j,
+				} else if (operatorAware.same(prev.positions, j, next.positions, i) || (operatorAware.following(prev.positions, j,
 						next.positions, i)
 						&& operatorAware.relativeDepth(prev.positions, j,
-								next.positions, i) > 0) {
+								next.positions, i) > 0)) {
 					continue;
 				}
 				break;
@@ -348,9 +348,7 @@ class PrecSibImPrecSibStaircase extends StaircaseJoin {
 					next.offset = i;
 					result.push(next, positionLength);
 					break;
-				} else if (operatorAware.descendant(prev.positions, j,
-						next.positions, i)
-						|| operatorAware.relativeDepth(prev.positions, j,
+				} else if (operatorAware.same(prev.positions, j, next.positions, i) || operatorAware.relativeDepth(prev.positions, j,
 								next.positions, i) > 0) {
 					continue;
 				}

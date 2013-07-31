@@ -14,18 +14,21 @@ public abstract class MPMGMRRJoin implements HalfPairJoin {
 	private final LogicalNodePositionAware nodePositionAware;
 	protected final int positionLength;
 	protected final OperatorAware operatorAware;
+	protected final Position[] skipPositions;
 	NodePositions result = new NodePositions();
 	Operator op;
 
-	public MPMGMRRJoin(Operator op, LogicalNodePositionAware nodePositionAware) {
+	public MPMGMRRJoin(Operator op, LogicalNodePositionAware nodePositionAware, Position[] skipPositions) {
 		this.nodePositionAware = nodePositionAware;
 		positionLength = nodePositionAware.getPositionLength();
 		operatorAware = nodePositionAware.getOperatorHandler();
+		this.skipPositions = skipPositions; 
 		this.op = op;
 	}
 
 	@Override
-	public NodePositions match(NodePositions prev, DocsAndPositionsEnum node) throws IOException {
+	public NodePositions match(NodePositions prev, DocsAndPositionsEnum node)
+			throws IOException {
 		int freq = node.freq();
 		result.reset();
 		int numNextRead = 0;
@@ -36,13 +39,14 @@ public abstract class MPMGMRRJoin implements HalfPairJoin {
 			nodePositionAware.getNextPosition(result, node);
 			numNextRead++;
 			prev.offset = pmark;
-			pmark = doJoinResult(prev, pmark);
+			pmark = doJoin(prev, pmark);
 		}
 		return result;
 	}
 
 	@Override
-	public NodePositions match(NodePositions prev, NodePositions next) throws IOException {
+	public NodePositions match(NodePositions prev, NodePositions next)
+			throws IOException {
 		result.reset();
 		next.offset = 0;
 		int pmark = 0;
@@ -56,24 +60,36 @@ public abstract class MPMGMRRJoin implements HalfPairJoin {
 		return result;
 	}
 	
-	protected abstract int doJoinResult(NodePositions prev, int pmark);
+	boolean skipPosition(Position position) {
+		for (Position pos : skipPositions) {
+			if (pos.equals(position))
+				return true;
+		}
+		return false;
+	}
 
-	protected abstract int doJoin(NodePositions prev, NodePositions next, int pmark);
-	
+	protected abstract int doJoin(NodePositions prev, int pmark);
+
+	protected abstract int doJoin(NodePositions prev, NodePositions next,
+			int pmark);
+
 }
 
-abstract class PositionRelationBased extends MPMGMRRJoin {
+class PositionRelationBased extends MPMGMRRJoin {
+	private final Position matchPosition;
 
 	public PositionRelationBased(Operator op,
-			LogicalNodePositionAware nodePositionAware) {
-		super(op, nodePositionAware);
+			LogicalNodePositionAware nodePositionAware,
+			Position[] skipPositions, Position matchPosition) {
+		super(op, nodePositionAware, skipPositions);
+		this.matchPosition = matchPosition;
 	}
-	
+
 	@Override
 	protected int doJoin(NodePositions prev, NodePositions next, int pmark) {
-		Position position = operatorAware.positionRelation(
-				prev.positions, prev.offset, next.positions, next.offset);
-		while (skipCondition(position)) {
+		Position position = operatorAware.positionRelation(prev.positions,
+				prev.offset, next.positions, next.offset);
+		while (skipPosition(position)) {
 			// skip
 			prev.offset += positionLength;
 			pmark = prev.offset;
@@ -88,13 +104,12 @@ abstract class PositionRelationBased extends MPMGMRRJoin {
 		}
 		return pmark;
 	}
-	
+
 	@Override
-	protected int doJoinResult(NodePositions prev, int pmark) {
-		Position position = operatorAware.positionRelation(
-				prev.positions, prev.offset, result.positions,
-				result.offset);
-		while (skipCondition(position)) {
+	protected int doJoin(NodePositions prev, int pmark) {
+		Position position = operatorAware.positionRelation(prev.positions,
+				prev.offset, result.positions, result.offset);
+		while (skipPosition(position)) {
 			// skip
 			prev.offset += positionLength;
 			pmark = prev.offset;
@@ -110,12 +125,12 @@ abstract class PositionRelationBased extends MPMGMRRJoin {
 		}
 		return pmark;
 	}
-	
+
 	protected boolean checkMatch(NodePositions prev, NodePositions next,
 			Position position) {
 		boolean found = false;
 		while (prev.offset < prev.size) {
-			if (matchCondition(position)) {
+			if (matchPosition.equals(position)) {
 				found = true;
 				break; // solution found; abort
 			} else if (Position.BEFORE.equals(position)) {
@@ -130,24 +145,23 @@ abstract class PositionRelationBased extends MPMGMRRJoin {
 		}
 		return found;
 	}
-	
-	abstract boolean skipCondition(Position position);
-	
-	abstract boolean matchCondition(Position position);
 }
 
-abstract class OperatorRelationBased extends MPMGMRRJoin {
+class OperatorRelationBased extends MPMGMRRJoin {
+	private final Operator matchRelation;
 
 	public OperatorRelationBased(Operator op,
-			LogicalNodePositionAware nodePositionAware) {
-		super(op, nodePositionAware);
+			LogicalNodePositionAware nodePositionAware,
+			Position[] skipPositions, Operator matchRelation) {
+		super(op, nodePositionAware, skipPositions);
+		this.matchRelation = matchRelation;
 	}
-	
+
 	@Override
 	protected int doJoin(NodePositions prev, NodePositions next, int pmark) {
 		Operator relation = operatorAware.mostRelevantOpRelation(
 				prev.positions, prev.offset, next.positions, next.offset);
-		while (skipCondition(relation)) {
+		while (skipPosition(relation.getPosition())) {
 			// skip
 			prev.offset += positionLength;
 			pmark = prev.offset;
@@ -162,18 +176,18 @@ abstract class OperatorRelationBased extends MPMGMRRJoin {
 		}
 		return pmark;
 	}
-	
+
 	@Override
-	protected int doJoinResult(NodePositions prev, int pmark) {
+	protected int doJoin(NodePositions prev, int pmark) {
 		Operator relation = operatorAware.mostRelevantOpRelation(
-				prev.positions, prev.offset, result.positions,
-				result.offset);
-		while (skipCondition(relation)) {
+				prev.positions, prev.offset, result.positions, result.offset);
+		while (skipPosition(relation.getPosition())) {
 			// skip
 			prev.offset += positionLength;
 			pmark = prev.offset;
 			if (prev.offset >= prev.size) {
-				result.removeLast(positionLength); //TODO: test for the presence of this line
+				result.removeLast(positionLength); // TODO: test for the
+													// presence of this line
 				return pmark;
 			}
 			relation = operatorAware.mostRelevantOpRelation(prev.positions,
@@ -184,12 +198,12 @@ abstract class OperatorRelationBased extends MPMGMRRJoin {
 		}
 		return pmark;
 	}
-	
+
 	protected boolean checkMatch(NodePositions prev, NodePositions next,
 			Operator relation) {
 		boolean found = false;
 		while (prev.offset < prev.size) {
-			if (matchCondition(relation)) {
+			if (matchRelation.equals(relation)) {
 				found = true;
 				break; // solution found; abort
 			} else if (Position.BEFORE.equals(relation.getPosition())) {
@@ -204,84 +218,7 @@ abstract class OperatorRelationBased extends MPMGMRRJoin {
 		}
 		return found;
 	}
-	
-	abstract boolean skipCondition(Operator relation);
-	
-	abstract boolean matchCondition(Operator relation);
-	
-}
 
-class DescMPMGMRR extends PositionRelationBased {
-
-	public DescMPMGMRR(Operator op, LogicalNodePositionAware nodePositionAware) {
-		super(op, nodePositionAware);
-	}
-
-	@Override
-	boolean skipCondition(Position position) {
-		return Position.AFTER.equals(position);
-	}
-
-	@Override
-	boolean matchCondition(Position position) {
-		return Position.BELOW.equals(position);
-	}
-	
-}
-
-class ChildMPMGMRR extends OperatorRelationBased {
-
-	public ChildMPMGMRR(Operator op, LogicalNodePositionAware nodePositionAware) {
-		super(op, nodePositionAware);
-	}
-
-	@Override
-	boolean skipCondition(Operator relation) {
-		return Position.AFTER.equals(relation.getPosition());
-	}
-
-	@Override
-	boolean matchCondition(Operator relation) {
-		return Operator.CHILD.equals(relation);
-	}
-	
-}
-
-class AncMPMGMRR extends PositionRelationBased {
-
-	public AncMPMGMRR(Operator op, LogicalNodePositionAware nodePositionAware) {
-		super(op, nodePositionAware);
-	}
-
-	@Override
-	boolean skipCondition(Position position) {
-		return Position.AFTER.equals(position) || Position.BELOW.equals(position);
-	}
-
-	@Override
-	boolean matchCondition(Position position) {
-		return Position.ABOVE.equals(position);
-	}
-	
-}
-
-class ParMPMGMRR extends OperatorRelationBased {
-
-	public ParMPMGMRR(Operator op, LogicalNodePositionAware nodePositionAware) {
-		super(op, nodePositionAware);
-	}
-
-	@Override
-	boolean skipCondition(Operator relation) {
-		Position position = relation.getPosition();
-		return Position.AFTER.equals(position) || Position.BELOW.equals(position);
-	}
-
-	@Override
-	boolean matchCondition(Operator relation) {
-		return Operator.PARENT.equals(relation);
-	}
-	
 }
 
 class MPMGMRRJoinBuilder implements JoinBuilder {
@@ -290,15 +227,21 @@ class MPMGMRRJoinBuilder implements JoinBuilder {
 	public HalfPairJoin getHalfPairJoin(Operator op,
 			LogicalNodePositionAware nodePositionAware) {
 		if (Operator.DESCENDANT.equals(op)) {
-			return new DescMPMGMRR(op, nodePositionAware);
+			return new PositionRelationBased(op, nodePositionAware,
+					new Position[] { Position.AFTER }, Position.BELOW);
 		} else if (Operator.CHILD.equals(op)) {
-			return new ChildMPMGMRR(op, nodePositionAware);
+			return new OperatorRelationBased(op, nodePositionAware,
+					new Position[] { Position.AFTER }, Operator.CHILD);
 		} else if (Operator.ANCESTOR.equals(op)) {
-			return new AncMPMGMRR(op, nodePositionAware);
+			return new PositionRelationBased(op, nodePositionAware,
+					new Position[] { Position.AFTER, Position.BELOW },
+					Position.ABOVE);
 		} else if (Operator.PARENT.equals(op)) {
-			return new ParMPMGMRR(op, nodePositionAware);
+			return new OperatorRelationBased(op, nodePositionAware,
+					new Position[] { Position.AFTER, Position.BELOW },
+					Operator.PARENT);
 		}
 		return null;
 	}
-	
+
 }

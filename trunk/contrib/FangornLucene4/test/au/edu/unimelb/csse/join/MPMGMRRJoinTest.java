@@ -104,5 +104,12 @@ public class MPMGMRRJoinTest extends PairJoinTestCase {
 		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 12, 0, "PP", "CC");
 		joinAndAssertOutput(8, 7, jb, prev, Operator.CHILD, posEnum);
 	}
+	
+	public void testChildOp2() throws Exception {
+		IndexReader r = setupIndexWithDocs("(A(B A)(A C))");
+		DocsAndPositionsEnum posEnum = initPrevGetNext(r, 12, 0, "A", "C");
+		joinAndAssertOutput(4, 3, jb, prev, Operator.CHILD, posEnum);
+		assertPositions(new int[] {1, 2, 2, 2}, 0, bufferResult);
+	}
 
 }

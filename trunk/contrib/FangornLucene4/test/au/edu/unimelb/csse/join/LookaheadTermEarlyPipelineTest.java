@@ -93,64 +93,64 @@ public class LookaheadTermEarlyPipelineTest extends PipelineTestCase {
 
 		assertGetAllPipe(aPosEnum, true, pipe);
 
-		pipe = pipe.getNext();
-		assertMetaPipe(Operator.ANCESTOR, true, false, pipe);
+		Pipe pipeAbranch1 = pipe.getNext();
+		assertMetaPipe(Operator.ANCESTOR, true, false, pipeAbranch1);
 
-		Pipe innerpipe = ((MetaPipe) pipe).getInner();
+		Pipe pipeD = ((MetaPipe) pipeAbranch1).getInner();
 
-		assertGetAllLookaheadPipe(dPosEnum, true, innerpipe);
+		assertGetAllLookaheadPipe(dPosEnum, true, pipeD);
 
-		innerpipe = innerpipe.getNext();
+		Pipe pipeDC = pipeD.getNext();
 
-		assertSimplePipe(cPosEnum, Operator.PRECEDING, innerpipe, true);
+		assertSimplePipe(cPosEnum, Operator.PRECEDING, pipeDC, true);
 
-		innerpipe = innerpipe.getNext();
+		Pipe pipeCB = pipeDC.getNext();
 
-		assertSimplePipe(bPosEnum, Operator.PARENT, innerpipe, true);
+		assertSimplePipe(bPosEnum, Operator.PARENT, pipeCB, true);
 
-		innerpipe = innerpipe.getNext();
+		Pipe pipeBbranch2 = pipeCB.getNext();
 
-		assertMetaLookaheadPipe(Operator.PARENT, Operator.ANCESTOR, false, true, innerpipe);
+		assertMetaLookaheadPipe(Operator.PARENT, Operator.ANCESTOR, false, true, pipeBbranch2);
 
-		Pipe inner2pipe = ((MetaPipe) innerpipe).getInner();
+		Pipe pipeG = ((MetaPipe) pipeBbranch2).getInner();
 
-		assertGetAllPipe(gPosEnum, true, inner2pipe);
+		assertGetAllPipe(gPosEnum, true, pipeG);
 
-		inner2pipe = inner2pipe.getNext();
+		Pipe pipeGF = pipeG.getNext();
 
 		assertLookaheadPipe(fPosEnum, Operator.FOLLOWING_SIBLING,
-				Operator.FOLLOWING, true, inner2pipe);
+				Operator.FOLLOWING, true, pipeGF);
 
-		inner2pipe = inner2pipe.getNext();
+		Pipe pipeFE = pipeGF.getNext();
 
-		assertSimplePipe(ePosEnum, Operator.FOLLOWING, inner2pipe, true);
+		assertSimplePipe(ePosEnum, Operator.FOLLOWING, pipeFE, true);
 
-		inner2pipe = inner2pipe.getNext();
+		Pipe pipeEbranch2 = pipeFE.getNext();
 
-		assertMetaPipe(Operator.FOLLOWING, false, false, inner2pipe);
+		assertMetaPipe(Operator.FOLLOWING, false, false, pipeEbranch2);
 
-		Pipe inner3pipe = ((MetaPipe) inner2pipe).getInner();
+		Pipe pipeI = ((MetaPipe) pipeEbranch2).getInner();
 
-		assertGetAllLookaheadPipe(iPosEnum, true, inner3pipe);
+		assertGetAllLookaheadPipe(iPosEnum, true, pipeI);
 
-		inner3pipe = inner3pipe.getNext();
+		Pipe pipeIH = pipeI.getNext();
 
 		assertLookaheadPipe(hPosEnum, Operator.DESCENDANT, Operator.FOLLOWING,
-				false, inner3pipe);
+				false, pipeIH);
 
-		pipe = pipe.getNext();
+		Pipe pipeAbranch2 = pipeAbranch1.getNext();
 
-		assertMetaTerminateEarlyPipe(Operator.IMMEDIATE_PRECEDING, false, true, pipe);
+		assertMetaTerminateEarlyPipe(Operator.IMMEDIATE_PRECEDING, false, true, pipeAbranch2);
 
-		innerpipe = ((MetaPipe) pipe).getInner();
+		Pipe pipeK = ((MetaPipe) pipeAbranch2).getInner();
 
-		assertGetAllPipe(kPosEnum, true, innerpipe);
+		assertGetAllPipe(kPosEnum, true, pipeK);
 
-		innerpipe = innerpipe.getNext();
+		Pipe pipeKJ = pipeK.getNext();
 
-		assertSimplePipe(jPosEnum, Operator.CHILD, innerpipe, false);
+		assertSimplePipe(jPosEnum, Operator.CHILD, pipeKJ, false);
 
-		assertNull(pipe.getNext());
+		assertNull(pipeAbranch2.getNext());
 	}
 
 	public void testPipelineExecutionReturnsNoResults() throws Exception {
