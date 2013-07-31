@@ -8,14 +8,15 @@ import au.edu.unimelb.csse.join.HalfPairLATEJoin.PruneOperation;
 import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
 
 public abstract class LookaheadTermEarlyJoin extends AbstractLookaheadJoin {
-	public static final LATEJoinBuilder JOIN_BUILDER = new LookaheadTermEarlyJoinBuilder(); 
+	public static final LATEJoinBuilder JOIN_BUILDER = new LookaheadTermEarlyJoinBuilder();
 
 	public LookaheadTermEarlyJoin(Operator op,
 			LogicalNodePositionAware nodePositionAware) {
 		super(op, nodePositionAware);
 	}
 
-	public NodePositions match(NodePositions prev, NodePositions next) throws IOException {
+	public NodePositions match(NodePositions prev, NodePositions next)
+			throws IOException {
 		prev.offset = 0;
 		next.offset = 0;
 		result.reset();
@@ -42,7 +43,8 @@ public abstract class LookaheadTermEarlyJoin extends AbstractLookaheadJoin {
 	}
 
 	@Override
-	public NodePositions matchTerminateEarly(NodePositions prev, NodePositions next) {
+	public NodePositions matchTerminateEarly(NodePositions prev,
+			NodePositions next) {
 		prev.offset = 0;
 		next.offset = 0;
 		result.reset();
@@ -151,7 +153,9 @@ class AncLATE extends LookaheadTermEarlyJoin {
 				result.push(next, positionLength);
 				next.offset += positionLength;
 			} else if (operatorAware.startsAfter(prev.positions, prev.offset,
-					next.positions, next.offset)) {
+					next.positions, next.offset)
+					|| operatorAware.same(prev.positions, prev.offset,
+							next.positions, next.offset)) {
 				prev.offset += positionLength;
 			} else {
 				next.offset += positionLength;
@@ -178,6 +182,10 @@ class AncLATE extends LookaheadTermEarlyJoin {
 					result.push(next, positionLength);
 				} else if (operatorAware.startsAfter(prev.positions,
 						prev.offset, next.positions, next.offset)) {
+					// no need to check if both prev and next are pointing to
+					// the same position in the above else condition, because
+					// the pruning has already retained just leaf nodes and leaf
+					// nodes can never be ancestors anyway
 					prev.offset += positionLength;
 					continue;
 				}
@@ -199,7 +207,9 @@ class AncLATE extends LookaheadTermEarlyJoin {
 				result.push(next, positionLength);
 				break;
 			} else if (operatorAware.startsAfter(prev.positions, prev.offset,
-					next.positions, next.offset)) {
+					next.positions, next.offset)
+					|| operatorAware.same(prev.positions, prev.offset,
+							next.positions, next.offset)) {
 				prev.offset += positionLength;
 			} else {
 				next.offset += positionLength;
@@ -280,8 +290,7 @@ class ChildLATE extends LookaheadTermEarlyJoin {
 			NodePositions next, Operator nextOp) {
 		int start = prev.offset;
 		for (; next.offset >= 0; next.offset -= positionLength) {
-			PruneOperation pruneOp = getBwdIterPruneOperation(next,
-					nextOp);
+			PruneOperation pruneOp = getBwdIterPruneOperation(next, nextOp);
 			if (pruneOp.equals(PruneOperation.PRUNE)) {
 				continue;
 			}
@@ -296,7 +305,8 @@ class ChildLATE extends LookaheadTermEarlyJoin {
 					result.insert(next, 0, positionLength);
 					matched = true;
 					break;
-				} else if (operatorAware.descendant(prev.positions, prev.offset, next.positions, next.offset)) {
+				} else if (operatorAware.descendant(prev.positions,
+						prev.offset, next.positions, next.offset)) {
 					break;
 				}
 			}
@@ -447,7 +457,7 @@ class FolLATE extends LookaheadTermEarlyJoin {
 	@Override
 	protected void doMatch(NodePositions prev, NodePositions next) {
 		for (; next.offset < next.size; next.offset += positionLength) {
-			for (; prev.offset < prev.size; prev.offset += positionLength) {
+			for (prev.offset = 0; prev.offset < prev.size; prev.offset += positionLength) {
 				if (op.match(prev, next, operatorAware)) {
 					result.push(next, positionLength);
 					break;
@@ -532,7 +542,6 @@ class PrecLATE extends LookaheadTermEarlyJoin {
 				} else if (operatorAware.startsAfter(prev.positions,
 						prev.offset, next.positions, next.offset)) {
 					pmark = prev.offset + positionLength;
-					break;
 				}
 			}
 		}
@@ -560,7 +569,6 @@ class PrecLATE extends LookaheadTermEarlyJoin {
 				} else if (operatorAware.startsAfter(prev.positions,
 						prev.offset, next.positions, next.offset)) {
 					poff += prev.offset + positionLength;
-					break;
 				}
 			}
 		}
@@ -609,7 +617,6 @@ class PrecLATE extends LookaheadTermEarlyJoin {
 				} else if (operatorAware.startsAfter(prev.positions,
 						prev.offset, next.positions, next.offset)) {
 					pmark = prev.offset + positionLength;
-					break;
 				}
 			}
 			if (!shouldContinue) {
@@ -647,10 +654,11 @@ class FolSibImFolSibLATE extends LookaheadTermEarlyJoin {
 					next.offset = i;
 					result.insert(next, 0, positionLength);
 					break;
-				} else if (operatorAware.following(prev.positions, j,
-						next.positions, i)
-						&& operatorAware.relativeDepth(prev.positions, j,
-								next.positions, i) > 0) {
+				} else if ((operatorAware.following(prev.positions, j,
+						next.positions, i) && operatorAware.relativeDepth(
+						prev.positions, j, next.positions, i) > 0)
+						|| operatorAware.same(prev.positions, j,
+								next.positions, i)) {
 					continue;
 				}
 				break;
@@ -688,10 +696,12 @@ class FolSibImFolSibLATE extends LookaheadTermEarlyJoin {
 					result.insert(next, 0, positionLength);
 					matched = true;
 					break;
-				} else if (operatorAware.following(prev.positions, j,
-						next.positions, next.offset)
-						&& operatorAware.relativeDepth(prev.positions, j,
-								next.positions, next.offset) > 0) {
+				} else if ((operatorAware.following(prev.positions, j,
+						next.positions, next.offset) && operatorAware
+						.relativeDepth(prev.positions, j, next.positions,
+								next.offset) > 0)
+						|| operatorAware.same(prev.positions, j,
+								next.positions, next.offset)) {
 					continue;
 				}
 				break;
@@ -741,6 +751,9 @@ class ImFolLATE extends LookaheadTermEarlyJoin {
 						break;
 					}
 					continue;
+				} else if (operatorAware.same(prev.positions, j,
+						next.positions, i)) {
+					continue;
 				}
 				break;
 			}
@@ -782,6 +795,9 @@ class ImFolLATE extends LookaheadTermEarlyJoin {
 							next.positions, next.offset)) {
 						break;
 					}
+					continue;
+				} else if (operatorAware.same(prev.positions, j,
+						next.positions, next.offset)) {
 					continue;
 				}
 				break;
@@ -827,10 +843,10 @@ class PrecSibImPrecSibLATE extends LookaheadTermEarlyJoin {
 						operatorAware)) {
 					next.offset = i;
 					result.push(next, positionLength);
-				} else if (operatorAware.descendant(prev.positions, j,
-						next.positions, i)
-						|| operatorAware.relativeDepth(prev.positions, j,
-								next.positions, i) > 0) {
+				} else if (operatorAware.relativeDepth(prev.positions, j,
+						next.positions, i) > 0
+						|| operatorAware.same(prev.positions, j,
+								next.positions, i)) {
 					continue;
 				}
 				break;
@@ -865,10 +881,10 @@ class PrecSibImPrecSibLATE extends LookaheadTermEarlyJoin {
 						result.removeLast(positionLength);
 					}
 					result.push(next, positionLength);
-				} else if (operatorAware.descendant(prev.positions, j,
-						next.positions, next.offset)
-						|| operatorAware.relativeDepth(prev.positions, j,
-								next.positions, next.offset) > 0) {
+				} else if (operatorAware.relativeDepth(prev.positions, j,
+						next.positions, next.offset) > 0
+						|| operatorAware.same(prev.positions, j,
+								next.positions, next.offset)) {
 					continue;
 				}
 				break;
@@ -903,10 +919,10 @@ class PrecSibImPrecSibLATE extends LookaheadTermEarlyJoin {
 					result.push(next, positionLength);
 					shouldContinue = false;
 					break;
-				} else if (operatorAware.descendant(prev.positions, j,
-						next.positions, i)
-						|| operatorAware.relativeDepth(prev.positions, j,
-								next.positions, i) > 0) {
+				} else if (operatorAware.relativeDepth(prev.positions, j,
+						next.positions, i) > 0
+						|| operatorAware.same(prev.positions, j,
+								next.positions, i)) {
 					continue;
 				}
 				break;
@@ -1119,7 +1135,8 @@ class FolSibImFolSibImFolCommonLATE {
 	int positionLength;
 	Operator op;
 
-	public FolSibImFolSibImFolCommonLATE(LookaheadTermEarlyJoin join, Operator op) {
+	public FolSibImFolSibImFolCommonLATE(LookaheadTermEarlyJoin join,
+			Operator op) {
 		parentJoin = join;
 		this.op = op;
 		operatorAware = parentJoin.operatorAware;
@@ -1180,7 +1197,8 @@ class PrecSibImPrecSibImPrecCommonLATE {
 	int positionLength;
 	Operator op;
 
-	public PrecSibImPrecSibImPrecCommonLATE(LookaheadTermEarlyJoin join, Operator op) {
+	public PrecSibImPrecSibImPrecCommonLATE(LookaheadTermEarlyJoin join,
+			Operator op) {
 		parentJoin = join;
 		this.op = op;
 		operatorAware = parentJoin.operatorAware;
@@ -1222,17 +1240,29 @@ class LookaheadTermEarlyJoinBuilder implements LATEJoinBuilder {
 	@Override
 	public HalfPairLATEJoin getHalfPairJoin(Operator op,
 			LogicalNodePositionAware nodePositionAware) {
-		if (Operator.DESCENDANT.equals(op)) return new DescLATE(op, nodePositionAware);
-		if (Operator.ANCESTOR.equals(op)) return new AncLATE(op, nodePositionAware);
-		if (Operator.CHILD.equals(op)) return new ChildLATE(op, nodePositionAware);
-		if (Operator.PARENT.equals(op)) return new ParLATE(op, nodePositionAware);
-		if (Operator.FOLLOWING.equals(op)) return new FolLATE(op, nodePositionAware);
-		if (Operator.PRECEDING.equals(op)) return new PrecLATE(op, nodePositionAware);
-		if (Operator.IMMEDIATE_FOLLOWING.equals(op)) return new ImFolLATE(op, nodePositionAware);
-		if (Operator.FOLLOWING_SIBLING.equals(op) || Operator.IMMEDIATE_FOLLOWING_SIBLING.equals(op)) return new FolSibImFolSibLATE(op, nodePositionAware);
-		if (Operator.IMMEDIATE_PRECEDING.equals(op)) return new ImPrecLATE(op, nodePositionAware);
-		if (Operator.PRECEDING_SIBLING.equals(op) || Operator.IMMEDIATE_PRECEDING_SIBLING.equals(op)) return new PrecSibImPrecSibLATE(op, nodePositionAware);
+		if (Operator.DESCENDANT.equals(op))
+			return new DescLATE(op, nodePositionAware);
+		if (Operator.ANCESTOR.equals(op))
+			return new AncLATE(op, nodePositionAware);
+		if (Operator.CHILD.equals(op))
+			return new ChildLATE(op, nodePositionAware);
+		if (Operator.PARENT.equals(op))
+			return new ParLATE(op, nodePositionAware);
+		if (Operator.FOLLOWING.equals(op))
+			return new FolLATE(op, nodePositionAware);
+		if (Operator.PRECEDING.equals(op))
+			return new PrecLATE(op, nodePositionAware);
+		if (Operator.IMMEDIATE_FOLLOWING.equals(op))
+			return new ImFolLATE(op, nodePositionAware);
+		if (Operator.FOLLOWING_SIBLING.equals(op)
+				|| Operator.IMMEDIATE_FOLLOWING_SIBLING.equals(op))
+			return new FolSibImFolSibLATE(op, nodePositionAware);
+		if (Operator.IMMEDIATE_PRECEDING.equals(op))
+			return new ImPrecLATE(op, nodePositionAware);
+		if (Operator.PRECEDING_SIBLING.equals(op)
+				|| Operator.IMMEDIATE_PRECEDING_SIBLING.equals(op))
+			return new PrecSibImPrecSibLATE(op, nodePositionAware);
 		return null;
 	}
-	
+
 }
