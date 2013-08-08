@@ -18,7 +18,7 @@ import au.edu.unimelb.csse.paypack.LogicalNodePositionAware;
 
 public class CacheEffectTest {
 	private final LogicalNodePositionAware lrdp;
-	private static final int TIMES = 6;
+	private static final int TIMES = 5;
 	private IndexReader reader;
 
 	public CacheEffectTest(String indexDir, PhysicalPayloadFormat ppf) throws IOException {
