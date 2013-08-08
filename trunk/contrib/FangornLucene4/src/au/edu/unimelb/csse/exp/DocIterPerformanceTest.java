@@ -12,7 +12,7 @@ import au.edu.unimelb.csse.join.DocIter;
 
 public class DocIterPerformanceTest {
 	private DirectoryReader reader;
-	private static final int TIMES = 6;
+	private static final int TIMES = 5;
 
 	public DocIterPerformanceTest(String indexDir) throws IOException {
 		Directory directory = MMapDirectory.open(new File(indexDir));
