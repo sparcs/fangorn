@@ -2,6 +2,7 @@ package au.edu.unimelb.csse.exp;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.util.Arrays;
 
 import org.apache.lucene.index.DirectoryReader;
@@ -17,7 +18,8 @@ public class TermFreqAnalyzer {
 
 	private DirectoryReader reader;
 	private TreeQuery query;
-
+	private DecimalFormat format = new DecimalFormat("#.##");
+	
 	public TermFreqAnalyzer(DirectoryReader reader, TreeQuery query) {
 		this.reader = reader;
 		this.query = query;
@@ -60,10 +62,10 @@ public class TermFreqAnalyzer {
 		}
 		if (numQueryTerms > 0) {
 			StringBuilder builder = new StringBuilder();
-			builder.append(totals[0] * 1.0 / numDocs);
-			for (int j = 0; j < numQueryTerms; j++) {
+			builder.append(format.format(totals[0] * 1.0 / numDocs));
+			for (int j = 1; j < numQueryTerms; j++) {
 				builder.append(",");
-				builder.append(totals[j] * 1.0 / numDocs);
+				builder.append(format.format(totals[j] * 1.0 / numDocs));
 			}
 			System.out.println(builder.toString());
 		}
@@ -80,10 +82,10 @@ public class TermFreqAnalyzer {
 		}
 		if (avgtf.length > 0) {
 			StringBuilder builder = new StringBuilder();
-			builder.append(avgtf[0]);
+			builder.append(format.format(avgtf[0]));
 			for (i = 1; i < avgtf.length; i++) {
 				builder.append(",");
-				builder.append(avgtf[i]);
+				builder.append(format.format(avgtf[i]));
 			}
 			System.out.println(builder.toString());
 		}
