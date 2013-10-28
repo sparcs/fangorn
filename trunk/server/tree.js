@@ -275,8 +275,7 @@ Tree.prototype.mainlyNarrowChars = function(name) {
 }
 
 Tree.prototype.toSVG = function(objid) {
-	var svg = document.createElementNS('http://www.w3.org/2000/svg',
-			'svg:svg');
+	var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg:svg');
 	this.recToSVG(svg, objid, this.tree);
 	this.drawHighlightPaths(svg)
 	var m = this.maxXY(this.tree, {

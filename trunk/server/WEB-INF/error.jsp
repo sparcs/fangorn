@@ -90,9 +90,8 @@ function selectInList(listid, item) {
 	<tr>
 		<td>
 		<center><b>Browser Requirements</b><br />
-		<p>Result trees are rendered correctly only in Mozilla Firefox
-		with Javascript turned on. A desktop resolution of 1024x768 or higher
-		is recommended.</p>
+		<p>Result trees require JavaScript to render correctly. 
+        A desktop resolution of 1024x768 or higher is recommended.</p>
 		</center>
 		</td>
 	</tr>

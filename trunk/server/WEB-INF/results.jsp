@@ -62,8 +62,6 @@ turned it off. This page requires Javascript to display results.
 <%}%>
 
 function render() {
-	if (navigator.userAgent.indexOf("Firefox") == -1)
-        	alert("To see this page as it is meant to appear please use a Mozilla Firefox browser.");
     var dec_qry_str = decodeSymbols(document.forms["stateinf"].p.value);
 	document.getElementById("query_fld_1").setAttribute("value",dec_qry_str);
 	var qryFld2 = document.getElementById("query_fld_2");
@@ -393,7 +391,7 @@ function defaultDisplay(num) {
 					</tr>
 				</table>
 				</div>
-				<div style="margin-top:-20px;"><object id="row<%=i%>" name="svg" type="image/svg+xml"></object>
+				<div style="margin-top:-20px;"><svg xmlns="http://www.w3.org/2000/svg" version="1.1" id="row<%=i%>"></svg>
 				</div>
 				</div>
 				</td>
@@ -522,9 +520,8 @@ function defaultDisplay(num) {
 	<tr>
 		<td>
 		<center><b>Browser Requirements</b><br />
-		<p>Result trees are rendered correctly only in Mozilla Firefox
-		with Javascript turned on. A desktop resolution of 1024x768 or higher
-		is recommended.</p>
+		<p>Result trees require JavaScript to render correctly. A
+		desktop resolution of 1024x768 or higher is recommended.</p>
 		</center>
 		</td>
 	</tr>

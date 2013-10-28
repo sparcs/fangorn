@@ -40,10 +40,6 @@ function openExample(queryStr) {
 </script>
 </head>
 <body>
-<script type="text/javascript">
-if (navigator.userAgent.indexOf("Firefox") == -1)
-	alert("To see this page as it is meant to appear please use a Mozilla Firefox browser.");
-</script>
 <%@include file="title.jspf" %>
 <hr />
 <br />
@@ -231,9 +227,8 @@ f">pdf</a></u> ]
 	<tr>
 		<td>
 		<center><b>Browser Requirements</b><br />
-		<p>Result trees are rendered correctly only in Mozilla Firefox
-		with Javascript turned on. A desktop resolution of 1024x768 or higher
-		is recommended.</p>
+		<p>Result trees require JavaScript to render correctly. 
+        A desktop resolution of 1024x768 or higher. is recommended.</p>
 		</center>
 		</td>
 	</tr>
