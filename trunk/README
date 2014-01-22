@@ -65,8 +65,8 @@ Press Ctrl + c in the terminal where the application is running.
 Accessing the application
 **********************************
 
-* If accessing the application on the same machine as the server: Start Mozilla 
-Firefox browser and type in http://localhost:9090 or http://localhost:9090/index
+* If accessing the application on the same machine as the server: Start a
+ browser and type in http://localhost:9090 or http://localhost:9090/index
 in the address bar.
 
 * The application could be accessed on a network using 

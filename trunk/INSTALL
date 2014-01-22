@@ -3,18 +3,25 @@ Installation
 **************************
 Requirements
 **************************
-Java6 or above
-Apache Ant 	http://ant.apache.org/
+
+* Java 6 or above
+* Preferably more than 1 GB RAM 
+* Apache Ant -- http://ant.apache.org/ (if compiling from source)
 
 
 **************************
 Steps
 **************************
-     We call the root directory as PROJ_ROOT
+
+Let's call the root directory PROJ_ROOT.
+
 1. Run ant in PROJ_ROOT
-     > ant
-2. Fangorn distribution is compiled and copied into PROJ_ROOT/dist folder
+     $ cd PROJ_ROOT
+     $ ant dist
+
+2. Fangorn distribution is compiled and copied into PROJ_ROOT/dist
+
 3. PROJ_ROOT/dist/fangorn is now your distribution root (DIST_ROOT) folder
+
 4. All commands in the README file, unless otherwise specified, must be 
    executed from DIST_ROOT
-
