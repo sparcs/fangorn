@@ -248,8 +248,8 @@ function closeQueryWindow(success) {
 
 function copyToSearchBar() {
 	var q = queryTree.getQuery();
-	document.searchBarTop.query.value = q;
-	document.searchBarBtm.query.value = q;
+	document.forms.searchBarTop.query.value = q;
+	document.forms.searchBarBtm.query.value = q;
 	closeQueryWindow(true);
 }
 
